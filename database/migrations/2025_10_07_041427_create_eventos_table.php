@@ -12,8 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('eventos', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
+            $table->string('nombre', 100);
+            $table->text('descripcion')->nullable();
+            $table->dateTime('fecha_inicio')->nullable();
+            $table->dateTime('fecha_fin')->nullable();
             $table->timestamps();
+            $table->softDeletesTz();
+
+            $table->index('fecha_inicio');
+            $table->index('fecha_fin');
         });
     }
 

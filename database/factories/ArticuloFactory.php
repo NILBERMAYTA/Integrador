@@ -9,15 +9,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ArticuloFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        $tipo = fake()->randomElement(['reutilizable','consumible']);
+        $seg  = $tipo==='reutilizable' ? 'serie' : 'cantidad';
+
         return [
-            //
+            'categoria_id' => 1, // cámbialo/relaciónalo en el seeder con ->for()
+            'nombre' => ucfirst(fake()->unique()->words(2, true)),
+            'unidad_medida' => $seg==='serie' ? 'unidad' : fake()->randomElement(['unidad','caja','cartucho']),
+            'descripcion' => null,
+            'tipo' => $tipo,
+            'seguimiento' => $seg,
         ];
     }
 }

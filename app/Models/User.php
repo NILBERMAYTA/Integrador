@@ -2,61 +2,59 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'name','email','password','role','can_login',
+        'rango','numero_escalafon','fecha_ingreso','remember_token',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
+    protected $hidden = ['password','remember_token'];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'fecha_ingreso'     => 'date',
+        'can_login'         => 'boolean',
+        // enums de Postgres se manejan como string
+        'role'              => 'string',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    // Operaciones donde el usuario es el receptor/afectado (policía)
+    public function operacionesComoPolicia()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Operacion::class, 'policia_id');
     }
 
-    /**
-     * Get the user's initials
-     */
-    public function initials(): string
+    // Operaciones registradas por el usuario (furriel/admin)
+    public function operacionesRegistradas()
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+        return $this->hasMany(Operacion::class, 'actor_id');
+    }
+
+    public function mantenimientosCreados()
+    {
+        return $this->hasMany(Mantenimiento::class, 'creado_por');
+    }
+
+    public function inspeccionesRealizadas()
+    {
+        return $this->hasMany(Inspeccion::class, 'inspector_id');
+    }
+
+    public function incidenciasCreadas()
+    {
+        return $this->hasMany(Incidencia::class, 'creado_por');
+    }
+
+    public function incidenciasComoPolicia()
+    {
+        return $this->hasMany(Incidencia::class, 'policia_id');
     }
 }

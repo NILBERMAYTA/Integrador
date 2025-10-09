@@ -17,7 +17,8 @@ class TipoIncidenteFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'nombre' => ucfirst(fake()->unique()->word()),
+            'severidad' => fake()->numberBetween(1,5),
         ];
     }
 }

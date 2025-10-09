@@ -11,9 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tipo_incidentes', function (Blueprint $table) {
-            $table->id();
+        Schema::create('tipos_incidente', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('nombre', 100)->unique();
+            $table->string('severidad', 500)->nullable();
             $table->timestamps();
+            $table->softDeletesTz();
+
+            $table->index('severidad');
         });
     }
 
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tipo_incidentes');
+        Schema::dropIfExists('tipos_incidente');
     }
 };

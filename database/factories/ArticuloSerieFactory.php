@@ -9,15 +9,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ArticuloSerieFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'articulo_id' => 1,
+            'codigo_serie' => strtoupper(fake()->bothify('SER-###??')),
+            'observaciones' => null,
         ];
     }
 }

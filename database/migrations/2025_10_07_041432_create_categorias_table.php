@@ -12,8 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('categorias', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
+            $table->string('nombre', 100)->unique();
+            $table->string('descripcion', 500)->nullable();
             $table->timestamps();
+            $table->softDeletesTz();
         });
     }
 

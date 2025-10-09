@@ -9,15 +9,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class EventoFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'nombre' => 'Operativo '.fake()->city(),
+            'descripcion' => fake()->sentence(),
+            'fecha_inicio' => now()->subHours(fake()->numberBetween(1,72)),
+            'fecha_fin' => null,
         ];
     }
 }

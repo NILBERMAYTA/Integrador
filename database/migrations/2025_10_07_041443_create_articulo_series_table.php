@@ -12,8 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('articulo_series', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
+            $table->foreignId('articulo_id')
+                ->constrained("articulos")
+                ->cascadeOnDelete();
+            $table->string('codigo_serie', 100)->unique();
+            $table->string('observaciones', 500)->nullable();
+
             $table->timestamps();
+            $table->softDeletesTz();
+
+            $table->index('articulo_id');
         });
     }
 

@@ -23,15 +23,18 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $role = fake()->randomElement(['admin','furriel','policia']);
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'email' => $role==='policia' && fake()->boolean(30) ? null : fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => $role==='policia' && fake()->boolean(30) ? null : Hash::make('secret123'),
+            'role' => $role,
+            'can_login' => in_array($role, ['admin','furriel']),
+            'rango' => fake()->randomElement(['Sgto.','Sbtte.','Tte.']),
+            'numero_escalafon' => 'P-'.fake()->unique()->numberBetween(100,999),
+            'fecha_ingreso' => fake()->date(),
             'remember_token' => Str::random(10),
-            'two_factor_secret' => Str::random(10),
-            'two_factor_recovery_codes' => Str::random(10),
-            'two_factor_confirmed_at' => now(),
         ];
     }
 
