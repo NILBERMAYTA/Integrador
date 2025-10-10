@@ -32,9 +32,9 @@
     --color-surface-alt: var(--color-slate-100);
     --color-on-surface: var(--color-slate-700);
     --color-on-surface-strong: var(--color-black);
-    --color-primary: var(--color-blue-700);
+    --color-primary: var(--color-lime-800);
     --color-on-primary: var(--color-slate-100);
-    --color-secondary: var(--color-indigo-700);
+    --color-secondary: var(--color-teal-500);
     --color-on-secondary: var(--color-slate-100);
     --color-outline: var(--color-slate-300);
     --color-outline-strong: var(--color-slate-800);
@@ -44,9 +44,9 @@
     --color-surface-dark-alt: var(--color-slate-800);
     --color-on-surface-dark: var(--color-slate-300);
     --color-on-surface-dark-strong: var(--color-white);
-    --color-primary-dark: var(--color-blue-600);
+    --color-primary-dark: var(--color-lime-600);
     --color-on-primary-dark: var(--color-slate-100);
-    --color-secondary-dark: var(--color-indigo-600);
+    --color-secondary-dark: var(--color-teal-400);
     --color-on-secondary-dark: var(--color-slate-100);
     --color-outline-dark: var(--color-slate-700);
     --color-outline-dark-strong: var(--color-slate-300);
@@ -62,7 +62,7 @@
     --color-on-danger: var(--color-white);
 
     /* border radius */
-    --radius-radius: var(--radius-lg);
+    --radius-radius: var(--radius-xl);
 }
 
 @layer theme {

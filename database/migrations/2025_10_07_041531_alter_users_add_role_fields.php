@@ -13,12 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         // Asegúrate de que la migración default de users ya corrió
-        Schema::table('users', function (Blueprint $t) {
-            $t->boolean('can_login')->default(false)->after('password');
-            $t->string('rango', 50)->nullable()->after('can_login');
-            $t->string('numero_escalafon', 50)->nullable()->after('rango');
-            $t->date('fecha_ingreso')->nullable()->after('numero_escalafon');
-            $t->softDeletesTz();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('apellido_paterno', 80)->nullable()->after('name');
+            $table->string('apellido_materno', 80)->nullable()->after('apellido_paterno');
+            $table->boolean('can_login')->default(false)->after('password');
+            $table->string('rango', 50)->nullable()->after('can_login');
+            $table->string('numero_escalafon', 50)->nullable()->after('rango');
+            $table->date('fecha_ingreso')->nullable()->after('numero_escalafon');
+            $table->softDeletesTz();
         });
         DB::unprepared("ALTER TABLE users ADD COLUMN role rol_enum NOT NULL DEFAULT 'policia'");
         DB::unprepared("ALTER TABLE users ALTER COLUMN email DROP NOT NULL");

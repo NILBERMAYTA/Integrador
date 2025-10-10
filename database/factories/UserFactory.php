@@ -4,59 +4,69 @@ namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
-        $role = fake()->randomElement(['admin','furriel','policia']);
+        // Rangos posibles dentro de la policía
+        $rangos = ['Sgto.', 'Sgto. My.', 'Tte.', 'Cap.', 'My.', 'Tcnl.', 'Cnl.'];
+
+        // Roles posibles
+        $roles = ['policia', 'furriel', 'admin'];
+
+        // Determinar rol aleatorio (por defecto policia)
+        $role = $this->faker->randomElement($roles);
+
         return [
-            'name' => fake()->name(),
-            'email' => $role==='policia' && fake()->boolean(30) ? null : fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => $role==='policia' && fake()->boolean(30) ? null : Hash::make('secret123'),
+            'name' => $this->faker->firstName(),
+            'apellido_paterno' => $this->faker->lastName(),
+            'apellido_materno' => $this->faker->lastName(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => Hash::make('password123'),
             'role' => $role,
-            'can_login' => in_array($role, ['admin','furriel']),
-            'rango' => fake()->randomElement(['Sgto.','Sbtte.','Tte.']),
-            'numero_escalafon' => 'P-'.fake()->unique()->numberBetween(100,999),
-            'fecha_ingreso' => fake()->date(),
-            'remember_token' => Str::random(10),
+            'can_login' => in_array($role, ['admin', 'furriel']), // solo ellos pueden ingresar
+            'rango' => $this->faker->randomElement($rangos),
+            'numero_escalafon' => 'P-' . str_pad($this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+            'fecha_ingreso' => $this->faker->dateTimeBetween('-10 years', '-1 year')->format('Y-m-d'),
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Estado específico para administradores
      */
-    public function unverified(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+        return $this->state(fn() => [
+            'role' => 'admin',
+            'can_login' => true,
         ]);
     }
 
     /**
-     * Indicate that the model does not have two-factor authentication configured.
+     * Estado específico para furrieles
      */
-    public function withoutTwoFactor(): static
+    public function furriel(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
+        return $this->state(fn() => [
+            'role' => 'furriel',
+            'can_login' => true,
+        ]);
+    }
+
+    /**
+     * Estado específico para policías sin acceso
+     */
+    public function policia(): static
+    {
+        return $this->state(fn() => [
+            'role' => 'policia',
+            'can_login' => false,
+            'email' => null,
+            'password' => null,
         ]);
     }
 }

@@ -10,37 +10,21 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'admin@armutop.local'],
-            [
-                'name' => 'Admin ARMUTOP',
-                'password' => Hash::make('admin123'),
-                'role' => 'admin',
-                'can_login' => true,
-            ]
-        );
+        // 1️⃣ Admin principal
+        User::factory()->admin()->create([
+            'name' => 'Admin',
+            'apellido_paterno' => 'General',
+            'apellido_materno' => 'UTOP',
+            'email' => 'admin@armutop.local',
+            'password' => Hash::make('admin123'),
+        ]);
 
-        User::updateOrCreate(
-            ['email' => 'furriel@armutop.local'],
-            [
-                'name' => 'Furriel UTOP',
-                'password' => Hash::make('furriel123'),
-                'role' => 'furriel',
-                'can_login' => true,
-            ]
-        );
+        // 2️⃣ Furrieles
+        User::factory()->furriel()->count(5)->create();
 
-        // Policía sin acceso (sin email)
-        User::firstOrCreate(
-            ['email' => null, 'numero_escalafon' => 'P-001'],
-            [
-                'name' => 'Policía Demo',
-                'password' => null,
-                'role' => 'policia',
-                'can_login' => false,
-                'rango' => 'Sgto.',
-                'fecha_ingreso' => now()->subYears(3)->toDateString(),
-            ]
-        );
+        // 3️⃣ Policías sin acceso
+        User::factory()->policia()->count(93)->create();
+
+        // Total aproximado: 99 usuarios (1 admin + 5 furrieles + 93 policías)
     }
 }
