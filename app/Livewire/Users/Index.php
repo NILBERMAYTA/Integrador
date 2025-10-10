@@ -13,7 +13,8 @@ class Index extends Component
     public function render()
     {
         return view('livewire.users.index', [
-            'users' => User::orderByApellidos()->simplePaginate(8),
+            //'users' => User::orderByApellidos()->simplePaginate(8),
+            'users' => User::latest()->simplePaginate(8),
         ]);
     }
 }
