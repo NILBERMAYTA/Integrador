@@ -23,9 +23,9 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
+    --color-accent: var(--color-lime-800);
+    --color-accent-content: var(--color-lime-800);
+    --color-accent-foreground: var(--color-slate-100);
 
     /* light theme */
     --color-surface: var(--color-white);
@@ -67,37 +67,198 @@
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-accent: var(--color-lime-600);
+        --color-accent-content: var(--color-lime-600);
+        --color-accent-foreground: var(--color-slate-100);
     }
 }
 
 @layer base {
+    /* Aplicar colores de fondo globales */
+    body {
+        @apply bg-surface dark:bg-surface-dark text-on-surface dark:text-on-surface-dark;
+    }
+
+    /* Layout principal */
+    main {
+        @apply bg-surface dark:bg-surface-dark;
+    }
 
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-slate-300, currentColor);
+    }
+
+    .dark *,
+    .dark ::after,
+    .dark ::before,
+    .dark ::backdrop,
+    .dark ::file-selector-button {
+        border-color: var(--color-slate-700, currentColor);
     }
 }
 
+/* Personalización de componentes Flux */
+@layer components {
+    /* Sobrescribir variables de Flux para modo claro */
+    :root {
+        /* Colores primarios de Flux */
+        --flux-primary: theme('colors.lime.800');
+        --flux-primary-foreground: theme('colors.slate.100');
+        
+        /* Colores secundarios */
+        --flux-secondary: theme('colors.teal.500');
+        --flux-secondary-foreground: theme('colors.slate.100');
+        
+        /* Fondos */
+        --flux-background: theme('colors.white');
+        --flux-foreground: theme('colors.slate.700');
+        --flux-card: theme('colors.white');
+        --flux-card-foreground: theme('colors.slate.700');
+        
+        /* Bordes y separadores */
+        --flux-border: theme('colors.slate.300');
+        --flux-input: theme('colors.slate.300');
+        --flux-ring: theme('colors.lime.800');
+        
+        /* Estados */
+        --flux-muted: theme('colors.slate.100');
+        --flux-muted-foreground: theme('colors.slate.700');
+        --flux-accent: theme('colors.lime.800');
+        --flux-accent-foreground: theme('colors.slate.100');
+        
+        /* Destructive */
+        --flux-destructive: theme('colors.red.600');
+        --flux-destructive-foreground: theme('colors.white');
+    }
+
+    /* Sobrescribir variables de Flux para modo oscuro */
+    .dark {
+        --flux-primary: theme('colors.lime.600');
+        --flux-primary-foreground: theme('colors.slate.100');
+        
+        --flux-secondary: theme('colors.teal.400');
+        --flux-secondary-foreground: theme('colors.slate.100');
+        
+        --flux-background: theme('colors.slate.900');
+        --flux-foreground: theme('colors.slate.300');
+        --flux-card: theme('colors.slate.900');
+        --flux-card-foreground: theme('colors.slate.300');
+        
+        --flux-border: theme('colors.slate.700');
+        --flux-input: theme('colors.slate.700');
+        --flux-ring: theme('colors.lime.600');
+        
+        --flux-muted: theme('colors.slate.800');
+        --flux-muted-foreground: theme('colors.slate.300');
+        --flux-accent: theme('colors.lime-600');
+        --flux-accent-foreground: theme('colors.slate.100');
+        
+        --flux-destructive: theme('colors.red.600');
+        --flux-destructive-foreground: theme('colors.white');
+    }
+
+    /* Contenedor principal Flux */
+    [data-flux-container] {
+        @apply bg-surface dark:bg-surface-dark;
+    }
+
+    /* Sidebar Flux */
+    [data-flux-sidebar] {
+        @apply bg-surface dark:bg-surface-dark border-outline dark:border-outline-dark;
+    }
+
+    /* Header Flux */
+    [data-flux-header] {
+        @apply bg-surface dark:bg-surface-dark border-outline dark:border-outline-dark;
+    }
+}
+
+/* Personalización específica de campos Flux */
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    @apply outline-hidden ring-2 ring-primary dark:ring-primary-dark ring-offset-2 ring-offset-surface dark:ring-offset-surface-dark;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* Botones Flux personalizados */
+[data-flux-button] {
+    @apply transition-all duration-200;
+}
+
+[data-flux-button][data-variant="primary"] {
+    @apply bg-primary dark:bg-primary-dark text-on-primary dark:text-on-primary-dark;
+    @apply hover:opacity-90;
+}
+
+[data-flux-button][data-variant="secondary"] {
+    @apply bg-secondary dark:bg-secondary-dark text-on-secondary dark:text-on-secondary-dark;
+    @apply hover:opacity-90;
+}
+
+[data-flux-button][data-variant="outline"] {
+    @apply border-outline dark:border-outline-dark text-on-surface dark:text-on-surface-dark;
+    @apply hover:bg-surface-alt dark:hover:bg-surface-dark-alt;
+}
+
+/* Cards Flux personalizados */
+[data-flux-card] {
+    @apply bg-surface dark:bg-surface-dark border-outline dark:border-outline-dark;
+    @apply rounded-[var(--radius-radius)];
+}
+
+/* Inputs Flux personalizados */
+[data-flux-input],
+[data-flux-select],
+[data-flux-textarea] {
+    @apply bg-surface dark:bg-surface-dark;
+    @apply border-outline dark:border-outline-dark;
+    @apply text-on-surface dark:text-on-surface-dark;
+    @apply rounded-[var(--radius-radius)];
+}
+
+[data-flux-input]:focus,
+[data-flux-select]:focus,
+[data-flux-textarea]:focus {
+    @apply border-primary dark:border-primary-dark;
+}
+
+/* Badges Flux personalizados */
+[data-flux-badge] {
+    @apply rounded-full;
+}
+
+[data-flux-badge][data-variant="primary"] {
+    @apply bg-primary dark:bg-primary-dark text-on-primary dark:text-on-primary-dark;
+}
+
+[data-flux-badge][data-variant="secondary"] {
+    @apply bg-secondary dark:bg-secondary-dark text-on-secondary dark:text-on-secondary-dark;
+}
+
+[data-flux-badge][data-variant="success"] {
+    @apply bg-success text-on-success;
+}
+
+[data-flux-badge][data-variant="danger"] {
+    @apply bg-danger text-on-danger;
+}
+
+[data-flux-badge][data-variant="warning"] {
+    @apply bg-warning text-on-warning;
+}
+
+[data-flux-badge][data-variant="info"] {
+    @apply bg-info text-on-info;
+}
