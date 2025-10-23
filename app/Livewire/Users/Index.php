@@ -51,7 +51,7 @@ class Index extends Component
     {
         try {
             $user = User::findOrFail($userId);
-            $user->delete(); // Soft delete
+            $user->delete(); 
 
             session()->flash('success', 'Usuario eliminado exitosamente.');
         } catch (\Exception $e) {

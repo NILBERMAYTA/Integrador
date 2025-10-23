@@ -1,5 +1,9 @@
 <?php
 
+use App\Livewire\Categorias\Create as CategoriasCreate;
+use App\Livewire\Categorias\Delete as CategoriasDelete;
+use App\Livewire\Categorias\Index as CategoriasIndex;
+use App\Livewire\Categorias\Update as CategoriasUpdate;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -31,6 +35,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('users/{user}/update', Update::class)->name('users.update');
     Route::get('users/deleted', Delete::class)->name('users.delete.index');
 
+    Route::get('categorias', CategoriasIndex::class)->name('categorias.index');
+    Route::get('categorias/create', CategoriasCreate::class)->name('categorias.create');
+    Route::get('categorias/{categoria}/update', CategoriasUpdate::class)->name('categorias.update');
+    Route::get('categorias/deleted', CategoriasDelete::class)->name('categorias.delete.index');
 
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(
