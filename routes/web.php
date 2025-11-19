@@ -1,5 +1,10 @@
 <?php
 
+use App\Livewire\Articulos\Create as ArticulosCreate;
+use App\Livewire\Articulos\Delete as ArticulosDelete;
+use App\Livewire\Articulos\Index as ArticulosIndex;
+use App\Livewire\Articulos\Update as ArticulosUpdate;
+use App\Livewire\Articulos\Inventario as ArticulosInventario;
 use App\Livewire\Categorias\Create as CategoriasCreate;
 use App\Livewire\Categorias\Delete as CategoriasDelete;
 use App\Livewire\Categorias\Index as CategoriasIndex;
@@ -39,6 +44,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('categorias/create', CategoriasCreate::class)->name('categorias.create');
     Route::get('categorias/{categoria}/update', CategoriasUpdate::class)->name('categorias.update');
     Route::get('categorias/deleted', CategoriasDelete::class)->name('categorias.delete.index');
+
+    Route::get('articulos', ArticulosIndex::class)->name('articulos.index');
+    Route::get('articulos/create', ArticulosCreate::class)->name('articulos.create');
+    Route::get('articulos/{articulo}/update', ArticulosUpdate::class)->name('articulos.update');
+    Route::get('articulos/deleted', ArticulosDelete::class)->name('articulos.delete.index');
+    Route::get('aticulos/invetario',ArticulosInventario::class)->name('articulos.inventario');
 
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(

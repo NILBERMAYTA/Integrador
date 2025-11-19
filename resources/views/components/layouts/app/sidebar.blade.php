@@ -15,7 +15,14 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="user" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Usuarios</flux:navlist.item>
+                    <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
+                    <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Articulos</flux:navlist.item>
                     <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>
+                    <flux:navlist.item icon="hand-raised" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Incidencias</flux:navlist.item>
+                    <flux:navlist.item icon="arrow-long-right" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Prestamos</flux:navlist.item>
+                    <flux:navlist.item icon="arrow-long-left" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Devoluciones</flux:navlist.item>
+                    <flux:navlist.item icon="cog-8-tooth" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
+                    
                 </flux:navlist.group>
             </flux:navlist>
 

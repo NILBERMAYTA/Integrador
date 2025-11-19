@@ -6,6 +6,7 @@ use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Url;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class Index extends Component
 {
@@ -57,6 +58,52 @@ class Index extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Error al eliminar el usuario: ' . $e->getMessage());
         }
+    }
+
+    public function exportPdf()
+    {
+        // Mismo orden y filtros de tu vista principal
+        $dir = $this->sortDirection === 'desc' ? 'DESC' : 'ASC';
+
+        $users = \App\Models\User::query()
+            ->when($this->search !== '', function ($q) {
+                $term = "%{$this->search}%";
+                $q->where(function ($q) use ($term) {
+                    $q->where('name', 'ILIKE', $term)
+                    ->orWhere('apellido_paterno', 'ILIKE', $term)
+                    ->orWhere('apellido_materno', 'ILIKE', $term)
+                    ->orWhereRaw("(apellido_paterno || ' ' || apellido_materno) ILIKE ?", [$term])
+                    ->orWhere('numero_escalafon', 'ILIKE', $term);
+                });
+            })
+            ->when($this->rango !== '', fn($q) => $q->where('rango', $this->rango))
+            ->when($this->rol   !== '', fn($q) => $q->where('role',  $this->rol))
+            ->when(true, function ($q) use ($dir) {
+                switch ($this->sortField) {
+                    case 'apellidos':
+                        $q->orderByRaw("LOWER(apellido_paterno) $dir NULLS LAST")
+                        ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
+                        break;
+                    case 'name':
+                    case 'numero_escalafon':
+                    case 'rango':
+                    case 'role':
+                        $q->orderByRaw("LOWER({$this->sortField}) $dir NULLS LAST");
+                        break;
+                    default:
+                        $q->orderByRaw("LOWER(apellido_paterno) $dir NULLS LAST")
+                        ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
+                }
+            })
+            ->get();
+
+        $pdf = PDF::loadView('reports.users', compact('users'))
+                ->setPaper('a4', 'portrait');
+
+        return response()->streamDownload(
+            fn() => print($pdf->output()),
+            'usuarios_'.now()->format('Ymd_His').'.pdf'
+        );
     }
 
     public function render()

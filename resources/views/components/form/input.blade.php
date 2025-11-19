@@ -1,6 +1,6 @@
 @props([
     'label' => null,
-    'name',
+    'name' => null,
     'type' => 'text',
     'placeholder' => '',
     'required' => false,
@@ -23,7 +23,7 @@
         type="{{ $type }}" 
         name="{{ $name }}"
         placeholder="{{ $placeholder }}" 
-        value="{{ old($name, $value) }}"
+        value="{{ $value }}"
         @if($autocomplete) autocomplete="{{ $autocomplete }}" @endif
         @if($required) required @endif
         {{ $attributes->merge([
