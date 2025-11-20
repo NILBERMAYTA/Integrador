@@ -13,6 +13,12 @@ class Index extends Component
 {
     use WithPagination;
 
+    protected $listeners = [
+        'closeAjuste' => 'closeAjuste',
+    ];
+    // Ajuste de stock: carga de modal con componente independiente
+    public ?Articulo $ajusteArticulo = null;
+
     // ---------------------------
     // Filtros (persisten en URL)
     // ---------------------------
@@ -166,5 +172,18 @@ class Index extends Component
         $categorias = Categoria::orderBy('nombre')->get(['id','nombre']);
 
         return view('livewire.articulos.index', compact('articulos','categorias'));
+    }
+
+    /**
+     * Abrir modal para ajuste: carga el modelo Articulo y muestra el modal.
+     */
+    public function abrirAjuste(int $id): void
+    {
+        $this->ajusteArticulo = Articulo::find($id);
+    }
+
+    public function closeAjuste(): void
+    {
+        $this->ajusteArticulo = null;
     }
 }

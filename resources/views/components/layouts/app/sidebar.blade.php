@@ -19,7 +19,7 @@
                     <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*') && !request()->routeIs('articulos.inventario')" wire:navigate>Articulos</flux:navlist.item>
                     <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>
                     <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos</flux:navlist.item>
-                    <flux:navlist.item icon="arrow-long-right" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Prestamos</flux:navlist.item>
+                    <flux:navlist.item icon="arrow-long-right" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos</flux:navlist.item>
                     <flux:navlist.item icon="arrow-long-left" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Devoluciones</flux:navlist.item>
                     <flux:navlist.item icon="cog-8-tooth" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
                     

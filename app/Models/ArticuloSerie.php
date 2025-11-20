@@ -12,11 +12,20 @@ class ArticuloSerie extends Model
 
     protected $table = 'articulo_series';
 
-    protected $fillable = ['articulo_id','codigo_serie','observaciones'];
+    protected $fillable = ['articulo_id','codigo_serie','observaciones','estado','operacion_detalle_id_actual'];
+
+    protected $casts = [
+        'estado' => 'string',
+    ];
 
     public function articulo()
     {
         return $this->belongsTo(Articulo::class);
+    }
+
+    public function operacionDetalleActual()
+    {
+        return $this->belongsTo(OperacionDetalle::class, 'operacion_detalle_id_actual');
     }
 
     public function detalleSeries()

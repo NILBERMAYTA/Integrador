@@ -46,7 +46,7 @@
         </div>
 
         <div class="flex justify-end gap-2 mt-3">
-            <button type="button" @click="modalAjuste = false" class="px-4 py-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-all">Cancelar</button>
+            <button type="button" wire:click.prevent="$emit('closeAjuste')" class="px-4 py-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-all">Cancelar</button>
             <button type="submit" class="px-4 py-2 rounded-[var(--radius-radius)] bg-[var(--color-primary)] dark:bg-[var(--color-primary-dark)] text-[var(--color-on-primary)] dark:text-[var(--color-on-primary-dark)] text-sm font-medium hover:opacity-90 transition-all">Registrar ajuste</button>
         </div>
     </form>

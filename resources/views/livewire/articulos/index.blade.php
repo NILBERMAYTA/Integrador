@@ -196,7 +196,7 @@
                                     {{-- Ajuste --}}
                                     <button 
                                         type="button"
-                                        @click="modalAjuste = true"
+                                        wire:click="abrirAjuste({{ $a->id }})"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-warning)] bg-[var(--color-warning)]/10 text-sm font-medium text-[var(--color-warning)] hover:bg-[var(--color-warning)]/20 dark:border-[var(--color-warning-dark)] dark:bg-[var(--color-warning-dark)]/10 dark:text-[var(--color-warning-dark)] dark:hover:bg-[var(--color-warning-dark)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-warning)] dark:focus:ring-[var(--color-warning-dark)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,6 +204,7 @@
                                         </svg>
                                         Ajuste
                                     </button>
+                                    
 
                                     {{-- Eliminar (modal) --}}
                                     <button 
@@ -261,4 +262,22 @@
             </div>
         @endif
     </div>
+
+    {{-- Modal global para Ajuste: monta el componente Livewire AjusteStock cuando se selecciona un artículo --}}
+    @if($ajusteArticulo)
+        <div class="fixed inset-0 z-50 flex items-start justify-center p-6">
+            <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" wire:click="closeAjuste"></div>
+
+            <div class="relative w-full max-w-2xl">
+                <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold text-[var(--color-on-surface-strong)]">Ajuste de Stock — {{ $ajusteArticulo->nombre }}</h3>
+                        <button wire:click="closeAjuste" class="rounded px-2 py-1 text-sm text-[var(--color-on-surface)]">✕</button>
+                    </div>
+
+                    <livewire:articulos.ajuste-stock :articulo="$ajusteArticulo" />
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

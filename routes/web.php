@@ -14,6 +14,10 @@ use App\Livewire\Eventos\Create as EventosCreate;
 use App\Livewire\Eventos\Delete as EventosDelete;
 use App\Livewire\Eventos\Index as EventosIndex;
 use App\Livewire\Eventos\Update as EventosUpdate;
+use App\Livewire\Prestamos\Index as PrestamosIndex;
+use App\Livewire\Prestamos\Create as PrestamosCreate;
+use App\Livewire\Prestamos\Devolucion as PrestamosDevolucion;
+use App\Livewire\Prestamos\RegisterSeries as PrestamosRegisterSeries;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -29,7 +33,73 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', function () {
+    $prestamos = \App\Models\Operacion::with([
+        'policia',
+        'detalles.articulo',
+        'detalles.series.serie',
+        'devoluciones.detalles.articulo',
+    ])->where('tipo', 'asignacion')->latest()->get();
+
+    $estadoPrestamo = function ($op) {
+        $devueltosCantidad = [];
+        foreach ($op->devoluciones as $dev) {
+            foreach ($dev->detalles as $detDev) {
+                if (optional($detDev->articulo)->seguimiento === 'cantidad') {
+                    $devueltosCantidad[$detDev->articulo_id] = ($devueltosCantidad[$detDev->articulo_id] ?? 0) + (int) $detDev->cantidad;
+                }
+            }
+        }
+        foreach ($op->detalles as $detOp) {
+            if (optional($detOp->articulo)->seguimiento === 'serie') {
+                $asignadas = $detOp->series->filter(fn($s) => optional($s->serie)->operacion_detalle_id_actual === $detOp->id);
+                if ($asignadas->count() > 0) {
+                    return 'pendiente';
+                }
+            } else {
+                $dev = $devueltosCantidad[$detOp->articulo_id] ?? 0;
+                if ($detOp->cantidad > $dev) {
+                    return 'pendiente';
+                }
+            }
+        }
+        return 'concluido';
+    };
+
+    $prestamosActivos = $prestamos->filter(fn($op) => $estadoPrestamo($op) === 'pendiente')->count();
+    $prestamosConcluidos = $prestamos->count() - $prestamosActivos;
+    $devolucionesPendientes = $prestamosActivos;
+    $personalActivo = \App\Models\User::where('role', 'policia')->count();
+
+    $prestamosRecientes = $prestamos->take(6)->map(function ($op) use ($estadoPrestamo) {
+        return [
+            'id' => $op->id,
+            'policia' => $op->policia?->name ?? 'Sin asignar',
+            'badge' => $op->policia?->numero_escalafon ?? '',
+            'articulo' => $op->detalles->first()?->articulo?->nombre ?? 'Articulo',
+            'serie' => $op->detalles->first()?->series->first()?->serie?->codigo_serie ?? null,
+            'fecha' => optional($op->fecha)->format('d M Y'),
+            'estado' => $estadoPrestamo($op),
+        ];
+    });
+
+    $categorias = \App\Models\Articulo::select('categoria_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+        ->with('categoria')
+        ->groupBy('categoria_id')
+        ->orderByDesc('total')
+        ->get();
+    $totalInventario = $categorias->sum('total');
+
+    return view('dashboard', [
+        'prestamosActivos' => $prestamosActivos,
+        'prestamosConcluidos' => $prestamosConcluidos,
+        'devolucionesPendientes' => $devolucionesPendientes,
+        'personalActivo' => $personalActivo,
+        'prestamosRecientes' => $prestamosRecientes,
+        'categorias' => $categorias,
+        'totalInventario' => $totalInventario,
+    ]);
+})
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
@@ -61,6 +131,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('eventos/create', EventosCreate::class)->name('eventos.create');
     Route::get('eventos/{evento}/update', EventosUpdate::class)->name('eventos.update');
     Route::get('eventos/deleted', EventosDelete::class)->name('eventos.delete.index');
+    
+    Route::get('prestamos', PrestamosIndex::class)->name('prestamos.index');
+    Route::get('prestamos/create', PrestamosCreate::class)->name('prestamos.create');
+    Route::get('prestamos/{operacion}/devolucion', PrestamosDevolucion::class)->name('prestamos.devolucion');
+    //Route::get('prestamos/{operacion}/series', PrestamosRegisterSeries::class)->name('prestamos.series');
     
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(

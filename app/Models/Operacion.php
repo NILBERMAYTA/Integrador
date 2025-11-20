@@ -13,7 +13,11 @@ class Operacion extends Model
     protected $table = 'operaciones';
 
     protected $fillable = [
-        'tipo','evento_id','policia_id','actor_id','fecha','observaciones',
+        'tipo','evento_id','policia_id','actor_id','fecha','observaciones','operacion_padre_id',
+    ];
+
+    protected $attributes = [
+        'tipo' => 'asignacion',
     ];
 
     protected $casts = [
@@ -38,6 +42,16 @@ class Operacion extends Model
 
     public function detalles()
     {
-        return $this->hasMany(OperacionDetalle::class);
+        return $this->hasMany(OperacionDetalle::class, 'operacion_id');
+    }
+
+    public function padre()
+    {
+        return $this->belongsTo(self::class, 'operacion_padre_id');
+    }
+
+    public function devoluciones()
+    {
+        return $this->hasMany(self::class, 'operacion_padre_id');
     }
 }
