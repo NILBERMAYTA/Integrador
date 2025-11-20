@@ -167,7 +167,7 @@
                                 {{ $a->unidad_medida ?? '—' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center gap-2" x-data="{ modalIsOpen: false }">
+                                <div class="flex items-center gap-2" x-data="{ modalIsOpen: false, modalAjuste: false }">
                                     {{-- Editar --}}
                                     <a 
                                         href="{{ route('articulos.update', $a) }}" 
@@ -179,6 +179,31 @@
                                         </svg>
                                         Editar
                                     </a>
+
+                                    {{-- Detalles --}}
+                                    <a 
+                                        href="{{ route('articulos.show', $a) }}" 
+                                        wire:navigate
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-secondary)] bg-[var(--color-secondary)]/10 text-sm font-medium text-[var(--color-secondary)] hover:bg-[var(--color-secondary)]/20 dark:border-[var(--color-secondary-dark)] dark:bg-[var(--color-secondary-dark)]/10 dark:text-[var(--color-secondary-dark)] dark:hover:bg-[var(--color-secondary-dark)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] dark:focus:ring-[var(--color-secondary-dark)] focus:ring-offset-1 transition-all"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        Detalles
+                                    </a>
+
+                                    {{-- Ajuste --}}
+                                    <button 
+                                        type="button"
+                                        @click="modalAjuste = true"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-warning)] bg-[var(--color-warning)]/10 text-sm font-medium text-[var(--color-warning)] hover:bg-[var(--color-warning)]/20 dark:border-[var(--color-warning-dark)] dark:bg-[var(--color-warning-dark)]/10 dark:text-[var(--color-warning-dark)] dark:hover:bg-[var(--color-warning-dark)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-warning)] dark:focus:ring-[var(--color-warning-dark)] focus:ring-offset-1 transition-all"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                        Ajuste
+                                    </button>
 
                                     {{-- Eliminar (modal) --}}
                                     <button 

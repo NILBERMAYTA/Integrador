@@ -19,8 +19,10 @@ return new class extends Migration {
 
             -- CASO 1: artículos gestionados por cantidad
             IF seg = 'cantidad' THEN
-                IF COALESCE(NEW.cantidad, 0) <= 0 THEN
-                    RAISE EXCEPTION 'Para seguimiento=cantidad, cantidad > 0';
+                -- Permitimos cantidades positivas (entrada) y negativas (salida)
+                -- Solo rechazamos si es exactamente 0
+                IF COALESCE(NEW.cantidad, 0) = 0 THEN
+                    RAISE EXCEPTION 'Para seguimiento=cantidad, cantidad no puede ser 0';
                 END IF;
 
             -- CASO 2: artículos gestionados por serie

@@ -5,6 +5,7 @@ use App\Livewire\Articulos\Delete as ArticulosDelete;
 use App\Livewire\Articulos\Index as ArticulosIndex;
 use App\Livewire\Articulos\Update as ArticulosUpdate;
 use App\Livewire\Articulos\Inventario as ArticulosInventario;
+use App\Livewire\Articulos\Show as ArticulosShow;
 use App\Livewire\Categorias\Create as CategoriasCreate;
 use App\Livewire\Categorias\Delete as CategoriasDelete;
 use App\Livewire\Categorias\Index as CategoriasIndex;
@@ -50,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('articulos/{articulo}/update', ArticulosUpdate::class)->name('articulos.update');
     Route::get('articulos/deleted', ArticulosDelete::class)->name('articulos.delete.index');
     Route::get('aticulos/invetario',ArticulosInventario::class)->name('articulos.inventario');
+    Route::get('articulos/{articulo}/show',ArticulosShow::class)->name('articulos.show');
 
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(
