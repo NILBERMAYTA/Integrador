@@ -11,6 +11,7 @@ use App\Models\OperacionDetalleSerie;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class Create extends Component
@@ -23,6 +24,11 @@ class Create extends Component
     public $policias = [];
     public $articulos = [];
     public $seriesDisponibles = [];
+    public $yoloErrores = [];
+
+    protected $listeners = [
+        'yolo-detecciones' => 'agregarDesdeYolo',
+    ];
 
     protected $rules = [
         'evento_id' => 'required|exists:eventos,id',
@@ -54,6 +60,7 @@ class Create extends Component
             ->toArray(); // Livewire no deshidrata colecciones Eloquent
 
         $this->addRow();
+        $this->yoloErrores = [];
     }
 
     public function addRow()
@@ -78,11 +85,132 @@ class Create extends Component
         $parts = explode('.', $key);
         if (count($parts) === 2 && $parts[1] === 'articulo_id') {
             $index = (int) $parts[0];
-            $articulo = $value ? $this->articulos->firstWhere('id', (int) $value) : null;
+            // Livewire rehidrata como array; usar collect para buscar el articulo seleccionado
+            $articulo = $value ? collect($this->articulos)->firstWhere('id', (int) $value) : null;
 
             $this->items[$index]['nombre'] = $articulo->nombre ?? '';
             $this->items[$index]['seguimiento'] = $articulo->seguimiento ?? '';
             $this->items[$index]['series'] = [];
+        }
+    }
+
+    public function agregarDesdeYolo($payload = [])
+    {
+        $raw = $payload['detecciones'] ?? [];
+        $this->yoloErrores = [];
+        $insertados = 0;
+
+        $detecciones = [];
+
+        // Caso 1: estructura {summary: {...}, detections: [...]}
+        if (is_array($raw) && isset($raw['summary']) && is_array($raw['summary'])) {
+            foreach ($raw['summary'] as $label => $count) {
+                $detecciones[] = ['label' => $label, 'count' => (int) $count];
+            }
+        }
+
+        // Caso 2: arreglo de {label, count} directamente
+        if (empty($detecciones) && is_array($raw) && isset($raw[0]['label'])) {
+            foreach ($raw as $det) {
+                $detecciones[] = [
+                    'label' => $det['label'] ?? null,
+                    'count' => (int) ($det['count'] ?? 1),
+                ];
+            }
+        }
+
+        // Caso 3: detections detalladas sin summary; contar labels
+        if (empty($detecciones) && is_array($raw) && isset($raw['detections']) && is_array($raw['detections'])) {
+            $contados = [];
+            foreach ($raw['detections'] as $det) {
+                $label = $det['label'] ?? null;
+                if ($label) {
+                    $contados[$label] = ($contados[$label] ?? 0) + 1;
+                }
+            }
+            foreach ($contados as $label => $count) {
+                $detecciones[] = ['label' => $label, 'count' => $count];
+            }
+        }
+
+        if (empty($detecciones)) {
+            $this->yoloErrores[] = 'No se pudo interpretar detecciones del modelo.';
+        }
+
+        foreach ($detecciones as $det) {
+            $label = $det['label'] ?? null;
+            $count = (int) ($det['count'] ?? 0);
+            if (!$label || $count <= 0) {
+                continue;
+            }
+
+            $labelNorm = Str::lower($label);
+            // Evitar columna inexistente etiqueta_ia; usamos coincidencia por nombre
+            $articulo = Articulo::whereRaw('LOWER(nombre) = ?', [$labelNorm])->first();
+
+            if (!$articulo) {
+                $this->yoloErrores[] = "Sin coincidencia para '{$label}'";
+                continue;
+            }
+
+            $index = collect($this->items)->search(fn($item) => (int) ($item['articulo_id'] ?? 0) === (int) $articulo->id);
+
+            if ($index !== false) {
+                $this->items[$index]['cantidad'] += $count;
+            } else {
+                $this->items[] = [
+                    'articulo_id' => $articulo->id,
+                    'nombre' => $articulo->nombre,
+                    'cantidad' => $count,
+                    'seguimiento' => $articulo->seguimiento,
+                    'series' => [],
+                ];
+                $index = count($this->items) - 1;
+            }
+
+            if ($articulo->seguimiento === 'serie') {
+                $this->asignarSeries($index);
+            }
+
+            $insertados++;
+        }
+
+        // si no hubo coincidencias, no elimines la fila vacia
+        if ($insertados === 0 && empty($this->items)) {
+            $this->addRow();
+        }
+
+        if ($insertados > 0 && count($this->items) > 1 && empty($this->items[0]['articulo_id'])) {
+            $this->items = array_values(array_filter($this->items, fn($item) => !empty($item['articulo_id'])));
+        }
+    }
+
+    protected function asignarSeries(int $index): void
+    {
+        $articuloId = $this->items[$index]['articulo_id'] ?? null;
+        if (!$articuloId) {
+            return;
+        }
+
+        $disponibles = collect($this->seriesDisponibles[$articuloId] ?? []);
+        if ($disponibles->isEmpty()) {
+            return;
+        }
+
+        $cantidad = (int) ($this->items[$index]['cantidad'] ?? 0);
+        $yaSeleccionadas = collect($this->items[$index]['series'] ?? []);
+        $faltantes = max(0, $cantidad - $yaSeleccionadas->count());
+
+        $nuevas = $disponibles
+            ->reject(fn($s) => $yaSeleccionadas->contains($s['id']))
+            ->pluck('id')
+            ->take($faltantes);
+
+        $series = $yaSeleccionadas->merge($nuevas)->take($cantidad)->unique()->values()->all();
+        $this->items[$index]['series'] = $series;
+
+        if ($cantidad === 0 && count($series) > 0) {
+            $this->items[$index]['cantidad'] = count($series);
         }
     }
 

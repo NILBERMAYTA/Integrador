@@ -143,6 +143,132 @@
             </table>
         </div>
 
+        <div 
+            x-data="yoloCamComponent()"
+            x-init="init()"
+            class="mt-4"
+        >
+            <h3 class="font-semibold mb-2">Escáner de artículos (YOLO)</h3>
+
+            <div class="flex gap-4 items-start">
+                <video x-ref="video" autoplay playsinline class="border rounded-md w-80 h-56 bg-black"></video>
+
+                <div class="flex flex-col gap-2">
+                    <button type="button" class="btn btn-secondary" @click="startCamera()">Iniciar cámara</button>
+                    <button type="button" class="btn btn-secondary" @click="stopCamera()">Detener cámara</button>
+                    <p class="text-sm text-gray-500" x-text="status"></p>
+                    @if(!empty($yoloErrores))
+                        <div class="mt-1 text-xs text-red-600 space-y-1">
+                            @foreach($yoloErrores as $err)
+                                <p>{{ $err }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <canvas x-ref="canvas" class="hidden"></canvas>
+        </div>
+
+        <script>
+        function yoloCamComponent() {
+            return {
+                stream: null,
+                processing: false,
+                intervalId: null,
+                status: 'Cámara detenida',
+
+                init() {
+                    // nada por ahora
+                },
+
+                startCamera() {
+                    if (this.stream) return;
+
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            this.stream = stream;
+                            this.$refs.video.srcObject = stream;
+                            this.status = 'Cámara encendida, analizando cada 1s...';
+                            this.startLoop();
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            this.status = 'No se pudo acceder a la cámara';
+                        });
+                },
+
+                stopCamera() {
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(t => t.stop());
+                        this.stream = null;
+                    }
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                    this.status = 'Cámara detenida';
+                },
+
+                startLoop() {
+                    // captura un frame cada 1000 ms
+                    this.intervalId = setInterval(() => {
+                        if (!this.processing && this.stream) {
+                            this.captureAndSend();
+                        }
+                    }, 1000);
+                },
+
+                captureAndSend() {
+                    this.processing = true;
+
+                    const video = this.$refs.video;
+                    const canvas = this.$refs.canvas;
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0);
+
+                    canvas.toBlob(blob => {
+                        if (!blob) {
+                            this.processing = false;
+                            return;
+                        }
+                        const formData = new FormData();
+                        formData.append('imagen', blob, 'frame.jpg');
+
+                        // Usamos URL absoluta al endpoint de API (evita error de ruta no definida)
+                        const endpoint = '{{ url('/api/detecciones') }}';
+
+                        fetch(endpoint, {
+                            method: 'POST',
+                            body: formData,
+                        })
+                        .then(async res => {
+                            if (!res.ok) {
+                                const text = await res.text();
+                                throw new Error(`HTTP ${res.status} - ${text}`);
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+                            // data = [{label, count}, ...] o {summary: {...}, detections: [...]}
+                            Livewire.find(@this.__instance.id).call('agregarDesdeYolo', { detecciones: data });
+                            this.status = 'Detecciones recibidas';
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            this.status = `Error al procesar detecciones: ${err.message}`;
+                        })
+                        .finally(() => {
+                            this.processing = false;
+                        });
+                    }, 'image/jpeg', 0.8);
+                }
+            }
+        }
+        </script>
+
         <div class="px-6 py-4 border-t border-[var(--color-outline)] bg-[var(--color-surface-alt)] flex justify-end gap-3">
             <button type="button" wire:click.prevent="save" class="inline-flex items-center px-4 py-2 rounded-[var(--radius-radius)] bg-primary text-on-primary">
                 Guardar asignacion
