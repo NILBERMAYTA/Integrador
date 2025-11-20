@@ -10,6 +10,10 @@ use App\Livewire\Categorias\Create as CategoriasCreate;
 use App\Livewire\Categorias\Delete as CategoriasDelete;
 use App\Livewire\Categorias\Index as CategoriasIndex;
 use App\Livewire\Categorias\Update as CategoriasUpdate;
+use App\Livewire\Eventos\Create as EventosCreate;
+use App\Livewire\Eventos\Delete as EventosDelete;
+use App\Livewire\Eventos\Index as EventosIndex;
+use App\Livewire\Eventos\Update as EventosUpdate;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -53,6 +57,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('aticulos/invetario',ArticulosInventario::class)->name('articulos.inventario');
     Route::get('articulos/{articulo}/show',ArticulosShow::class)->name('articulos.show');
 
+    Route::get('eventos', EventosIndex::class)->name('eventos.index');
+    Route::get('eventos/create', EventosCreate::class)->name('eventos.create');
+    Route::get('eventos/{evento}/update', EventosUpdate::class)->name('eventos.update');
+    Route::get('eventos/deleted', EventosDelete::class)->name('eventos.delete.index');
+    
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(
             when(
