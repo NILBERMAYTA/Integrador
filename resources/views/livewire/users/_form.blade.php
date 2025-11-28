@@ -12,9 +12,9 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <x-input name="email" type="email" label="Correo Electrónico" placeholder="correo@ejemplo.com" autocomplete="email" wire:model.defer="email" />
     @if($modo === 'create')
-      <x-input name="password" type="password" label="Contraseña" placeholder="••••••••" autocomplete="new-password" wire:model.defer="password" />
+      <x-form.password name="password" label="Contraseña" placeholder="********" autocomplete="new-password" wire:model.defer="password" />
     @else
-      <x-input name="password" type="password" label="Contraseña (opcional)" placeholder="••••••••" autocomplete="new-password" wire:model.defer="password" />
+      <x-form.password name="password" label="Contraseña (opcional)" placeholder="********" autocomplete="new-password" wire:model.defer="password" />
     @endif
   </div>
 
@@ -22,16 +22,23 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <x-input name="rango" label="Rango" placeholder="Ej: Cabo, Sargento" wire:model.defer="rango" />
     <x-input name="numero_escalafon" label="Número de Escalafón" placeholder="Número de escalafón" wire:model.defer="numero_escalafon" />
-    <x-input name="fecha_ingreso" type="date" label="Fecha de Ingreso" wire:model.defer="fecha_ingreso" />
+    <x-form.datepiker name="fecha_ingreso" label="Fecha de Ingreso" placeholder="Seleccione fecha" format="YYYY-MM-DD" wire:model.defer="fecha_ingreso" />
   </div>
 
   <!-- Rol y Permisos -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <x-select name="role" label="Rol" required wire:model.defer="role">
-      <option value="policia">Policía</option>
-      <option value="furriel">Furriel</option>
-      <option value="admin">Administrador</option>
-    </x-select>
+    <x-form.combobox
+      name="role"
+      label="Rol"
+      placeholder="Seleccione rol"
+      :options="[
+        ['value' => 'policia', 'label' => 'Policía'],
+        ['value' => 'furriel', 'label' => 'Furriel'],
+        ['value' => 'admin', 'label' => 'Administrador'],
+      ]"
+      required
+      wire:model.defer="role"
+    />
 
     <x-checkbox name="can_login" label="Puede iniciar sesión" description="Habilitar acceso al sistema para este usuario" wire:model.defer="can_login" />
   </div>

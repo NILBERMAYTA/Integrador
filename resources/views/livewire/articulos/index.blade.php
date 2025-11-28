@@ -7,59 +7,36 @@
         
         <div class="flex flex-wrap items-center gap-3">
             {{-- Exportar PDF --}}
-            <button     
-                type="button"
-                wire:click="exportPdf"
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-radius bg-surface-alt border border-surface-alt 
-                    px-4 py-2 text-sm font-medium tracking-wide text-on-surface-strong 
-                    transition hover:opacity-75 text-center 
-                    focus-visible:outline-2 focus-visible:outline-offset-2 
-                    focus-visible:outline-surface-alt active:opacity-100 active:outline-offset-0 
-                    disabled:opacity-75 disabled:cursor-not-allowed 
-                    dark:bg-surface-dark-alt dark:border-surface-dark-alt 
-                    dark:text-on-surface-dark-strong dark:focus-visible:outline-surface-dark-alt"
-            >
+            <x-form.header_button variant="export" type="button" wire:click="exportPdf">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16l4-4m-4 4l-4-4m4 4V4m0 12v4m-7 0h14"/>
                 </svg>
                 Exportar PDF
-            </button>
+            </x-form.header_button>
 
             {{-- Ver Inventario --}}
-            <a 
-                href="{{ route('articulos.inventario') }}" 
-                wire:navigate 
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-5 py-2.5 text-sm font-medium tracking-wide text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] transition-all hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] hover:border-[var(--color-outline-strong)] dark:hover:border-[var(--color-outline-dark-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] dark:focus-visible:outline-[var(--color-primary-dark)] active:opacity-100 active:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-75"
-            >
+            <x-form.header_button variant="neutral" href="{{ route('articulos.inventario') }}" wire:navigate>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4v16h14V4M7 14h10M7 10h10"/>
                 </svg>
                 Ver Inventario
-            </a>
+            </x-form.header_button>
 
             {{-- Ver Eliminados (ruta placeholder) --}}
-            <a 
-                href="{{ route('articulos.delete.index') }}" 
-                wire:navigate 
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-5 py-2.5 text-sm font-medium tracking-wide text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] transition-all hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] hover:border-[var(--color-outline-strong)] dark:hover:border-[var(--color-outline-dark-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] dark:focus-visible:outline-[var(--color-primary-dark)] active:opacity-100 active:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-75"
-            >
+            <x-form.header_button variant="neutral" href="{{ route('articulos.delete.index') }}" wire:navigate>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
                 Ver Eliminados
-            </a>
+            </x-form.header_button>
             
             {{-- Crear Artículo --}}
-            <a 
-                href="{{ route('articulos.create') }}" 
-                wire:navigate 
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-primary)] dark:bg-[var(--color-primary-dark)] border border-[var(--color-primary)] dark:border-[var(--color-primary-dark)] px-6 py-2.5 text-sm font-medium tracking-wide text-[var(--color-on-primary)] dark:text-[var(--color-on-primary-dark)] transition-all hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] dark:focus-visible:outline-[var(--color-primary-dark)] active:opacity-100 active:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-75"
-            >
+            <x-form.header_button variant="primary" href="{{ route('articulos.create') }}" wire:navigate>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Crear Artículo
-            </a>
+            </x-form.header_button>
         </div>
     </div>
 
@@ -169,54 +146,54 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-2" x-data="{ modalIsOpen: false, modalAjuste: false }">
                                     {{-- Editar --}}
-                                    <a 
-                                        href="{{ route('articulos.update', $a) }}" 
+                                    <x-form.outline_button
+                                        variant="edit"
+                                        href="{{ route('articulos.update', $a) }}"
                                         wire:navigate
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] hover:border-[var(--color-outline-strong)] dark:hover:border-[var(--color-outline-dark-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                         Editar
-                                    </a>
+                                    </x-form.outline_button>
 
                                     {{-- Detalles --}}
-                                    <a 
-                                        href="{{ route('articulos.show', $a) }}" 
+                                    <x-form.outline_button
+                                        variant="details"
+                                        href="{{ route('articulos.show', $a) }}"
                                         wire:navigate
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-secondary)] bg-[var(--color-secondary)]/10 text-sm font-medium text-[var(--color-secondary)] hover:bg-[var(--color-secondary)]/20 dark:border-[var(--color-secondary-dark)] dark:bg-[var(--color-secondary-dark)]/10 dark:text-[var(--color-secondary-dark)] dark:hover:bg-[var(--color-secondary-dark)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] dark:focus:ring-[var(--color-secondary-dark)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         Detalles
-                                    </a>
+                                    </x-form.outline_button>
 
                                     {{-- Ajuste --}}
-                                    <button 
+                                    <x-form.outline_button
                                         type="button"
+                                        variant="adjust"
                                         wire:click="abrirAjuste({{ $a->id }})"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-warning)] bg-[var(--color-warning)]/10 text-sm font-medium text-[var(--color-warning)] hover:bg-[var(--color-warning)]/20 dark:border-[var(--color-warning-dark)] dark:bg-[var(--color-warning-dark)]/10 dark:text-[var(--color-warning-dark)] dark:hover:bg-[var(--color-warning-dark)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-warning)] dark:focus:ring-[var(--color-warning-dark)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                         </svg>
                                         Ajuste
-                                    </button>
+                                    </x-form.outline_button>
                                     
 
                                     {{-- Eliminar (modal) --}}
-                                    <button 
+                                    <x-form.outline_button
                                         type="button"
+                                        variant="delete"
                                         @click="modalIsOpen = true"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-danger)] bg-[var(--color-danger)]/10 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-[var(--color-on-danger)] focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                         Eliminar
-                                    </button>
+                                    </x-form.outline_button>
 
                                     {{-- Modal reutilizable --}}
                                     <x-form.confirm-modal

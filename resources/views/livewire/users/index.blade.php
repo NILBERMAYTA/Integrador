@@ -6,96 +6,70 @@
         </h1>
         
         <div class="flex flex-wrap items-center gap-3">
-            <button 
-                type="button"
-                wire:click="exportPdf"
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-radius bg-surface-alt border border-surface-alt 
-                    px-4 py-2 text-sm font-medium tracking-wide text-on-surface-strong 
-                    transition hover:opacity-75 text-center 
-                    focus-visible:outline-2 focus-visible:outline-offset-2 
-                    focus-visible:outline-surface-alt active:opacity-100 active:outline-offset-0 
-                    disabled:opacity-75 disabled:cursor-not-allowed 
-                    dark:bg-surface-dark-alt dark:border-surface-dark-alt 
-                    dark:text-on-surface-dark-strong dark:focus-visible:outline-surface-dark-alt"
-            >
+            <x-form.header_button variant="export" type="button" wire:click="exportPdf">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16l4-4m-4 4l-4-4m4 4V4m0 12v4m-7 0h14"/>
                 </svg>
                 Exportar PDF
-            </button>
+            </x-form.header_button>
 
 
             
-            <a 
-                href="{{ route('users.delete.index') }}" 
-                wire:navigate 
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-5 py-2.5 text-sm font-medium tracking-wide text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] transition-all hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] hover:border-[var(--color-outline-strong)] dark:hover:border-[var(--color-outline-dark-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] dark:focus-visible:outline-[var(--color-primary-dark)] active:opacity-100 active:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-75"
-            >
+            <x-form.header_button variant="neutral" href="{{ route('users.delete.index') }}" wire:navigate>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
                 Ver Eliminados
-            </a>
+            </x-form.header_button>
             
-            <a 
-                href="{{ route('users.create') }}" 
-                wire:navigate 
-                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-primary)] dark:bg-[var(--color-primary-dark)] border border-[var(--color-primary)] dark:border-[var(--color-primary-dark)] px-6 py-2.5 text-sm font-medium tracking-wide text-[var(--color-on-primary)] dark:text-[var(--color-on-primary-dark)] transition-all hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] dark:focus-visible:outline-[var(--color-primary-dark)] active:opacity-100 active:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-75"
-            >
+            <x-form.header_button variant="primary" href="{{ route('users.create') }}" wire:navigate>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Crear Usuario
-            </a>
+            </x-form.header_button>
         </div>
     </div>
 
-    {{-- Mensaje de éxito --}}
-    @if (session()->has('success'))
-        <div class="p-4 rounded-[var(--radius-radius)] bg-[var(--color-success)]/10 border border-[var(--color-success)] text-[var(--color-success)] flex items-center gap-3">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
+    {{-- Notificaciones --}}
+    <x-form.toast_notification :message="session('success')" variant="success" />
+    <x-form.toast_notification :message="session('error')" variant="danger" />
+
+    @php
+        $rangoOptions = collect($rangos ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los rangos'])->values();
+        $roleOptions = collect($roles ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los roles'])->values();
+    @endphp
 
     {{-- Barra de filtros --}}
-    <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="flex-1 min-w-[280px]">
-                <div class="relative">
-                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre, apellidos, escalafón…"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all placeholder:text-[var(--color-on-surface)] placeholder:dark:text-[var(--color-on-surface-dark)] placeholder:opacity-50"
-                        wire:model.live.debounce.300ms="search"
-                    />
-                </div>
-            </div>
-
-            <div class="min-w-[180px]">
-                <select class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all" wire:model.live="rango">
-                    <option value="">Todos los rangos</option>
-                    @foreach ($rangos as $r)
-                        <option value="{{ $r }}">{{ $r }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="min-w-[180px]">
-                <select class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all" wire:model.live="rol">
-                    <option value="">Todos los roles</option>
-                    @foreach ($roles as $r)
-                        <option value="{{ $r }}">{{ $r }}</option>
-                    @endforeach
-                </select>
-            </div>
+    <x-form.filter-bar>
+        <div class="flex-1 min-w-[280px]">
+            <x-form.search
+                name="search"
+                placeholder="Buscar por nombre, apellidos, escalafón…"
+                wire:model.live.debounce.300ms="search"
+            />
         </div>
-    </div>
+
+        <div class="min-w-[180px]">
+            <x-form.combobox
+                name="rango"
+                label="Rango"
+                placeholder="Todos los rangos"
+                :options="$rangoOptions"
+                wire:model.live="rango"
+            />
+        </div>
+
+        <div class="min-w-[180px]">
+            <x-form.combobox
+                name="rol"
+                label="Rol"
+                placeholder="Todos los roles"
+                :options="$roleOptions"
+                wire:model.live="rol"
+            />
+        </div>
+    </x-form.filter-bar>
 
     {{-- Tabla --}}
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] overflow-hidden">
@@ -159,27 +133,27 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-2" x-data="{ modalIsOpen: false }">
-                                    <a 
-                                        href="{{ route('users.update', $user) }}" 
+                                    <x-form.outline_button
+                                        variant="edit"
+                                        href="{{ route('users.update', $user) }}"
                                         wire:navigate
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] hover:border-[var(--color-outline-strong)] dark:hover:border-[var(--color-outline-dark-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                         Editar
-                                    </a>
+                                    </x-form.outline_button>
                                     
-                                    <button 
+                                    <x-form.outline_button
                                         type="button"
+                                        variant="delete"
                                         @click="modalIsOpen = true"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-danger)] bg-[var(--color-danger)]/10 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-[var(--color-on-danger)] focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] focus:ring-offset-1 transition-all"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                         Eliminar
-                                    </button>
+                                    </x-form.outline_button>
 
                                     {{-- Modal reutilizable --}}
                                     <x-form.confirm-modal

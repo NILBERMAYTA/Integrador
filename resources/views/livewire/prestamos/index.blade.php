@@ -126,23 +126,23 @@
                             <td class="px-6 py-4 text-[var(--color-on-surface)]">{{ $operacion->observaciones }}</td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <button
+                                    <x-form.outline_button
                                         type="button"
+                                        variant="details"
                                         @click="open = true"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] text-sm font-medium text-[var(--color-on-surface)] hover:bg-[var(--color-surface-alt)] transition"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                                         </svg>
                                         Detalles
-                                    </button>
-                                    <a
+                                    </x-form.outline_button>
+                                    <x-form.outline_button
+                                        variant="return"
                                         href="{{ route('prestamos.devolucion', $operacion) }}"
                                         wire:navigate
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)] transition"
                                     >
                                         Devolver
-                                    </a>
+                                    </x-form.outline_button>
                                 </div>
 
                                 <div

@@ -6,8 +6,8 @@
     @include('livewire.users._form', ['modo' => 'edit'])
 
     <div class="flex gap-3 pt-4 border-t border-outline dark:border-outline-dark">
-      <button type="submit" class="btn btn-primary">Actualizar Usuario</button>
-      <button type="button" onclick="window.history.back()" class="btn">Cancelar</button>
+      <x-form.button type="submit">Actualizar Usuario</x-form.button>
+      <x-form.button type="button" variant="alternate" onclick="window.history.back()">Cancelar</x-form.button>
     </div>
   </form>
 </div>

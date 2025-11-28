@@ -1,0 +1,150 @@
+@props([
+    'label' => null,
+    'name',
+    'options' => [],
+    'placeholder' => 'Please select',
+    'value' => null,
+    'required' => false,
+])
+
+@php
+    $normalizedOptions = collect($options)
+        ->map(function ($option) {
+            if (is_array($option)) {
+                return [
+                    'value' => $option['value'] ?? $option['label'] ?? null,
+                    'label' => $option['label'] ?? $option['value'] ?? null,
+                ];
+            }
+
+            return ['value' => $option, 'label' => $option];
+        })
+        ->filter(fn ($option) => $option['value'] !== null && $option['label'] !== null)
+        ->values();
+
+    $inputId = $attributes->get('id', $name ? $name : 'combobox_'.uniqid());
+    $listboxId = $inputId.'-options';
+    $wireAttributes = $attributes->whereStartsWith('wire:');
+@endphp
+
+<div
+    x-data="{
+        options: @js($normalizedOptions),
+        isOpen: false,
+        openedWithKeyboard: false,
+        selectedOption: null,
+        placeholder: @js($placeholder),
+        initialValue: @js($value),
+        init() {
+            if (this.initialValue) {
+                const existing = this.options.find((option) => option.value == this.initialValue);
+                if (existing) {
+                    this.setSelectedOption(existing, false);
+                } else {
+                    this.$refs.hiddenField.value = this.initialValue;
+                }
+            }
+        },
+        setSelectedOption(option, close = true) {
+            this.selectedOption = option;
+            this.$refs.hiddenField.value = option.value;
+
+            if (close) {
+                this.isOpen = false;
+                this.openedWithKeyboard = false;
+            }
+        },
+        highlightFirstMatchingOption(pressedKey) {
+            const option = this.options.find((item) =>
+                item.label.toLowerCase().startsWith(pressedKey.toLowerCase()),
+            );
+
+            if (option) {
+                const index = this.options.indexOf(option);
+                const allOptions = this.$refs.optionsList?.querySelectorAll('.combobox-option') || [];
+                if (allOptions[index]) {
+                    allOptions[index].focus();
+                }
+            }
+        },
+    }"
+    class="w-full max-w-xs flex flex-col gap-1"
+    x-on:keydown="highlightFirstMatchingOption($event.key)"
+    x-on:keydown.esc.window="isOpen = false; openedWithKeyboard = false"
+>
+    @if($label)
+        <label for="{{ $inputId }}" class="w-fit pl-0.5 text-sm text-on-surface dark:text-on-surface-dark">
+            {{ $label }}
+            @if($required)
+                <span class="text-danger">*</span>
+            @endif
+        </label>
+    @endif
+
+    <div class="relative">
+        <button
+            type="button"
+            role="combobox"
+            class="inline-flex w-full items-center justify-between gap-2 whitespace-nowrap border-outline bg-surface-alt px-4 py-2 text-sm font-medium capitalize tracking-wide text-on-surface transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-outline-dark dark:bg-surface-dark-alt/50 dark:text-on-surface-dark dark:focus-visible:outline-primary-dark rounded-radius border"
+            aria-haspopup="listbox"
+            aria-controls="{{ $listboxId }}"
+            x-on:click="isOpen = ! isOpen"
+            x-on:keydown.down.prevent="openedWithKeyboard = true"
+            x-on:keydown.enter.prevent="openedWithKeyboard = true"
+            x-on:keydown.space.prevent="openedWithKeyboard = true"
+            x-bind:aria-label="selectedOption ? selectedOption.value : placeholder"
+            x-bind:aria-expanded="isOpen || openedWithKeyboard"
+        >
+            <span class="text-sm font-normal" x-text="selectedOption ? selectedOption.value : placeholder"></span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+                <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+
+        <input
+            id="{{ $inputId }}"
+            name="{{ $name }}"
+            type="hidden"
+            x-ref="hiddenField"
+            @if($value) value="{{ $value }}" @endif
+            @if($required) required @endif
+            {{ $wireAttributes }}
+        >
+
+        <ul
+            x-cloak
+            x-show="isOpen || openedWithKeyboard"
+            x-ref="optionsList"
+            id="{{ $listboxId }}"
+            class="absolute z-10 left-0 top-11 flex max-h-44 w-full flex-col overflow-hidden overflow-y-auto border-outline bg-surface-alt py-1.5 dark:border-outline-dark dark:bg-surface-dark-alt rounded-radius border"
+            role="listbox"
+            aria-label="{{ $label ?? $name }}"
+            x-on:click.outside="isOpen = false; openedWithKeyboard = false"
+            x-on:keydown.down.prevent="$focus.wrap().next()"
+            x-on:keydown.up.prevent="$focus.wrap().previous()"
+            x-transition
+            x-trap="openedWithKeyboard"
+        >
+            <template x-for="(item, index) in options" x-bind:key="item.value">
+                <li
+                    class="combobox-option inline-flex justify-between gap-6 bg-surface-alt px-4 py-2 text-sm text-on-surface hover:bg-surface-dark-alt/5 hover:text-on-surface-strong focus-visible:bg-surface-dark-alt/5 focus-visible:text-on-surface-strong focus-visible:outline-hidden dark:bg-surface-dark-alt dark:text-on-surface-dark dark:hover:bg-surface-alt/5 dark:hover:text-on-surface-dark-strong dark:focus-visible:bg-surface-alt/10 dark:focus-visible:text-on-surface-dark-strong"
+                    role="option"
+                    x-on:click="setSelectedOption(item)"
+                    x-on:keydown.enter="setSelectedOption(item)"
+                    x-bind:id="'option-' + index"
+                    tabindex="0"
+                >
+                    <span x-bind:class="selectedOption == item ? 'font-bold' : null" x-text="item.label"></span>
+                    <span class="sr-only" x-text="selectedOption == item ? 'selected' : null"></span>
+                    <svg x-cloak x-show="selectedOption == item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" class="size-4" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                    </svg>
+                </li>
+            </template>
+        </ul>
+    </div>
+
+    @error($name)
+        <span class="text-xs text-danger">{{ $message }}</span>
+    @enderror
+</div>

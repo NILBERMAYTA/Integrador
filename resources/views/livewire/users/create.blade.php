@@ -6,8 +6,8 @@
     @include('livewire.users._form', ['modo' => 'create'])
 
     <div class="flex gap-3 pt-4 border-t border-outline dark:border-outline-dark">
-      <button type="submit" class="btn btn-primary">Registrar Usuario</button>
-      <button type="button" onclick="window.history.back()" class="btn">Cancelar</button>
+      <x-form.button type="submit">Registrar Usuario</x-form.button>
+      <x-form.button type="button" variant="alternate" onclick="window.history.back()">Cancelar</x-form.button>
     </div>
   </form>
 </div>

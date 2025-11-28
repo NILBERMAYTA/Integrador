@@ -22,57 +22,43 @@
     </div>
 
     {{-- Mensajes de éxito/error --}}
-    @if (session()->has('success'))
-        <div class="p-4 rounded-[var(--radius-radius)] bg-[var(--color-success)]/10 border border-[var(--color-success)] text-[var(--color-success)] flex items-center gap-3">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
+    @<x-form.toast_notification :message="session('success')" variant="success" />
+    <x-form.toast_notification :message="session('error')" variant="danger" />
 
-    @if (session()->has('error'))
-        <div class="p-4 rounded-[var(--radius-radius)] bg-[var(--color-danger)]/10 border border-[var(--color-danger)] text-[var(--color-danger)] flex items-center gap-3">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
+    @php
+        $rangoOptions = collect($rangos ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los rangos'])->values();
+        $roleOptions = collect($roles ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los roles'])->values();
+    @endphp
 
     {{-- Barra de filtros --}}
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
         <div class="flex flex-wrap items-center gap-3">
             <div class="flex-1 min-w-[280px]">
-                <div class="relative">
-                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre, apellidos, escalafón…"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all placeholder:text-[var(--color-on-surface)] placeholder:dark:text-[var(--color-on-surface-dark)] placeholder:opacity-50"
-                        wire:model.live.debounce.300ms="search"
-                    />
-                </div>
+                <x-form.search
+                    name="search"
+                    placeholder="Buscar por nombre, apellidos, escalafón…"
+                    wire:model.live.debounce.300ms="search"
+                />
             </div>
 
             <div class="min-w-[180px]">
-                <select class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all" wire:model.live="rango">
-                    <option value="">Todos los rangos</option>
-                    @foreach ($rangos as $r)
-                        <option value="{{ $r }}">{{ $r }}</option>
-                    @endforeach
-                </select>
+                <x-form.combobox
+                    name="rango"
+                    label="Rango"
+                    placeholder="Todos los rangos"
+                    :options="$rangoOptions"
+                    wire:model.live="rango"
+                />
             </div>
 
             <div class="min-w-[180px]">
-                <select class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all" wire:model.live="rol">
-                    <option value="">Todos los roles</option>
-                    @foreach ($roles as $r)
-                        <option value="{{ $r }}">{{ $r }}</option>
-                    @endforeach
-                </select>
+                <x-form.combobox
+                    name="rol"
+                    label="Rol"
+                    placeholder="Todos los roles"
+                    :options="$roleOptions"
+                    wire:model.live="rol"
+                />
             </div>
         </div>
     </div>
@@ -136,30 +122,30 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div x-data="{ openRestore: false, openDelete: false }" class="flex items-center gap-2">
                                     {{-- Botón: Restaurar --}}
-                                    <button 
+                                    <x-form.outline_button
                                         type="button"
-                                        @click="openRestore = true"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-success)] bg-[var(--color-success)]/10 text-sm font-medium text-[var(--color-success)] hover:bg-[var(--color-success)] hover:text-[var(--color-on-success)] focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] focus:ring-offset-1 transition-all"
+                                        variant="success"
+                                        x-on:click="openRestore = true"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                         </svg>
                                         Restaurar
-                                    </button>
+                                    </x-form.outline_button>
 
                                     {{-- Botón: Eliminar permanente --}}
-                                    <button 
+                                    <x-form.outline_button
                                         type="button"
-                                        @click="openDelete = true"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-radius)] border border-[var(--color-danger)] bg-[var(--color-danger)]/10 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-[var(--color-on-danger)] focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] focus:ring-offset-1 transition-all"
+                                        variant="delete"
+                                        x-on:click="openDelete = true"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                         </svg>
                                         Eliminar Permanentemente
-                                    </button>
+                                    </x-form.outline_button>
 
-                                    {{-- MODAL: Confirmar Restauración (x-confirm-modal) --}}
+                                    {{-- MODAL: Confirmar Restauración --}}
                                     <x-form.confirm-modal
                                         x-model="openRestore"
                                         title="Confirmar Restauración"
@@ -178,7 +164,7 @@
                                         </p>
                                     </x-form.confirm-modal>
 
-                                    {{-- MODAL: Confirmar Eliminación Permanente (x-confirm-modal) --}}
+                                    {{-- MODAL: Confirmar Eliminación Permanente --}}
                                     <x-form.confirm-modal
                                         x-model="openDelete"
                                         title="Confirmar Eliminación Permanente"
@@ -190,7 +176,7 @@
                                         @confirm="$wire.eliminarPermanentemente({{ $user->id }}); openDelete = false"
                                     >
                                         <p class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)] mb-2">
-                                            ⚠️ Esta acción es <span class="font-semibold">irreversible</span>.
+                                            Esta acción es <span class="font-semibold">irreversible</span>.
                                         </p>
                                         <p class="text-sm opacity-75 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                             ¿Está seguro de eliminar definitivamente al usuario <span class="font-semibold">{{ $user->name }}</span>?
