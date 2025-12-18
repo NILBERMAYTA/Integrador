@@ -22,12 +22,22 @@
         ->filter(fn ($option) => $option['value'] !== null && $option['label'] !== null)
         ->values();
 
+    if (!$required) {
+        $normalizedOptions = $normalizedOptions
+            ->prepend(['value' => '', 'label' => $placeholder ?: 'Todos'])
+            ->values();
+    }
+
     $inputId = $attributes->get('id', $name ? $name : 'combobox_'.uniqid());
     $listboxId = $inputId.'-options';
-    $wireAttributes = $attributes->whereStartsWith('wire:');
+    $wireKey = $attributes->get('wire:key');
+    $wireAttributes = $attributes->whereStartsWith('wire:')->except('wire:key');
+    $wireAttributeNames = array_keys($wireAttributes->getAttributes());
+    $buttonAttributes = $attributes->except($wireAttributeNames)->except('wire:key');
 @endphp
 
 <div
+    @if($wireKey) wire:key="{{ $wireKey }}" @endif
     x-data="{
         options: @js($normalizedOptions),
         isOpen: false,
@@ -36,18 +46,24 @@
         placeholder: @js($placeholder),
         initialValue: @js($value),
         init() {
-            if (this.initialValue) {
-                const existing = this.options.find((option) => option.value == this.initialValue);
-                if (existing) {
-                    this.setSelectedOption(existing, false);
-                } else {
-                    this.$refs.hiddenField.value = this.initialValue;
-                }
+            this.hydrateFromHidden();
+            this.$nextTick(() => this.hydrateFromHidden());
+        },
+        hydrateFromHidden() {
+            const hiddenVal = this.$refs.hiddenField ? this.$refs.hiddenField.value : null;
+            const val = hiddenVal || this.initialValue;
+            if (!val) return;
+            const existing = this.options.find((option) => option.value == val);
+            if (existing) {
+                this.setSelectedOption(existing, false);
+            } else if (hiddenVal) {
+                this.$refs.hiddenField.dispatchEvent(new Event('input', { bubbles: true }));
             }
         },
         setSelectedOption(option, close = true) {
             this.selectedOption = option;
             this.$refs.hiddenField.value = option.value;
+            this.$refs.hiddenField.dispatchEvent(new Event('input', { bubbles: true }));
 
             if (close) {
                 this.isOpen = false;
@@ -85,7 +101,7 @@
         <button
             type="button"
             role="combobox"
-            class="inline-flex w-full items-center justify-between gap-2 whitespace-nowrap border-outline bg-surface-alt px-4 py-2 text-sm font-medium capitalize tracking-wide text-on-surface transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-outline-dark dark:bg-surface-dark-alt/50 dark:text-on-surface-dark dark:focus-visible:outline-primary-dark rounded-radius border"
+            {{ $buttonAttributes->merge(['class' => 'inline-flex w-full items-center justify-between gap-2 whitespace-nowrap border-outline bg-surface-alt px-4 py-2 text-sm font-medium capitalize tracking-wide text-on-surface transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-outline-dark dark:bg-surface-dark-alt/50 dark:text-on-surface-dark dark:focus-visible:outline-primary-dark rounded-radius border']) }}
             aria-haspopup="listbox"
             aria-controls="{{ $listboxId }}"
             x-on:click="isOpen = ! isOpen"
@@ -94,8 +110,9 @@
             x-on:keydown.space.prevent="openedWithKeyboard = true"
             x-bind:aria-label="selectedOption ? selectedOption.value : placeholder"
             x-bind:aria-expanded="isOpen || openedWithKeyboard"
+            x-effect="hydrateFromHidden()"
         >
-            <span class="text-sm font-normal" x-text="selectedOption ? selectedOption.value : placeholder"></span>
+            <span class="text-sm font-normal" x-text="selectedOption ? selectedOption.label : placeholder"></span>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
                 <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>
             </svg>

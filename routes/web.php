@@ -14,6 +14,10 @@ use App\Livewire\Eventos\Create as EventosCreate;
 use App\Livewire\Eventos\Delete as EventosDelete;
 use App\Livewire\Eventos\Index as EventosIndex;
 use App\Livewire\Eventos\Update as EventosUpdate;
+use App\Livewire\Mantenimientos\Create as MantenimientosCreate;
+use App\Livewire\Mantenimientos\Delete as MantenimientosDelete;
+use App\Livewire\Mantenimientos\Index as MantenimientosIndex;
+use App\Livewire\Mantenimientos\Update as MantenimientosUpdate;
 use App\Livewire\Prestamos\Index as PrestamosIndex;
 use App\Livewire\Prestamos\Create as PrestamosCreate;
 use App\Livewire\Prestamos\Devolucion as PrestamosDevolucion;
@@ -132,10 +136,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('eventos/{evento}/update', EventosUpdate::class)->name('eventos.update');
     Route::get('eventos/deleted', EventosDelete::class)->name('eventos.delete.index');
     
+    Route::get('mantenimientos',MantenimientosIndex::class)->name('mantenimientos.index');
+    Route::get('mantenimientos/create',MantenimientosCreate::class)->name('mantenimientos.create');
+    Route::get('mantenimientos/{mantenimiento}/update',MantenimientosUpdate::class)->name('mantenimientos.update');
+    Route::get('mantenimientos/deleted',MantenimientosDelete::class)->name('mantenimientos.delete.index');
+    
     Route::get('prestamos', PrestamosIndex::class)->name('prestamos.index');
     Route::get('prestamos/create', PrestamosCreate::class)->name('prestamos.create');
     Route::get('prestamos/{operacion}/devolucion', PrestamosDevolucion::class)->name('prestamos.devolucion');
-    //Route::get('prestamos/{operacion}/series', PrestamosRegisterSeries::class)->name('prestamos.series');
+    
     
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(

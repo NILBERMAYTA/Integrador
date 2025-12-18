@@ -23,7 +23,8 @@ return new class extends Migration
                 ->constrained("users");
             $table->dateTimeTz('fecha_inicio')->nullable();
             $table->dateTimeTz('fecha_fin')->nullable();
-            //$table->string('costo', 500)->nullable();
+            $table->text('descripcion')->nullable()->after('tipo');
+            $table->decimal('costo', 12, 2)->nullable()->after('fecha_fin');
 
             $table->timestamps();
             $table->softDeletesTz();

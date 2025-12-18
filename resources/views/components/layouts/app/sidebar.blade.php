@@ -13,22 +13,23 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Inicio') }}</flux:navlist.item>
                     <flux:navlist.item icon="user" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Usuarios</flux:navlist.item>
                     <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
                     <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*') && !request()->routeIs('articulos.inventario')" wire:navigate>Articulos</flux:navlist.item>
                     <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>
                     <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos</flux:navlist.item>
-                    <flux:navlist.item icon="arrow-long-right" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos</flux:navlist.item>
-                    <flux:navlist.item icon="arrow-long-left" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Devoluciones</flux:navlist.item>
-                    <flux:navlist.item icon="cog-8-tooth" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
+                    <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos y Devoluciones</flux:navlist.item>
+                    <flux:navlist.item icon="eye" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Inspecciones</flux:navlist.item>
+                    <flux:navlist.item icon="megaphone" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Incidentes</flux:navlist.item>
+                    <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
                     
                 </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />
 
-            <flux:navlist variant="outline">
+            {{-- <flux:navlist variant="outline">
                 <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
                 {{ __('Repository') }}
                 </flux:navlist.item>
@@ -36,7 +37,7 @@
                 <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
                 {{ __('Documentation') }}
                 </flux:navlist.item>
-            </flux:navlist>
+            </flux:navlist> --}}
 
             <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">

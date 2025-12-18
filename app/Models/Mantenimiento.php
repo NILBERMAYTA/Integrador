@@ -11,7 +11,7 @@ class Mantenimiento extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'articulo_id','serie_id','creado_por','tipo','descripcion',
+        'articulo_id','serie_id','created_por','tipo','descripcion',
         'fecha_inicio','fecha_fin','costo',
     ];
 
@@ -34,6 +34,6 @@ class Mantenimiento extends Model
 
     public function creador()
     {
-        return $this->belongsTo(User::class, 'creado_por');
+        return $this->belongsTo(User::class, 'created_por');
     }
 }

@@ -56,6 +56,7 @@
                 label="Rango"
                 placeholder="Todos los rangos"
                 :options="$rangoOptions"
+                :value="$rango"
                 wire:model.live="rango"
             />
         </div>
@@ -66,6 +67,7 @@
                 label="Rol"
                 placeholder="Todos los roles"
                 :options="$roleOptions"
+                :value="$rol"
                 wire:model.live="rol"
             />
         </div>

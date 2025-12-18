@@ -189,7 +189,7 @@
                         .then(stream => {
                             this.stream = stream;
                             this.$refs.video.srcObject = stream;
-                            this.status = 'Cámara encendida, analizando cada 1s...';
+                            this.status = 'Cámara encendida, analizando cada 5s...';
                             this.startLoop();
                         })
                         .catch(err => {
@@ -211,12 +211,12 @@
                 },
 
                 startLoop() {
-                    // captura un frame cada 1000 ms
+                    // captura un frame cada 5000 ms
                     this.intervalId = setInterval(() => {
                         if (!this.processing && this.stream) {
                             this.captureAndSend();
                         }
-                    }, 1000);
+                    }, 5000);
                 },
 
                 captureAndSend() {

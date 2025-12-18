@@ -5,6 +5,7 @@
     'value' => null,
     'format' => 'YYYY-MM-DD',
     'required' => false,
+    'allowEmpty' => true,
 ])
 
 @php
@@ -24,7 +25,36 @@
         datePickerBlankDaysInMonth: [],
         datePickerMonthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         datePickerDays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        allowEmpty: @js($allowEmpty),
+        ensureContextDate() {
+            const monthNum = Number(this.datePickerMonth);
+            const yearNum = Number(this.datePickerYear);
+            if (!isNaN(monthNum) && !isNaN(yearNum)) {
+                return new Date(yearNum, monthNum, 1);
+            }
+            const today = new Date();
+            this.datePickerMonth = today.getMonth();
+            this.datePickerYear = today.getFullYear();
+            this.datePickerDay = today.getDate();
+            return today;
+        },
+        parseInput(val) {
+            if (!val) return null;
+            const normalized = val.replace(' ', 'T');
+            const parsed = Date.parse(normalized);
+            return isNaN(parsed) ? null : new Date(parsed);
+        },
+        syncHidden(newValue) {
+            this.datePickerValue = newValue;
+            if (this.$refs.hiddenInput) {
+                this.$refs.hiddenInput.value = newValue;
+                this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        },
         init() {
+            if (this.$refs.hiddenInput && this.$refs.hiddenInput.value && !this.datePickerValue) {
+                this.datePickerValue = this.$refs.hiddenInput.value;
+            }
             this.setInitialDate();
             this.datePickerCalculateDays();
         },
@@ -33,40 +63,41 @@
             this.datePickerMonth = today.getMonth();
             this.datePickerYear = today.getFullYear();
             this.datePickerDay = today.getDate();
-            this.datePickerValue = this.datePickerFormatDate(today);
-            if (this.$refs.hiddenInput) {
-                this.$refs.hiddenInput.value = this.datePickerValue;
-            }
+            this.syncHidden(this.datePickerFormatDate(today));
             this.datePickerCalculateDays();
             this.datePickerOpen = false;
         },
         setInitialDate() {
-            let currentDate = new Date();
-            if (this.datePickerValue) {
-                const parsedDate = new Date(Date.parse(this.datePickerValue));
-                if (!isNaN(parsedDate)) {
-                    currentDate = parsedDate;
+            const parsed = this.parseInput(this.datePickerValue);
+            if (!parsed) {
+                if (this.allowEmpty) {
+                    this.datePickerValue = '';
+                    this.datePickerMonth = '';
+                    this.datePickerYear = '';
+                    this.datePickerDay = '';
+                    return;
                 }
-            }
-
-            this.datePickerMonth = currentDate.getMonth();
-            this.datePickerYear = currentDate.getFullYear();
-            this.datePickerDay = currentDate.getDate();
-            this.datePickerValue = this.datePickerFormatDate(currentDate);
-            if (this.$refs.hiddenInput) {
-                this.$refs.hiddenInput.value = this.datePickerValue;
+                const today = new Date();
+                this.datePickerMonth = today.getMonth();
+                this.datePickerYear = today.getFullYear();
+                this.datePickerDay = today.getDate();
+                this.syncHidden(this.datePickerFormatDate(today));
+            } else {
+                this.datePickerMonth = parsed.getMonth();
+                this.datePickerYear = parsed.getFullYear();
+                this.datePickerDay = parsed.getDate();
+                this.syncHidden(this.datePickerFormatDate(parsed));
             }
         },
         datePickerDayClicked(day) {
-            const selectedDate = new Date(this.datePickerYear, this.datePickerMonth, day);
+            const base = this.parseInput(this.datePickerValue) ?? new Date();
+            const selectedDate = new Date(this.datePickerYear, this.datePickerMonth, day, base.getHours(), base.getMinutes());
             this.datePickerDay = day;
-            this.datePickerValue = this.datePickerFormatDate(selectedDate);
-            if (this.$refs.hiddenInput) {
-                this.$refs.hiddenInput.value = this.datePickerValue;
-            }
+            this.syncHidden(this.datePickerFormatDate(selectedDate));
             this.datePickerOpen = false;
         },
         datePickerPreviousMonth(){
+            this.ensureContextDate();
             if (this.datePickerMonth === 0) {
                 this.datePickerYear--;
                 this.datePickerMonth = 12;
@@ -75,6 +106,7 @@
             this.datePickerCalculateDays();
         },
         datePickerNextMonth(){
+            this.ensureContextDate();
             if (this.datePickerMonth === 11) {
                 this.datePickerMonth = 0;
                 this.datePickerYear++;
@@ -84,16 +116,19 @@
             this.datePickerCalculateDays();
         },
         datePickerIsSelectedDate(day) {
+            this.ensureContextDate();
             const d = new Date(this.datePickerYear, this.datePickerMonth, day);
             return this.datePickerValue === this.datePickerFormatDate(d);
         },
         datePickerIsToday(day) {
             const today = new Date();
+            this.ensureContextDate();
             const d = new Date(this.datePickerYear, this.datePickerMonth, day);
             return today.toDateString() === d.toDateString();
         },
         datePickerCalculateDays() {
-            const daysInMonth = new Date(this.datePickerYear, this.datePickerMonth + 1, 0).getDate();
+            this.ensureContextDate();
+            const daysInMonth = new Date(this.datePickerYear, Number(this.datePickerMonth) + 1, 0).getDate();
             const dayOfWeek = new Date(this.datePickerYear, this.datePickerMonth).getDay();
 
             const blankdaysArray = [];
@@ -116,6 +151,8 @@
             const formattedMonthShortName = this.datePickerMonthNames[date.getMonth()].substring(0, 3);
             const formattedMonthInNumber = ('0' + (parseInt(date.getMonth()) + 1)).slice(-2);
             const formattedYear = date.getFullYear();
+            const formattedHours = ('0' + date.getHours()).slice(-2);
+            const formattedMinutes = ('0' + date.getMinutes()).slice(-2);
 
             if (this.datePickerFormat === 'M d, Y') {
                 return `${formattedMonthShortName} ${formattedDate}, ${formattedYear}`;
@@ -128,6 +165,12 @@
             }
             if (this.datePickerFormat === 'YYYY-MM-DD') {
                 return `${formattedYear}-${formattedMonthInNumber}-${formattedDate}`;
+            }
+            if (this.datePickerFormat === 'YYYY-MM-DD HH:mm') {
+                return `${formattedYear}-${formattedMonthInNumber}-${formattedDate} ${formattedHours}:${formattedMinutes}`;
+            }
+            if (this.datePickerFormat === 'YYYY-MM-DDTHH:mm') {
+                return `${formattedYear}-${formattedMonthInNumber}-${formattedDate}T${formattedHours}:${formattedMinutes}`;
             }
             if (this.datePickerFormat === 'D d M, Y') {
                 return `${formattedDay} ${formattedDate} ${formattedMonthShortName} ${formattedYear}`;
