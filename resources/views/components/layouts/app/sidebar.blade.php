@@ -23,6 +23,7 @@
                     <flux:navlist.item icon="eye" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Inspecciones</flux:navlist.item>
                     <flux:navlist.item icon="megaphone" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Incidentes</flux:navlist.item>
                     <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('activity-logs.index')" :current="request()->routeIs('activity-logs.*')" wire:navigate>Auditoría</flux:navlist.item>
                     
                 </flux:navlist.group>
             </flux:navlist>

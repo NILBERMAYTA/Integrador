@@ -2,7 +2,7 @@
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
             <h3 class="text-lg font-semibold text-[var(--color-on-surface-strong)]">Asistente táctico</h3>
-            <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Beta</span>
+            <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded"></span>
         </div>
         <button wire:click="resetForm" class="text-xs text-[var(--color-primary)] hover:underline">Limpiar</button>
     </div>

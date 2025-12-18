@@ -6,6 +6,7 @@ use App\Livewire\Articulos\Index as ArticulosIndex;
 use App\Livewire\Articulos\Update as ArticulosUpdate;
 use App\Livewire\Articulos\Inventario as ArticulosInventario;
 use App\Livewire\Articulos\Show as ArticulosShow;
+use App\Livewire\ActivityLogs\Index as ActivityLogsIndex;
 use App\Livewire\Categorias\Create as CategoriasCreate;
 use App\Livewire\Categorias\Delete as CategoriasDelete;
 use App\Livewire\Categorias\Index as CategoriasIndex;
@@ -144,6 +145,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('prestamos', PrestamosIndex::class)->name('prestamos.index');
     Route::get('prestamos/create', PrestamosCreate::class)->name('prestamos.create');
     Route::get('prestamos/{operacion}/devolucion', PrestamosDevolucion::class)->name('prestamos.devolucion');
+    
+    Route::get('activity-logs', ActivityLogsIndex::class)->name('activity-logs.index');
     
     
     Route::get('settings/two-factor', TwoFactor::class)
