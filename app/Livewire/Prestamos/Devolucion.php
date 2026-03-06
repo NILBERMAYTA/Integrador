@@ -18,6 +18,7 @@ class Devolucion extends Component
 
     public function mount(Operacion $operacion)
     {
+        abort_unless(auth()->user()?->isAdmin() || auth()->user()?->isFurriel(), 403);
         abort_unless($operacion->tipo === 'asignacion', 404);
 
         $this->operacion = $operacion->load(['detalles.articulo', 'detalles.series.serie']);

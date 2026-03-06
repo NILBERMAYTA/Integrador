@@ -28,6 +28,9 @@ class Index extends Component
                 'devoluciones.detalles',
             ])
             ->where('tipo', 'asignacion')
+            ->when(auth()->user()?->isPolicia(), function ($query) {
+                $query->where('policia_id', auth()->id());
+            })
             ->when($this->search, function ($query) {
                 $query->whereHas('policia', fn ($u) => $u->where('name', 'like', "%{$this->search}%"));
             })

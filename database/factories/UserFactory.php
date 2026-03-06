@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Hash;
  */
 class UserFactory extends Factory
 {
+    public function configure()
+    {
+        return $this->afterCreating(function ($user) {
+            if (!empty($user->role)) {
+                $user->syncRoles([$user->role]);
+            }
+        });
+    }
+
     public function definition(): array
     {
         // Rangos posibles dentro de la policía

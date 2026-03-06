@@ -7,24 +7,45 @@
         <flux:sidebar sticky stashable class="border-e border-outline dark:border-outline-dark bg-surface dark:bg-surface-dark">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
+            <a href="{{ auth()->user()->hasRole('policia') ? route('prestamos.index') : route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
                 <x-app-logo />
             </a>
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Inicio') }}</flux:navlist.item>
-                    <flux:navlist.item icon="user" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Usuarios</flux:navlist.item>
-                    <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
-                    <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*') && !request()->routeIs('articulos.inventario')" wire:navigate>Articulos</flux:navlist.item>
-                    <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>
-                    <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos</flux:navlist.item>
-                    <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos y Devoluciones</flux:navlist.item>
-                    <flux:navlist.item icon="eye" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Inspecciones</flux:navlist.item>
-                    <flux:navlist.item icon="megaphone" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Incidentes</flux:navlist.item>
-                    <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
-                    <flux:navlist.item icon="clipboard-document-list" :href="route('activity-logs.index')" :current="request()->routeIs('activity-logs.*')" wire:navigate>Auditoría</flux:navlist.item>
-                    
+                    @role('policia')
+                        @can('prestamos.view')
+                            <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Mis Prestamos</flux:navlist.item>
+                        @endcan
+                    @else
+                        @can('dashboard.view')
+                            <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Inicio') }}</flux:navlist.item>
+                        @endcan
+                        @can('users.manage')
+                            <flux:navlist.item icon="user" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Usuarios</flux:navlist.item>
+                        @endcan
+                        @can('articulos.manage')
+                            <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
+                            <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*') && !request()->routeIs('articulos.inventario')" wire:navigate>Articulos</flux:navlist.item>
+                            <flux:navlist.item icon="eye" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Inspecciones</flux:navlist.item>
+                            <flux:navlist.item icon="megaphone" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Incidentes</flux:navlist.item>
+                        @endcan
+                        @can('categorias.manage')
+                            <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>
+                        @endcan
+                        @can('eventos.manage')
+                            <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos</flux:navlist.item>
+                        @endcan
+                        @can('prestamos.manage')
+                            <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos y Devoluciones</flux:navlist.item>
+                        @endcan
+                        @can('mantenimientos.manage')
+                            <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
+                        @endcan
+                        @can('activity_logs.view')
+                            <flux:navlist.item icon="clipboard-document-list" :href="route('activity-logs.index')" :current="request()->routeIs('activity-logs.*')" wire:navigate>Auditoria</flux:navlist.item>
+                        @endcan
+                    @endrole
                 </flux:navlist.group>
             </flux:navlist>
 

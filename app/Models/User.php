@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, LogsActivity;
+    use HasFactory, Notifiable, SoftDeletes, LogsActivity, HasRoles;
 
     protected $fillable = [
         'name',
@@ -67,7 +68,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->hasRole('admin');
     }
 
     /**
@@ -75,7 +76,7 @@ class User extends Authenticatable
      */
     public function isFurriel(): bool
     {
-        return $this->role === 'furriel';
+        return $this->hasRole('furriel');
     }
 
     /**
@@ -83,7 +84,7 @@ class User extends Authenticatable
      */
     public function isPolicia(): bool
     {
-        return $this->role === 'policia';
+        return $this->hasRole('policia');
     }
 
     // Operaciones donde el usuario es el receptor/afectado (policía)

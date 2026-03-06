@@ -262,3 +262,49 @@ select:focus[data-flux-control] {
 [data-flux-badge][data-variant="info"] {
     @apply bg-info text-on-info;
 }
+
+/* Fondos difuminados para autenticaciÃ³n */
+body.auth-bg {
+    position: relative;
+    overflow: hidden;
+    background: #0f1115;
+}
+
+body.auth-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background-image: url("/login.jpg");
+    background-size: cover;
+    background-position: center;
+    filter: blur(10px);
+    transform: scale(1.1);
+    animation: auth-float 20s ease-in-out infinite alternate;
+}
+
+body.auth-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 45%),
+        linear-gradient(120deg, rgba(15,17,21,0.55), rgba(15,17,21,0.35));
+}
+
+.auth-bg-content {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-panel {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+@keyframes auth-float {
+    0% { transform: scale(1.08) translate3d(-1%, 0, 0); }
+    100% { transform: scale(1.12) translate3d(1%, 1%, 0); }
+}

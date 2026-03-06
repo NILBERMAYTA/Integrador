@@ -1,72 +1,50 @@
 <div class="space-y-6">
-    {{-- Header con título --}}
+    {{-- Header con tÃ­tulo --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-            Auditoría del Sistema
+            Auditoria del Sistema
         </h1>
         
-        @if($search || $causer_id || $subject_type || $event || $date_from || $date_to)
-            <button 
-                wire:click="clearFilters" 
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-outline)] dark:hover:bg-[var(--color-outline-dark)] transition-colors"
-            >
+        <div class="flex flex-wrap items-center gap-3">
+            <x-form.header_button variant="export" type="button" wire:click="exportPdf">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16l4-4m-4 4l-4-4m4 4V4m0 12v4m-7 0h14"/>
                 </svg>
-                Limpiar Filtros
-            </button>
-        @endif
+                Exportar PDF
+            </x-form.header_button>
+
+            @if($date_from || $date_to)
+                <button 
+                    wire:click="clearFilters" 
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-outline)] dark:hover:bg-[var(--color-outline-dark)] transition-colors"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Limpiar Filtros
+                </button>
+            @endif
+        </div>
     </div>
 
-    @php
-        $userOptions = collect($users ?? [])->map(fn($u) => ['value' => $u['id'], 'label' => $u['nombre_completo']])->prepend(['value' => '', 'label' => 'Todos los usuarios'])->values();
-        $subjectTypeOptions = collect($subjectTypes ?? [])->map(fn($t) => ['value' => 'App\\Models\\' . $t, 'label' => $t])->prepend(['value' => '', 'label' => 'Todos los modelos'])->values();
-        $eventOptions = collect($events ?? [])->map(fn($e) => ['value' => $e, 'label' => ucfirst($e)])->prepend(['value' => '', 'label' => 'Todos los eventos'])->values();
-    @endphp
+    {{-- Tabs --}}
+    <div class="flex flex-wrap gap-2">
+        <button
+            wire:click="$set('tab','activity')"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius-radius)] border text-sm font-medium transition-colors {{ $tab === 'activity' ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)] border-[var(--color-primary)]' : 'bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] hover:bg-[var(--color-outline)] dark:hover:bg-[var(--color-outline-dark)]' }}"
+        >
+            Actividad General
+        </button>
+        <button
+            wire:click="$set('tab','logins')"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius-radius)] border text-sm font-medium transition-colors {{ $tab === 'logins' ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)] border-[var(--color-primary)]' : 'bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] hover:bg-[var(--color-outline)] dark:hover:bg-[var(--color-outline-dark)]' }}"
+        >
+            Logins
+        </button>
+    </div>
 
     {{-- Barra de filtros --}}
     <x-form.filter-bar>
-        <div class="flex-1 min-w-[280px]">
-            <x-form.search
-                name="search"
-                placeholder="Buscar en descripción..."
-                wire:model.live.debounce.300ms="search"
-            />
-        </div>
-
-        <div class="min-w-[180px]">
-            <x-form.combobox
-                name="causer_id"
-                label="Usuario"
-                placeholder="Todos los usuarios"
-                :options="$userOptions"
-                :value="$causer_id"
-                wire:model.live="causer_id"
-            />
-        </div>
-
-        <div class="min-w-[180px]">
-            <x-form.combobox
-                name="subject_type"
-                label="Modelo"
-                placeholder="Todos los modelos"
-                :options="$subjectTypeOptions"
-                :value="$subject_type"
-                wire:model.live="subject_type"
-            />
-        </div>
-
-        <div class="min-w-[150px]">
-            <x-form.combobox
-                name="event"
-                label="Evento"
-                placeholder="Todos los eventos"
-                :options="$eventOptions"
-                :value="$event"
-                wire:model.live="event"
-            />
-        </div>
-
         <div class="min-w-[160px]">
             <label class="block text-xs font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] mb-1.5">
                 Desde
@@ -115,6 +93,12 @@
                             Modelo
                         </th>
 
+                        @if($tab === 'logins')
+                            <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
+                                Rol
+                            </th>
+                        @endif
+
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
                             Detalles
                         </th>
@@ -153,6 +137,9 @@
                                             'created' => 'bg-green-500/20 text-green-700 dark:text-green-300',
                                             'updated' => 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
                                             'deleted' => 'bg-red-500/20 text-red-700 dark:text-red-300',
+                                            'login_success' => 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+                                            'login_failed' => 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
+                                            'login_locked' => 'bg-rose-500/20 text-rose-700 dark:text-rose-300',
                                         ];
                                         $eventColor = $eventColors[$activity->event] ?? 'bg-gray-500/20 text-gray-700 dark:text-gray-300';
                                     @endphp
@@ -175,6 +162,14 @@
                                     </div>
                                 @endif
                             </td>
+
+                            @if($tab === 'logins')
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
+                                        {{ $activity->causer?->role ?? '—' }}
+                                    </span>
+                                </td>
+                            @endif
 
                             <td class="px-6 py-4">
                                 <button 
@@ -229,12 +224,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="{{ $tab === 'logins' ? 6 : 5 }}" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-12 w-12 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                                 <p class="mt-4 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] font-medium">No hay registros de actividad</p>
-                                <p class="mt-1 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60">Intenta ajustar los filtros de búsqueda</p>
+                                <p class="mt-1 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60">Intenta ajustar los filtros de bÃºsqueda</p>
                             </td>
                         </tr>
                     @endforelse

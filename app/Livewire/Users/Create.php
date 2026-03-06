@@ -5,6 +5,7 @@ namespace App\Livewire\Users;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
 class Create extends Component
@@ -22,7 +23,7 @@ class Create extends Component
             'apellido_paterno' => ['nullable','string','max:255'],
             'apellido_materno' => ['nullable','string','max:255'],
             'email' => ['required','email','max:255', Rule::unique('users','email')],
-            'password' => ['required','string','min:6'],
+            'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
             'rango' => ['nullable','string','max:255'],
             'numero_escalafon' => ['nullable','string','max:255'],
             'fecha_ingreso' => ['nullable','date'],
@@ -46,6 +47,7 @@ class Create extends Component
         $user->role = $data['role'];
         $user->can_login = (bool) $data['can_login'];
         $user->save();
+        $user->syncRoles([$data['role']]);
 
         session()->flash('success','Usuario creado correctamente.');
         return redirect()->route('users.index');

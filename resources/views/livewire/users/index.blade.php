@@ -51,25 +51,33 @@
         </div>
 
         <div class="min-w-[180px]">
-            <x-form.combobox
+            <label for="rango" class="block text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase mb-1">Rango</label>
+            <select
+                id="rango"
                 name="rango"
-                label="Rango"
-                placeholder="Todos los rangos"
-                :options="$rangoOptions"
-                :value="$rango"
                 wire:model.live="rango"
-            />
+                class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] px-3 py-2 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]"
+            >
+                <option value="">Todos los rangos</option>
+                @foreach($rangoOptions as $opt)
+                    <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
+                @endforeach
+            </select>
         </div>
 
         <div class="min-w-[180px]">
-            <x-form.combobox
+            <label for="rol" class="block text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase mb-1">Rol</label>
+            <select
+                id="rol"
                 name="rol"
-                label="Rol"
-                placeholder="Todos los roles"
-                :options="$roleOptions"
-                :value="$rol"
                 wire:model.live="rol"
-            />
+                class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] px-3 py-2 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]"
+            >
+                <option value="">Todos los roles</option>
+                @foreach($roleOptions as $opt)
+                    <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
+                @endforeach
+            </select>
         </div>
     </x-form.filter-bar>
 

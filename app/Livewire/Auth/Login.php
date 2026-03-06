@@ -32,26 +32,65 @@ class Login extends Component
 
         $user = $this->validateCredentials();
 
-        // Si llegamos aquí, credenciales OK y can_login=true
+        // Si llegamos aquÃ­, credenciales OK y can_login=true
         Auth::login($user, $this->remember);
+
+        activity()
+            ->useLog('auth')
+            ->event('login_success')
+            ->performedOn($user)
+            ->causedBy($user)
+            ->withProperties([
+                'email' => $user->email,
+                'remember' => $this->remember,
+            ])
+            ->log('Login exitoso');
 
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        $defaultRoute = $user->isPolicia()
+            ? route('prestamos.index', absolute: false)
+            : route('dashboard', absolute: false);
+
+        $this->redirectIntended(default: $defaultRoute, navigate: true);
     }
 
     protected function validateCredentials(): User
     {
         // Solo usuarios con can_login = true
-        $user = User::where('email', $this->email)
-            ->where('can_login', true)
-            // (Opcional) restringe solo admin/furriel:
-            // ->whereIn('role', ['admin','furriel'])
-            ->first();
+        $user = User::where('email', $this->email)->first();
+        $canLogin = $user && $user->can_login;
 
-        if (! $user || ! $user->password || ! Hash::check($this->password, $user->password)) {
+        if (! $user) {
             RateLimiter::hit($this->throttleKey());
+
+            activity()
+                ->useLog('auth')
+                ->event('login_failed')
+                ->withProperties([
+                    'email' => $this->email,
+                    'reason' => 'user_not_found',
+                ])
+                ->log('Login fallido');
+
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        if (! $canLogin || ! $user->password || ! Hash::check($this->password, $user->password)) {
+            RateLimiter::hit($this->throttleKey());
+
+            activity()
+                ->useLog('auth')
+                ->event('login_failed')
+                ->performedOn($user)
+                ->withProperties([
+                    'email' => $this->email,
+                    'reason' => $canLogin ? 'bad_password' : 'can_login_disabled',
+                ])
+                ->log('Login fallido');
 
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
@@ -70,6 +109,23 @@ class Login extends Component
         event(new Lockout(request()));
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
+
+        $user = User::where('email', $this->email)->first();
+
+        $logger = activity()
+            ->useLog('auth')
+            ->event('login_locked');
+
+        if ($user) {
+            $logger->performedOn($user);
+        }
+
+        $logger
+            ->withProperties([
+                'email' => $this->email,
+                'seconds' => $seconds,
+            ])
+            ->log('Login bloqueado');
 
         throw ValidationException::withMessages([
             'email' => __('auth.throttle', [

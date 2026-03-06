@@ -105,7 +105,7 @@ Route::get('dashboard', function () {
         'totalInventario' => $totalInventario,
     ]);
 })
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'role:admin|furriel', 'permission:dashboard.view'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
@@ -115,40 +115,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 
-    Route::get('users', Index::class)->name('users.index');
-    Route::get('users/create', Create::class)->name('users.create');
-    Route::get('users/{user}/update', Update::class)->name('users.update');
-    Route::get('users/deleted', Delete::class)->name('users.delete.index');
+    Route::get('prestamos', PrestamosIndex::class)
+        ->middleware(['permission:prestamos.view'])
+        ->name('prestamos.index');
 
-    Route::get('categorias', CategoriasIndex::class)->name('categorias.index');
-    Route::get('categorias/create', CategoriasCreate::class)->name('categorias.create');
-    Route::get('categorias/{categoria}/update', CategoriasUpdate::class)->name('categorias.update');
-    Route::get('categorias/deleted', CategoriasDelete::class)->name('categorias.delete.index');
-
-    Route::get('articulos', ArticulosIndex::class)->name('articulos.index');
-    Route::get('articulos/create', ArticulosCreate::class)->name('articulos.create');
-    Route::get('articulos/{articulo}/update', ArticulosUpdate::class)->name('articulos.update');
-    Route::get('articulos/deleted', ArticulosDelete::class)->name('articulos.delete.index');
-    Route::get('aticulos/invetario',ArticulosInventario::class)->name('articulos.inventario');
-    Route::get('articulos/{articulo}/show',ArticulosShow::class)->name('articulos.show');
-
-    Route::get('eventos', EventosIndex::class)->name('eventos.index');
-    Route::get('eventos/create', EventosCreate::class)->name('eventos.create');
-    Route::get('eventos/{evento}/update', EventosUpdate::class)->name('eventos.update');
-    Route::get('eventos/deleted', EventosDelete::class)->name('eventos.delete.index');
-    
-    Route::get('mantenimientos',MantenimientosIndex::class)->name('mantenimientos.index');
-    Route::get('mantenimientos/create',MantenimientosCreate::class)->name('mantenimientos.create');
-    Route::get('mantenimientos/{mantenimiento}/update',MantenimientosUpdate::class)->name('mantenimientos.update');
-    Route::get('mantenimientos/deleted',MantenimientosDelete::class)->name('mantenimientos.delete.index');
-    
-    Route::get('prestamos', PrestamosIndex::class)->name('prestamos.index');
-    Route::get('prestamos/create', PrestamosCreate::class)->name('prestamos.create');
-    Route::get('prestamos/{operacion}/devolucion', PrestamosDevolucion::class)->name('prestamos.devolucion');
-    
-    Route::get('activity-logs', ActivityLogsIndex::class)->name('activity-logs.index');
-    
-    
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(
             when(
@@ -159,6 +129,40 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+});
+
+Route::middleware(['auth', 'role:admin|furriel'])->group(function () {
+    Route::get('users', Index::class)->middleware(['permission:users.manage'])->name('users.index');
+    Route::get('users/create', Create::class)->middleware(['permission:users.manage'])->name('users.create');
+    Route::get('users/{user}/update', Update::class)->middleware(['permission:users.manage'])->name('users.update');
+    Route::get('users/deleted', Delete::class)->middleware(['permission:users.manage'])->name('users.delete.index');
+
+    Route::get('categorias', CategoriasIndex::class)->middleware(['permission:categorias.manage'])->name('categorias.index');
+    Route::get('categorias/create', CategoriasCreate::class)->middleware(['permission:categorias.manage'])->name('categorias.create');
+    Route::get('categorias/{categoria}/update', CategoriasUpdate::class)->middleware(['permission:categorias.manage'])->name('categorias.update');
+    Route::get('categorias/deleted', CategoriasDelete::class)->middleware(['permission:categorias.manage'])->name('categorias.delete.index');
+
+    Route::get('articulos', ArticulosIndex::class)->middleware(['permission:articulos.manage'])->name('articulos.index');
+    Route::get('articulos/create', ArticulosCreate::class)->middleware(['permission:articulos.manage'])->name('articulos.create');
+    Route::get('articulos/{articulo}/update', ArticulosUpdate::class)->middleware(['permission:articulos.manage'])->name('articulos.update');
+    Route::get('articulos/deleted', ArticulosDelete::class)->middleware(['permission:articulos.manage'])->name('articulos.delete.index');
+    Route::get('aticulos/invetario', ArticulosInventario::class)->middleware(['permission:articulos.manage'])->name('articulos.inventario');
+    Route::get('articulos/{articulo}/show', ArticulosShow::class)->middleware(['permission:articulos.manage'])->name('articulos.show');
+
+    Route::get('eventos', EventosIndex::class)->middleware(['permission:eventos.manage'])->name('eventos.index');
+    Route::get('eventos/create', EventosCreate::class)->middleware(['permission:eventos.manage'])->name('eventos.create');
+    Route::get('eventos/{evento}/update', EventosUpdate::class)->middleware(['permission:eventos.manage'])->name('eventos.update');
+    Route::get('eventos/deleted', EventosDelete::class)->middleware(['permission:eventos.manage'])->name('eventos.delete.index');
+    
+    Route::get('mantenimientos', MantenimientosIndex::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.index');
+    Route::get('mantenimientos/create', MantenimientosCreate::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.create');
+    Route::get('mantenimientos/{mantenimiento}/update', MantenimientosUpdate::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.update');
+    Route::get('mantenimientos/deleted', MantenimientosDelete::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.delete.index');
+    
+    Route::get('prestamos/create', PrestamosCreate::class)->middleware(['permission:prestamos.manage'])->name('prestamos.create');
+    Route::get('prestamos/{operacion}/devolucion', PrestamosDevolucion::class)->middleware(['permission:prestamos.manage'])->name('prestamos.devolucion');
+    
+    Route::get('activity-logs', ActivityLogsIndex::class)->middleware(['permission:activity_logs.view'])->name('activity-logs.index');
 });
 
 require __DIR__.'/auth.php';

@@ -43,6 +43,8 @@ class Create extends Component
 
     public function mount()
     {
+        abort_unless(auth()->user()?->isAdmin() || auth()->user()?->isFurriel(), 403);
+
         $this->eventos = Evento::orderBy('id', 'desc')->get();
         $this->policias = User::where('role', 'policia')->get();
         $this->articulos = Articulo::orderBy('nombre')->get();
