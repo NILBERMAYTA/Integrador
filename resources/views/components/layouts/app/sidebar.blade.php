@@ -27,8 +27,6 @@
                         @can('articulos.manage')
                             <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
                             <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*') && !request()->routeIs('articulos.inventario')" wire:navigate>Articulos</flux:navlist.item>
-                            <flux:navlist.item icon="eye" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Inspecciones</flux:navlist.item>
-                            <flux:navlist.item icon="megaphone" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Incidentes</flux:navlist.item>
                         @endcan
                         @can('categorias.manage')
                             <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>

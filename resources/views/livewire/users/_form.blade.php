@@ -25,6 +25,31 @@
     <x-form.datepiker name="fecha_ingreso" label="Fecha de Ingreso" placeholder="Seleccione fecha" format="YYYY-MM-DD" wire:model.defer="fecha_ingreso" />
   </div>
 
+  <!-- Foto -->
+  <div class="flex flex-col md:flex-row md:items-center gap-4">
+    <div class="h-16 w-16 rounded-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center">
+      @if (!empty($foto))
+        <img src="{{ $foto->temporaryUrl() }}" alt="Foto" class="h-full w-full object-cover" />
+      @elseif (!empty($foto_actual))
+        <img src="{{ asset('storage/'.$foto_actual) }}" alt="Foto" class="h-full w-full object-cover" />
+      @else
+        <span class="text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Sin foto</span>
+      @endif
+    </div>
+    <div class="flex-1">
+      <label class="block text-sm font-medium mb-1">Foto</label>
+      <input
+        type="file"
+        accept="image/*"
+        wire:model="foto"
+        class="block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] px-3 py-2 text-sm"
+      />
+      @error('foto')
+        <p class="mt-1 text-xs text-[var(--color-danger)]">{{ $message }}</p>
+      @enderror
+    </div>
+  </div>
+
   <!-- Rol y Permisos -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <x-form.combobox

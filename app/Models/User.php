@@ -26,6 +26,7 @@ class User extends Authenticatable
         'rango',
         'numero_escalafon',
         'fecha_ingreso',
+        'foto',
         'remember_token',
     ];
 

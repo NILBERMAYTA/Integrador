@@ -88,31 +88,29 @@
                 <thead class="bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border-b border-[var(--color-outline)] dark:border-[var(--color-outline-dark)]">
                     <tr>
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
+                            Foto
+                        </th>
+                        <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
                             Nro de Escalafón
                         </th>
-
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider cursor-pointer select-none hover:bg-[var(--color-surface)] dark:hover:bg-[var(--color-surface-dark)] transition-colors" wire:click="sortBy('apellidos')">
                             <div class="flex items-center gap-2">
                                 <span>Apellidos</span>
                                 @include('partials.sort-icon', ['field' => 'apellidos', 'sortField' => $sortField, 'sortDirection' => $sortDirection])
                             </div>
                         </th>
-
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider cursor-pointer select-none hover:bg-[var(--color-surface)] dark:hover:bg-[var(--color-surface-dark)] transition-colors" wire:click="sortBy('name')">
                             <div class="flex items-center gap-2">
                                 <span>Nombre</span>
                                 @include('partials.sort-icon', ['field' => 'name', 'sortField' => $sortField, 'sortDirection' => $sortDirection])
                             </div>
                         </th>
-
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
                             Rango
                         </th>
-
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
                             Rol
                         </th>
-
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
                             Acciones
                         </th>
@@ -122,6 +120,17 @@
                 <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
                     @forelse ($users as $user)
                         <tr class="hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="h-10 w-10 rounded-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center">
+                                    @if (!empty($user->foto))
+                                        <img src="{{ asset('storage/'.$user->foto) }}" alt="Foto" class="h-full w-full object-cover" />
+                                    @else
+                                        <span class="text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
+                                            {{ $user->initials() }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $user->numero_escalafon }}</span>
                             </td>
@@ -190,7 +199,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-12 w-12 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                 </svg>
@@ -210,3 +219,8 @@
         @endif
     </div>
 </div>
+
+
+
+
+

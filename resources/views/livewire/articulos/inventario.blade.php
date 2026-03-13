@@ -10,13 +10,22 @@
                 Vista consolidada del stock actual de todos los artículos.
             </p>
         </div>
-        <a href="{{ route('articulos.create') }}" wire:navigate 
-             class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-primary)] text-[var(--color-on-primary)] px-4 py-2 text-sm font-medium hover:opacity-90 transition-all">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nuevo artículo
-        </a>
+                <div class="flex items-center gap-3">
+            <button type="button" wire:click="exportPdf"
+                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2 text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16l4-4m-4 4l-4-4m4 4V4m0 12v4m-7 0h14"/>
+                </svg>
+                Exportar PDF
+            </button>
+            <a href="{{ route('articulos.create') }}" wire:navigate
+                class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-primary)] text-[var(--color-on-primary)] px-4 py-2 text-sm font-medium hover:opacity-90 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nuevo artículo
+            </a>
+        </div>
     </div>
 
     {{-- Filtros --}}
@@ -90,7 +99,6 @@
                             </button>
                         </th>
                         <th class="px-4 py-3 text-left font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Último movimiento</th>
-                        <th class="px-4 py-3 text-right font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -163,3 +171,4 @@
     @endif
 
 </div>
+

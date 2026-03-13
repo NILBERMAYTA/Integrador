@@ -5,7 +5,12 @@
             <h1 class="text-2xl font-bold">{{ $articulo->nombre }}</h1>
             <p class="text-sm text-muted">Categoría: {{ $articulo->categoria?->nombre ?? '—' }} • Tipo: {{ ucfirst($articulo->tipo) }} • Seguimiento: {{ ucfirst($articulo->seguimiento) }}</p>
         </div>
-        <a href="{{ route('articulos.index') }}" wire:navigate class="px-3 py-2 rounded bg-[var(--color-surface)] border">Volver</a>
+                <div class="flex items-center gap-2">
+            <button type="button" wire:click="exportPdf" class="px-3 py-2 rounded border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
+                Exportar PDF
+            </button>
+            <a href="{{ route('articulos.index') }}" wire:navigate class="px-3 py-2 rounded bg-[var(--color-surface)] border">Volver</a>
+        </div>
     </div>
 
     <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] overflow-hidden bg-[var(--color-surface)]">
@@ -99,3 +104,4 @@
     </div>
 
 </div>
+

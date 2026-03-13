@@ -7,14 +7,19 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Create extends Component
 {
+    use WithFileUploads;
+
     public $name, $apellido_paterno, $apellido_materno;
     public $email, $password;
     public $rango, $numero_escalafon, $fecha_ingreso;
     public $role = 'policia';
     public $can_login = true;
+    public $foto;
+    public $foto_actual = null;
 
     protected function rules()
     {
@@ -29,6 +34,7 @@ class Create extends Component
             'fecha_ingreso' => ['nullable','date'],
             'role' => ['required','in:policia,furriel,admin'],
             'can_login' => ['boolean'],
+            'foto' => ['nullable', 'image', 'max:2048'],
         ];
     }
 
@@ -46,6 +52,9 @@ class Create extends Component
         $user->fecha_ingreso = $data['fecha_ingreso'] ?? null;
         $user->role = $data['role'];
         $user->can_login = (bool) $data['can_login'];
+        if (!empty($data['foto'])) {
+            $user->foto = $data['foto']->store('policias', 'public');
+        }
         $user->save();
         $user->syncRoles([$data['role']]);
 

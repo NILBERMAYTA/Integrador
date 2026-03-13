@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 use App\Models\Articulo;
 use App\Models\Categoria;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class Inventario extends Component
 {
@@ -74,6 +75,47 @@ class Inventario extends Component
     }
 
     /**
+     * Exportar PDF del inventario actual (respeta filtros y orden)
+     */
+    public function exportPdf()
+    {
+        $query = Articulo::query()
+            ->with(['categoria'])
+            ->when($this->categoria_id, fn($q) => $q->where('categoria_id', $this->categoria_id))
+            ->when($this->search, fn($q) =>
+                $q->where('nombre', 'ilike', "%{$this->search}%")
+                  ->orWhere('descripcion', 'ilike', "%{$this->search}%")
+            );
+
+        $articulos = $query->get();
+
+        $items = $articulos->map(function ($articulo) {
+            return [
+                'articulo' => $articulo,
+                'entrada' => $this->calcularEntrada($articulo),
+                'salida' => $this->calcularSalida($articulo),
+                'total' => $this->calcularTotal($articulo),
+                'ultimo_movimiento' => $this->obtenerUltimoMovimiento($articulo),
+            ];
+        });
+
+        if ($this->sortField === 'total') {
+            $items = $items->sortBy('total', SORT_REGULAR, $this->sortDirection === 'desc')->values();
+        } elseif ($this->sortField === 'articulos.nombre') {
+            $items = $items->sortBy(fn($i) => mb_strtolower($i['articulo']->nombre ?? ''), SORT_REGULAR, $this->sortDirection === 'desc')->values();
+        }
+
+        $pdf = PDF::loadView('reports.inventario-articulos', [
+            'items' => $items,
+        ])->setPaper('a4', 'portrait');
+
+        return response()->streamDownload(
+            fn() => print($pdf->output()),
+            'inventario_articulos_'.now()->format('Ymd_His').'.pdf'
+        );
+    }
+
+    /**
      * Calcula cantidad de ENTRADA (ajuste, devolucion, mantenimiento_retorno)
      */
     private function calcularEntrada(Articulo $articulo): int|float
@@ -107,10 +149,11 @@ class Inventario extends Component
         if ($articulo->seguimiento === 'cantidad') {
             return $this->calcularEntrada($articulo) - $this->calcularSalida($articulo);
         } else {
-            // Para serie: contar series activas (no soft-deleted)
+            // Para serie: contar series disponibles (no soft-deleted)
             return DB::table('articulo_series')
                 ->whereNull('deleted_at')
                 ->where('articulo_id', $articulo->id)
+                ->where('estado', 'disponible')
                 ->count();
         }
     }
