@@ -23,7 +23,7 @@
             {{ $date_from ?: 'Sin limite' }} 
             - 
             {{ $date_to ?: 'Sin limite' }}
-            <span class="badge">{{ $tab === 'logins' ? 'Logins' : 'Actividad' }}</span>
+            <span class="badge">{{ $tab === 'logins' ? 'Inicios de sesion' : 'Actividad' }}</span>
         </div>
         <div class="muted">Total registros: {{ $activities->count() }}</div>
     </div>

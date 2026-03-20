@@ -12,8 +12,8 @@
     </div>
   </form>
 
-  {{-- Sub-CRUD de series (solo si seguimiento = serie y el artículo ya existe) --}}
-  @if($articulo && ($seguimiento === 'serie'))
+  {{-- Sub-CRUD de series (solo si el artículo es reutilizable y ya existe) --}}
+  @if($articulo && $articulo->isSerializado())
     <div class="mt-8 p-6 bg-surface dark:bg-surface-dark rounded-[var(--radius-radius)] shadow-md border border-outline dark:border-outline-dark">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-semibold">Series del artículo</h3>

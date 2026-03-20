@@ -127,7 +127,7 @@ class Delete extends Component
             ->sort()
             ->values();
 
-        $roles = ['admin', 'furriel', 'policia'];
+        $roles = ['administrador_general', 'administrador_unidad', 'furriel', 'policia'];
 
         return view('livewire.users.delete', [
             'users' => $users,

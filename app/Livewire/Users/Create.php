@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Users;
 
+use App\Models\Unidad;
 use App\Models\User;
-use Illuminate\Validation\Rule;
+use App\Services\UserTransferService;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -18,22 +20,38 @@ class Create extends Component
     public $rango, $numero_escalafon, $fecha_ingreso;
     public $role = 'policia';
     public $can_login = true;
+    public $unidad_id;
     public $foto;
     public $foto_actual = null;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->check(), 403);
+
+        if (! auth()->user()->isAdministradorGeneral()) {
+            $this->unidad_id = auth()->user()->unidad_id;
+            $this->role = 'policia';
+        }
+    }
 
     protected function rules()
     {
         return [
-            'name' => ['required','string','max:255'],
-            'apellido_paterno' => ['nullable','string','max:255'],
-            'apellido_materno' => ['nullable','string','max:255'],
-            'email' => ['required','email','max:255', Rule::unique('users','email')],
+            'name' => ['required', 'string', 'max:255'],
+            'apellido_paterno' => ['nullable', 'string', 'max:255'],
+            'apellido_materno' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
-            'rango' => ['nullable','string','max:255'],
-            'numero_escalafon' => ['nullable','string','max:255'],
-            'fecha_ingreso' => ['nullable','date'],
-            'role' => ['required','in:policia,furriel,admin'],
+            'rango' => ['nullable', 'string', 'max:255'],
+            'numero_escalafon' => ['nullable', 'string', 'max:255'],
+            'fecha_ingreso' => ['nullable', 'date'],
+            'role' => ['required', Rule::in($this->allowedRoles())],
             'can_login' => ['boolean'],
+            'unidad_id' => [
+                'required',
+                'exists:unidades,id',
+                Rule::in($this->allowedUnidadIds()),
+            ],
             'foto' => ['nullable', 'image', 'max:2048'],
         ];
     }
@@ -41,6 +59,11 @@ class Create extends Component
     public function guardaruser()
     {
         $data = $this->validate();
+
+        if (! auth()->user()->isAdministradorGeneral()) {
+            $data['unidad_id'] = auth()->user()->unidad_id;
+        }
+
         $user = new User();
         $user->name = $data['name'];
         $user->apellido_paterno = $data['apellido_paterno'] ?? null;
@@ -52,15 +75,67 @@ class Create extends Component
         $user->fecha_ingreso = $data['fecha_ingreso'] ?? null;
         $user->role = $data['role'];
         $user->can_login = (bool) $data['can_login'];
-        if (!empty($data['foto'])) {
+        $user->unidad_id = (int) $data['unidad_id'];
+
+        if (! empty($data['foto'])) {
             $user->foto = $data['foto']->store('policias', 'public');
         }
+
         $user->save();
         $user->syncRoles([$data['role']]);
 
-        session()->flash('success','Usuario creado correctamente.');
+        app(UserTransferService::class)->registerInitialAssignment(
+            auth()->user(),
+            $user,
+            (int) $data['unidad_id'],
+            'Asignacion inicial de unidad al crear usuario'
+        );
+
+        session()->flash('success', 'Usuario creado correctamente.');
+
         return redirect()->route('users.index');
     }
 
-    public function render() { return view('livewire.users.create'); }
+    public function render()
+    {
+        $unidades = Unidad::query()
+            ->whereIn('id', $this->allowedUnidadIds())
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'sigla']);
+
+        $rolesDisponibles = collect($this->allowedRoles())
+            ->map(fn (string $role) => [
+                'value' => $role,
+                'label' => match ($role) {
+                    'administrador_general' => 'Administrador General',
+                    'administrador_unidad' => 'Administrador de Unidad',
+                    'furriel' => 'Furriel',
+                    default => 'Policia',
+                },
+            ])
+            ->values()
+            ->all();
+
+        return view('livewire.users.create', compact('unidades', 'rolesDisponibles'));
+    }
+
+    private function allowedUnidadIds(): array
+    {
+        $actor = auth()->user();
+
+        if ($actor->isAdministradorGeneral()) {
+            return Unidad::query()->pluck('id')->all();
+        }
+
+        return [$actor->unidad_id];
+    }
+
+    private function allowedRoles(): array
+    {
+        if (auth()->user()->isAdministradorGeneral()) {
+            return ['administrador_general', 'administrador_unidad', 'furriel', 'policia'];
+        }
+
+        return ['administrador_unidad', 'furriel', 'policia'];
+    }
 }

@@ -37,6 +37,14 @@
                         <option value="concluido">Concluido</option>
                     </select>
                 </div>
+                <div>
+                    <select wire:model="unidadId" class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]">
+                        <option value="">Todas las unidades</option>
+                        @foreach($unidades as $unidad)
+                            <option value="{{ $unidad->id }}">{{ ($unidad->sigla ? $unidad->sigla.' - ' : '').$unidad->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
             <div class="flex justify-end">
                 <a
@@ -71,6 +79,7 @@
                     <tr>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Fecha</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Evento</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Unidad</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Policia</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Items</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Estado</th>
@@ -84,14 +93,14 @@
                             $devueltosCantidad = [];
                             foreach ($operacion->devoluciones as $dev) {
                                 foreach ($dev->detalles as $detDev) {
-                                    if (optional($detDev->articulo)->seguimiento === 'cantidad') {
+                                    if ($detDev->articulo?->isCantidad()) {
                                         $devueltosCantidad[$detDev->articulo_id] = ($devueltosCantidad[$detDev->articulo_id] ?? 0) + (int) $detDev->cantidad;
                                     }
                                 }
                             }
                             $pendiente = false;
                             foreach ($operacion->detalles as $detOp) {
-                                if (optional($detOp->articulo)->seguimiento === 'serie') {
+                                if ($detOp->articulo?->isSerializado()) {
                                     $asignadas = $detOp->series->filter(fn($s) => optional($s->serie)->operacion_detalle_id_actual === $detOp->id);
                                     if ($asignadas->count() > 0) { $pendiente = true; break; }
                                 } else {
@@ -107,6 +116,9 @@
                             </td>
                             <td class="px-6 py-4 text-[var(--color-on-surface)]">
                                 {{ $operacion->evento->nombre ?? 'No especificado' }}
+                            </td>
+                            <td class="px-6 py-4 text-[var(--color-on-surface)]">
+                                {{ $operacion->unidad?->sigla ?? $operacion->unidad?->nombre ?? 'No definida' }}
                             </td>
                             <td class="px-6 py-4 text-[var(--color-on-surface)]">
                                 {{ $operacion->policia->name ?? 'No definido' }}
@@ -160,7 +172,7 @@
                                             <button class="text-[var(--color-on-surface)] hover:text-[var(--color-danger)]" @click="open = false">Cerrar</button>
                                         </div>
                                         <div class="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
                                                 <div>
                                                     <p class="text-xs opacity-60">Fecha</p>
                                                     <p class="font-medium">{{ optional($operacion->fecha)->format('Y-m-d H:i') }}</p>
@@ -168,6 +180,10 @@
                                                 <div>
                                                     <p class="text-xs opacity-60">Evento</p>
                                                     <p class="font-medium">{{ $operacion->evento->nombre ?? 'No especificado' }}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs opacity-60">Unidad</p>
+                                                    <p class="font-medium">{{ $operacion->unidad?->sigla ?? $operacion->unidad?->nombre ?? 'No definida' }}</p>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs opacity-60">Policia</p>
@@ -184,7 +200,7 @@
                                                         <tr class="text-[var(--color-on-surface)] opacity-80">
                                                             <th class="px-2 py-1">Articulo</th>
                                                             <th class="px-2 py-1 text-center">Cantidad</th>
-                                                            <th class="px-2 py-1 text-center">Seguimiento</th>
+                                                            <th class="px-2 py-1 text-center">Gestion</th>
                                                             <th class="px-2 py-1">Series / Estado</th>
                                                             <th class="px-2 py-1 text-center">Pendiente</th>
                                                             <th class="px-2 py-1">Condicion</th>
@@ -194,7 +210,7 @@
                                                         @forelse($operacion->detalles as $detalle)
                                                             @php
                                                                 $devueltoCantidad = $devueltosCantidad[$detalle->articulo_id] ?? 0;
-                                                                $pendienteCantidad = optional($detalle->articulo)->seguimiento === 'cantidad'
+                                                                $pendienteCantidad = $detalle->articulo?->isCantidad()
                                                                     ? max(0, ($detalle->cantidad ?? 0) - $devueltoCantidad)
                                                                     : 0;
                                                                 $seriesAsignadas = $detalle->series->filter(fn($s) => optional($s->serie)->operacion_detalle_id_actual === $detalle->id);
@@ -203,14 +219,14 @@
                                                                 <td class="px-2 py-1">{{ $detalle->articulo->nombre ?? 'Articulo' }}</td>
                                                                 <td class="px-2 py-1 text-center">{{ $detalle->cantidad }}</td>
                                                                 <td class="px-2 py-1 text-center">
-                                                                    @if(optional($detalle->articulo)->seguimiento === 'serie')
-                                                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Serie</span>
+                                                                    @if($detalle->articulo?->isSerializado())
+                                                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Por serie</span>
                                                                     @else
-                                                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">Cantidad</span>
+                                                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">Por cantidad</span>
                                                                     @endif
                                                                 </td>
                                                                 <td class="px-2 py-1">
-                                                                    @if(optional($detalle->articulo)->seguimiento === 'serie')
+                                                                    @if($detalle->articulo?->isSerializado())
                                                                         @php $codes = $detalle->series->map(fn($s) => [
                                                                             'codigo' => $s->serie->codigo_serie ?? '',
                                                                             'asignado' => optional($s->serie)->operacion_detalle_id_actual === $detalle->id,
@@ -231,7 +247,7 @@
                                                                     @endif
                                                                 </td>
                                                                 <td class="px-2 py-1 text-center">
-                                                                    @if(optional($detalle->articulo)->seguimiento === 'serie')
+                                                                    @if($detalle->articulo?->isSerializado())
                                                                         {{ $seriesAsignadas->count() }} pendiente(s)
                                                                     @else
                                                                         {{ $pendienteCantidad }}
@@ -256,7 +272,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-[var(--color-on-surface)] opacity-70">
+                            <td colspan="8" class="px-6 py-12 text-center text-[var(--color-on-surface)] opacity-70">
                                 No hay operaciones registradas.
                             </td>
                         </tr>

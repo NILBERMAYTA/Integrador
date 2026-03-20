@@ -2,7 +2,7 @@
     'label' => null,
     'name',
     'options' => [],
-    'placeholder' => 'Please select',
+    'placeholder' => 'Seleccione una opcion',
     'value' => null,
     'required' => false,
 ])
@@ -152,7 +152,7 @@
                     tabindex="0"
                 >
                     <span x-bind:class="selectedOption == item ? 'font-bold' : null" x-text="item.label"></span>
-                    <span class="sr-only" x-text="selectedOption == item ? 'selected' : null"></span>
+                    <span class="sr-only" x-text="selectedOption == item ? 'seleccionado' : null"></span>
                     <svg x-cloak x-show="selectedOption == item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" class="size-4" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
                     </svg>

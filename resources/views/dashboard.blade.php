@@ -1,4 +1,4 @@
-<x-layouts.app :title="__('Dashboard')">
+<x-layouts.app :title="__('Inicio')">
     <div class="flex flex-col gap-6">
         {{-- Encabezado con CTA --}}
         <div class="relative overflow-hidden rounded-[20px] border border-[var(--color-outline)] bg-gradient-to-r from-[var(--color-primary)]/12 via-[var(--color-primary)]/6 to-[var(--color-secondary)]/12 shadow-sm">

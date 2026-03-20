@@ -11,15 +11,21 @@ class ArticuloSerie extends BaseModel
 
     protected $table = 'articulo_series';
 
-    protected $fillable = ['articulo_id','codigo_serie','observaciones','estado','operacion_detalle_id_actual'];
+    protected $fillable = ['articulo_id','unidad_id','codigo_serie','observaciones','estado','condicion_actual','operacion_detalle_id_actual'];
 
     protected $casts = [
         'estado' => 'string',
+        'condicion_actual' => 'string',
     ];
 
     public function articulo()
     {
         return $this->belongsTo(Articulo::class);
+    }
+
+    public function unidad()
+    {
+        return $this->belongsTo(Unidad::class, 'unidad_id');
     }
 
     public function operacionDetalleActual()
@@ -45,5 +51,10 @@ class ArticuloSerie extends BaseModel
     public function incidencias()
     {
         return $this->hasMany(Incidencia::class, 'serie_id');
+    }
+
+    public function scopeForUnidad($query, ?int $unidadId)
+    {
+        return $query->when($unidadId, fn ($builder) => $builder->where('unidad_id', $unidadId));
     }
 }

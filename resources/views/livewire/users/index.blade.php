@@ -38,6 +38,7 @@
     @php
         $rangoOptions = collect($rangos ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los rangos'])->values();
         $roleOptions = collect($roles ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los roles'])->values();
+        $unidadOptions = collect($unidades ?? [])->map(fn($u) => ['value' => $u->id, 'label' => trim(($u->sigla ? $u->sigla.' - ' : '').$u->nombre)])->prepend(['value' => '', 'label' => 'Todas las unidades'])->values();
     @endphp
 
     {{-- Barra de filtros --}}
@@ -79,6 +80,20 @@
                 @endforeach
             </select>
         </div>
+
+        <div class="min-w-[220px]">
+            <label for="unidad" class="block text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase mb-1">Unidad</label>
+            <select
+                id="unidad"
+                name="unidad"
+                wire:model.live="unidad"
+                class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] px-3 py-2 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]"
+            >
+                @foreach($unidadOptions as $opt)
+                    <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
+                @endforeach
+            </select>
+        </div>
     </x-form.filter-bar>
 
     {{-- Tabla --}}
@@ -112,6 +127,9 @@
                             Rol
                         </th>
                         <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
+                            Unidad
+                        </th>
+                        <th class="px-6 py-4 text-xs font-semibold text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -132,7 +150,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $user->numero_escalafon }}</span>
+                                <span class="text-sm font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $user->numero_escalafon }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                 {{ $user->apellido_paterno }} {{ $user->apellido_materno }}
@@ -150,6 +168,9 @@
                                     {{ $user->role }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
+                                {{ $user->unidad?->sigla ?? $user->unidad?->nombre ?? '—' }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-2" x-data="{ modalIsOpen: false }">
                                     <x-form.outline_button
@@ -162,6 +183,16 @@
                                         </svg>
                                         Editar
                                     </x-form.outline_button>
+
+                                    @if(auth()->user()?->isAdministradorGeneral())
+                                        <x-form.outline_button
+                                            variant="neutral"
+                                            href="{{ route('users.transfer', $user) }}"
+                                            wire:navigate
+                                        >
+                                            Transferir
+                                        </x-form.outline_button>
+                                    @endif
                                     
                                     <x-form.outline_button
                                         type="button"
@@ -199,7 +230,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
+                            <td colspan="8" class="px-6 py-12 text-center">
                                 <svg class="mx-auto h-12 w-12 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                 </svg>

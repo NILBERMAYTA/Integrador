@@ -10,13 +10,17 @@ class Articulo extends BaseModel
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'categoria_id','nombre','unidad_medida','descripcion','tipo','seguimiento',
+        'categoria_id',
+        'nombre',
+        'unidad_medida',
+        'descripcion',
+        'tipo',
+        'seguimiento',
     ];
 
     protected $casts = [
-        // enums en Postgres → strings en PHP
-        'tipo'        => 'string',      // reutilizable | consumible
-        'seguimiento' => 'string',      // serie | cantidad
+        'tipo' => 'string',
+        'seguimiento' => 'string',
     ];
 
     public function categoria()
@@ -27,6 +31,11 @@ class Articulo extends BaseModel
     public function series()
     {
         return $this->hasMany(ArticuloSerie::class);
+    }
+
+    public function inventariosUnidad()
+    {
+        return $this->hasMany(InventarioUnidadArticulo::class, 'articulo_id');
     }
 
     public function detalles()
@@ -47,5 +56,20 @@ class Articulo extends BaseModel
     public function incidencias()
     {
         return $this->hasMany(Incidencia::class);
+    }
+
+    public function isSerializado(): bool
+    {
+        return $this->tipo === 'reutilizable';
+    }
+
+    public function isCantidad(): bool
+    {
+        return $this->tipo === 'consumible';
+    }
+
+    public function seguimientoLabel(): string
+    {
+        return $this->isSerializado() ? 'Serie' : 'Cantidad';
     }
 }

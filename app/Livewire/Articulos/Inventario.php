@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 use App\Models\Articulo;
 use App\Models\Categoria;
+use App\Models\Unidad;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class Inventario extends Component
@@ -15,6 +16,7 @@ class Inventario extends Component
 
     // Filtros
     public ?int $categoria_id = null;
+    public ?int $unidad_id = null;
     public string $search = '';
     public string $sortField = 'articulos.nombre';
     public string $sortDirection = 'asc';
@@ -22,12 +24,27 @@ class Inventario extends Component
     // Paginación
     public int $perPage = 15;
 
+    public function mount(): void
+    {
+        $this->unidad_id = auth()->user()?->unidad_id;
+    }
+
+    private function unidadActualId(): ?int
+    {
+        return $this->unidad_id;
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
     public function updatingCategoria()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingUnidadId()
     {
         $this->resetPage();
     }
@@ -67,10 +84,12 @@ class Inventario extends Component
         });
 
         $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
+        $unidades = Unidad::orderBy('nombre')->get(['id', 'nombre', 'sigla']);
 
         return view('livewire.articulos.inventario', [
             'articulos' => $articulos,
             'categorias' => $categorias,
+            'unidades' => $unidades,
         ]);
     }
 
@@ -120,10 +139,13 @@ class Inventario extends Component
      */
     private function calcularEntrada(Articulo $articulo): int|float
     {
+        $unidadId = $this->unidadActualId();
+
         return DB::table('operacion_detalles as od')
             ->join('operaciones as o', 'o.id', '=', 'od.operacion_id')
             ->whereNull('od.deleted_at')
             ->where('od.articulo_id', $articulo->id)
+            ->when($unidadId, fn($q) => $q->where('o.unidad_id', $unidadId))
             ->whereIn('o.tipo', ['ajuste', 'devolucion', 'mantenimiento_retorno'])
             ->sum('od.cantidad') ?? 0;
     }
@@ -133,10 +155,13 @@ class Inventario extends Component
      */
     private function calcularSalida(Articulo $articulo): int|float
     {
+        $unidadId = $this->unidadActualId();
+
         return DB::table('operacion_detalles as od')
             ->join('operaciones as o', 'o.id', '=', 'od.operacion_id')
             ->whereNull('od.deleted_at')
             ->where('od.articulo_id', $articulo->id)
+            ->when($unidadId, fn($q) => $q->where('o.unidad_id', $unidadId))
             ->whereIn('o.tipo', ['asignacion', 'consumo', 'mantenimiento_salida'])
             ->sum('od.cantidad') ?? 0;
     }
@@ -146,13 +171,16 @@ class Inventario extends Component
      */
     private function calcularTotal(Articulo $articulo): int|float
     {
-        if ($articulo->seguimiento === 'cantidad') {
+        if ($articulo->isCantidad()) {
             return $this->calcularEntrada($articulo) - $this->calcularSalida($articulo);
         } else {
             // Para serie: contar series disponibles (no soft-deleted)
+            $unidadId = $this->unidadActualId();
+
             return DB::table('articulo_series')
                 ->whereNull('deleted_at')
                 ->where('articulo_id', $articulo->id)
+                ->when($unidadId, fn($q) => $q->where('unidad_id', $unidadId))
                 ->where('estado', 'disponible')
                 ->count();
         }
@@ -163,10 +191,13 @@ class Inventario extends Component
      */
     private function obtenerUltimoMovimiento(Articulo $articulo): ?string
     {
+        $unidadId = $this->unidadActualId();
+
         $fecha = DB::table('operacion_detalles as od')
             ->join('operaciones as o', 'o.id', '=', 'od.operacion_id')
             ->whereNull('od.deleted_at')
             ->where('od.articulo_id', $articulo->id)
+            ->when($unidadId, fn($q) => $q->where('o.unidad_id', $unidadId))
             ->max('o.fecha');
         
         return $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y H:i') : null;

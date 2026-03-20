@@ -23,7 +23,7 @@
             </select>
         </div>
 
-        @if($articulo->seguimiento === 'cantidad')
+        @if($articulo->isCantidad())
             <div>
                 <label class="block text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] mb-1">Cantidad</label>
                 <input wire:model.defer="cantidad" type="number" step="0.01" min="0" class="w-full px-3 py-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] placeholder:text-[var(--color-on-surface)]/60 dark:placeholder:text-[var(--color-on-surface-dark)]/60 focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all" />

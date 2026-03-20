@@ -2,18 +2,18 @@
     @include('partials.settings-heading')
 
     <x-settings.layout
-        :heading="__('Two Factor Authentication')"
-        :subheading="__('Manage your two-factor authentication settings')"
+        :heading="__('Autenticacion en dos pasos')"
+        :subheading="__('Administra la configuracion de autenticacion en dos pasos')"
     >
         <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
             @if ($twoFactorEnabled)
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <flux:badge color="green">{{ __('Enabled') }}</flux:badge>
+                        <flux:badge color="green">{{ __('Activada') }}</flux:badge>
                     </div>
 
                     <flux:text>
-                        {{ __('With two-factor authentication enabled, you will be prompted for a secure, random pin during login, which you can retrieve from the TOTP-supported application on your phone.') }}
+                        {{ __('Con la autenticacion en dos pasos activada, se te pedira un codigo seguro durante el inicio de sesion. Puedes obtenerlo desde una aplicacion compatible con TOTP en tu telefono.') }}
                     </flux:text>
 
                     <livewire:settings.two-factor.recovery-codes :$requiresConfirmation/>
@@ -25,18 +25,18 @@
                             icon:variant="outline"
                             wire:click="disable"
                         >
-                            {{ __('Disable 2FA') }}
+                            {{ __('Desactivar 2FA') }}
                         </flux:button>
                     </div>
                 </div>
             @else
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <flux:badge color="red">{{ __('Disabled') }}</flux:badge>
+                        <flux:badge color="red">{{ __('Desactivada') }}</flux:badge>
                     </div>
 
                     <flux:text variant="subtle">
-                        {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
+                        {{ __('Cuando actives la autenticacion en dos pasos, se te pedira un codigo seguro durante el inicio de sesion. Puedes obtenerlo desde una aplicacion compatible con TOTP en tu telefono.') }}
                     </flux:text>
 
                     <flux:button
@@ -45,7 +45,7 @@
                         icon:variant="outline"
                         wire:click="enable"
                     >
-                        {{ __('Enable 2FA') }}
+                        {{ __('Activar 2FA') }}
                     </flux:button>
                 </div>
             @endif
@@ -106,7 +106,7 @@
                             class="flex-1"
                             wire:click="resetVerification"
                         >
-                            {{ __('Back') }}
+                            {{ __('Volver') }}
                         </flux:button>
 
                         <flux:button
@@ -115,7 +115,7 @@
                             wire:click="confirmTwoFactor"
                             x-bind:disabled="$wire.code.length < 6"
                         >
-                            {{ __('Confirm') }}
+                            {{ __('Confirmar') }}
                         </flux:button>
                     </div>
                 </div>
@@ -153,7 +153,7 @@
                     <div class="relative flex items-center justify-center w-full">
                         <div class="absolute inset-0 w-full h-px top-1/2 bg-stone-200 dark:bg-stone-600"></div>
                         <span class="relative px-2 text-sm bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400">
-                            {{ __('or, enter the code manually') }}
+                            {{ __('o ingresa el codigo manualmente') }}
                         </span>
                     </div>
 

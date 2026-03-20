@@ -24,10 +24,10 @@
     <strong>ArtÃ­culo:</strong> {{ $articulo->nombre }}<br>
     <strong>CategorÃ­a:</strong> {{ $articulo->categoria?->nombre ?? 'â€”' }}<br>
     <strong>Tipo:</strong> {{ ucfirst($articulo->tipo ?? '') }}<br>
-    <strong>Seguimiento:</strong> {{ ucfirst($articulo->seguimiento ?? '') }}
+    <strong>Gestion:</strong> {{ ($articulo->tipo ?? '') === 'reutilizable' ? 'Serie' : 'Cantidad' }}
   </div>
 
-  @if(($articulo->seguimiento ?? '') === 'serie')
+  @if(($articulo->tipo ?? '') === 'reutilizable')
     <div class="box">
       <strong>Total series:</strong> {{ $resumen['total'] ?? 0 }} &nbsp;|&nbsp;
       <strong>Disponibles:</strong> {{ $resumen['disponibles'] ?? 0 }} &nbsp;|&nbsp;

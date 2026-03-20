@@ -12,7 +12,7 @@ class Operacion extends BaseModel
     protected $table = 'operaciones';
 
     protected $fillable = [
-        'tipo','evento_id','policia_id','actor_id','fecha','observaciones','operacion_padre_id',
+        'tipo','evento_id','usuario_destino_id','actor_id','unidad_id','fecha','observaciones','operacion_padre_id',
     ];
 
     protected $attributes = [
@@ -29,14 +29,24 @@ class Operacion extends BaseModel
         return $this->belongsTo(Evento::class);
     }
 
+    public function usuarioDestino()
+    {
+        return $this->belongsTo(User::class, 'usuario_destino_id');
+    }
+
     public function policia()
     {
-        return $this->belongsTo(User::class, 'policia_id');
+        return $this->usuarioDestino();
     }
 
     public function actor()
     {
         return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    public function unidad()
+    {
+        return $this->belongsTo(Unidad::class, 'unidad_id');
     }
 
     public function detalles()
@@ -52,5 +62,10 @@ class Operacion extends BaseModel
     public function devoluciones()
     {
         return $this->hasMany(self::class, 'operacion_padre_id');
+    }
+
+    public function scopeForUnidad($query, ?int $unidadId)
+    {
+        return $query->when($unidadId, fn ($builder) => $builder->where('unidad_id', $unidadId));
     }
 }

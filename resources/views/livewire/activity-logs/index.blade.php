@@ -39,7 +39,7 @@
             wire:click="$set('tab','logins')"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-[var(--radius-radius)] border text-sm font-medium transition-colors {{ $tab === 'logins' ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)] border-[var(--color-primary)]' : 'bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] hover:bg-[var(--color-outline)] dark:hover:bg-[var(--color-outline-dark)]' }}"
         >
-            Logins
+            Inicios de sesion
         </button>
     </div>
 

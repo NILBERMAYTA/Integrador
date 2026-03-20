@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Articulo;
 use App\Models\Categoria;
 use App\Models\ArticuloSerie;
+use App\Services\InventarioUnidadService;
 
 class Create extends Component
 {
@@ -21,7 +22,6 @@ class Create extends Component
     // Paso 1 – definición (ambos modos)
     public ?int $categoria_id = null;
     public string $nombre = '';
-    public ?string $unidad_medida = null;
     public ?string $descripcion = null;
 
     // Paso 2 – modo "cantidad"
@@ -36,13 +36,18 @@ class Create extends Component
 
     public ?Articulo $articulo = null;
 
+    private function unidadActualId(): ?int
+    {
+        return Auth::user()?->unidad_id;
+    }
+
     // --- Seleccionar modo ---
     public function selectMode(string $mode)
     {
         $this->mode = $mode;
         $this->showModal = false;
         $this->step = 1;
-        $this->reset(['nombre', 'categoria_id', 'unidad_medida', 'descripcion', 'cantidad_inicial', 'codigo_serie', 'fecha_ingreso', 'obs_ingreso', 'articulo']);
+        $this->reset(['nombre', 'categoria_id', 'descripcion', 'cantidad_inicial', 'codigo_serie', 'fecha_ingreso', 'obs_ingreso', 'articulo']);
     }
 
     public function closeModal()
@@ -61,7 +66,6 @@ class Create extends Component
                 Rule::unique('articulos', 'nombre')
                     ->where(fn($q) => $q->where('categoria_id', $this->categoria_id ?? 0)),
             ],
-            'unidad_medida' => ['nullable', 'string', 'max:20'],
             'descripcion'   => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -96,7 +100,7 @@ class Create extends Component
         $this->articulo = Articulo::create([
             'categoria_id'  => $this->categoria_id,
             'nombre'        => $this->nombre,
-            'unidad_medida' => $this->unidad_medida ?: ($this->mode === 'cantidad' ? null : 'unidad'),
+            'unidad_medida' => null,
             'descripcion'   => $this->descripcion,
             'tipo'          => $tipo,
             'seguimiento'   => $seguimiento,
@@ -110,7 +114,7 @@ class Create extends Component
     }
 
     // --- Paso 2: registrar stock inicial (cantidad) ---
-    public function saveStep2Cantidad()
+    public function saveStep2Cantidad(InventarioUnidadService $inventario)
     {
         $this->validate($this->rulesStep2Cantidad());
 
@@ -124,7 +128,13 @@ class Create extends Component
             return;
         }
 
-        DB::transaction(function () {
+        $unidadId = $this->unidadActualId();
+        if (!$unidadId) {
+            $this->addError('unidad', 'El usuario actual no tiene una unidad asignada.');
+            return;
+        }
+
+        DB::transaction(function () use ($unidadId) {
             $now = now();
             $fecha = $this->fecha_ingreso
                 ? \Carbon\Carbon::parse($this->fecha_ingreso)
@@ -134,8 +144,9 @@ class Create extends Component
             $opId = DB::table('operaciones')->insertGetId([
                 'tipo' => 'ajuste',
                 'evento_id' => null,
-                'policia_id' => null,
+                'usuario_destino_id' => null,
                 'actor_id' => Auth::id(),
+                'unidad_id' => $unidadId,
                 'fecha' => $fecha,
                 'observaciones' => $this->obs_ingreso ?: 'Ingreso inicial',
                 'created_at' => $now,
@@ -150,6 +161,8 @@ class Create extends Component
                 'created_at'   => $now,
                 'updated_at'   => $now,
             ]);
+
+            $inventario->addInitialStock($unidadId, $this->articulo->id, (float) $this->cantidad_inicial);
         });
 
     session()->flash('success', "Stock inicial creado: {$this->cantidad_inicial} unidades.");
@@ -172,7 +185,13 @@ class Create extends Component
             return;
         }
 
-        DB::transaction(function () {
+        $unidadId = $this->unidadActualId();
+        if (!$unidadId) {
+            $this->addError('unidad', 'El usuario actual no tiene una unidad asignada.');
+            return;
+        }
+
+        DB::transaction(function () use ($unidadId) {
             $now = now();
             $fecha = $this->fecha_ingreso
                 ? \Carbon\Carbon::parse($this->fecha_ingreso)
@@ -182,8 +201,9 @@ class Create extends Component
             $opId = DB::table('operaciones')->insertGetId([
                 'tipo' => 'ajuste',
                 'evento_id' => null,
-                'policia_id' => null,
+                'usuario_destino_id' => null,
                 'actor_id' => Auth::id(),
+                'unidad_id' => $unidadId,
                 'fecha' => $fecha,
                 'observaciones' => $this->obs_ingreso ?: 'Ingreso inicial',
                 'created_at' => $now,
@@ -202,7 +222,9 @@ class Create extends Component
             // Crear serie
             $serieId = DB::table('articulo_series')->insertGetId([
                 'articulo_id'   => $this->articulo->id,
+                'unidad_id'     => $unidadId,
                 'codigo_serie'  => trim($this->codigo_serie),
+                'estado'        => 'disponible',
                 'observaciones' => null,
                 'created_at'    => $now,
                 'updated_at'    => $now,

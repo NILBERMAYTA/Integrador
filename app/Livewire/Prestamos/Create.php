@@ -9,6 +9,7 @@ use App\Models\Operacion;
 use App\Models\OperacionDetalle;
 use App\Models\OperacionDetalleSerie;
 use App\Models\User;
+use App\Services\InventarioUnidadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,6 +31,11 @@ class Create extends Component
         'yolo-detecciones' => 'agregarDesdeYolo',
     ];
 
+    private function unidadActualId(): ?int
+    {
+        return auth()->user()?->unidad_id;
+    }
+
     protected $rules = [
         'evento_id' => 'required|exists:eventos,id',
         'policia_id' => 'required|exists:users,id',
@@ -45,21 +51,28 @@ class Create extends Component
     {
         abort_unless(auth()->user()?->isAdmin() || auth()->user()?->isFurriel(), 403);
 
+        $unidadId = $this->unidadActualId();
+        abort_if(! $unidadId, 403, 'El usuario actual no tiene una unidad asignada.');
+
         $this->eventos = Evento::orderBy('id', 'desc')->get();
-        $this->policias = User::where('role', 'policia')->get();
+        $this->policias = User::query()
+            ->where('role', 'policia')
+            ->where('unidad_id', $unidadId)
+            ->orderBy('name')
+            ->get();
         $this->articulos = Articulo::orderBy('nombre')->get();
-        $this->seriesDisponibles = ArticuloSerie::select('id', 'articulo_id', 'codigo_serie')
+        $this->seriesDisponibles = ArticuloSerie::query()
+            ->select('id', 'articulo_id', 'codigo_serie')
+            ->where('unidad_id', $unidadId)
             ->where('estado', 'disponible')
             ->orderBy('codigo_serie')
             ->get()
             ->groupBy('articulo_id')
-            ->map(function ($group) {
-                return $group->map(fn($serie) => [
-                    'id' => $serie->id,
-                    'codigo_serie' => $serie->codigo_serie,
-                ])->values()->all();
-            })
-            ->toArray(); // Livewire no deshidrata colecciones Eloquent
+            ->map(fn ($group) => $group->map(fn ($serie) => [
+                'id' => $serie->id,
+                'codigo_serie' => $serie->codigo_serie,
+            ])->values()->all())
+            ->toArray();
 
         $this->addRow();
         $this->yoloErrores = [];
@@ -87,11 +100,10 @@ class Create extends Component
         $parts = explode('.', $key);
         if (count($parts) === 2 && $parts[1] === 'articulo_id') {
             $index = (int) $parts[0];
-            // Livewire rehidrata como array; usar collect para buscar el articulo seleccionado
             $articulo = $value ? collect($this->articulos)->firstWhere('id', (int) $value) : null;
 
             $this->items[$index]['nombre'] = $articulo->nombre ?? '';
-            $this->items[$index]['seguimiento'] = $articulo->seguimiento ?? '';
+            $this->items[$index]['seguimiento'] = $articulo?->isSerializado() ? 'serie' : 'cantidad';
             $this->items[$index]['series'] = [];
         }
     }
@@ -101,17 +113,14 @@ class Create extends Component
         $raw = $payload['detecciones'] ?? [];
         $this->yoloErrores = [];
         $insertados = 0;
-
         $detecciones = [];
 
-        // Caso 1: estructura {summary: {...}, detections: [...]}
         if (is_array($raw) && isset($raw['summary']) && is_array($raw['summary'])) {
             foreach ($raw['summary'] as $label => $count) {
                 $detecciones[] = ['label' => $label, 'count' => (int) $count];
             }
         }
 
-        // Caso 2: arreglo de {label, count} directamente
         if (empty($detecciones) && is_array($raw) && isset($raw[0]['label'])) {
             foreach ($raw as $det) {
                 $detecciones[] = [
@@ -121,7 +130,6 @@ class Create extends Component
             }
         }
 
-        // Caso 3: detections detalladas sin summary; contar labels
         if (empty($detecciones) && is_array($raw) && isset($raw['detections']) && is_array($raw['detections'])) {
             $contados = [];
             foreach ($raw['detections'] as $det) {
@@ -142,20 +150,19 @@ class Create extends Component
         foreach ($detecciones as $det) {
             $label = $det['label'] ?? null;
             $count = (int) ($det['count'] ?? 0);
-            if (!$label || $count <= 0) {
+            if (! $label || $count <= 0) {
                 continue;
             }
 
             $labelNorm = Str::lower($label);
-            // Evitar columna inexistente etiqueta_ia; usamos coincidencia por nombre
             $articulo = Articulo::whereRaw('LOWER(nombre) = ?', [$labelNorm])->first();
 
-            if (!$articulo) {
+            if (! $articulo) {
                 $this->yoloErrores[] = "Sin coincidencia para '{$label}'";
                 continue;
             }
 
-            $index = collect($this->items)->search(fn($item) => (int) ($item['articulo_id'] ?? 0) === (int) $articulo->id);
+            $index = collect($this->items)->search(fn ($item) => (int) ($item['articulo_id'] ?? 0) === (int) $articulo->id);
 
             if ($index !== false) {
                 $this->items[$index]['cantidad'] += $count;
@@ -164,33 +171,32 @@ class Create extends Component
                     'articulo_id' => $articulo->id,
                     'nombre' => $articulo->nombre,
                     'cantidad' => $count,
-                    'seguimiento' => $articulo->seguimiento,
+                    'seguimiento' => $articulo->isSerializado() ? 'serie' : 'cantidad',
                     'series' => [],
                 ];
                 $index = count($this->items) - 1;
             }
 
-            if ($articulo->seguimiento === 'serie') {
+            if ($articulo->isSerializado()) {
                 $this->asignarSeries($index);
             }
 
             $insertados++;
         }
 
-        // si no hubo coincidencias, no elimines la fila vacia
         if ($insertados === 0 && empty($this->items)) {
             $this->addRow();
         }
 
         if ($insertados > 0 && count($this->items) > 1 && empty($this->items[0]['articulo_id'])) {
-            $this->items = array_values(array_filter($this->items, fn($item) => !empty($item['articulo_id'])));
+            $this->items = array_values(array_filter($this->items, fn ($item) => ! empty($item['articulo_id'])));
         }
     }
 
     protected function asignarSeries(int $index): void
     {
         $articuloId = $this->items[$index]['articulo_id'] ?? null;
-        if (!$articuloId) {
+        if (! $articuloId) {
             return;
         }
 
@@ -204,23 +210,35 @@ class Create extends Component
         $faltantes = max(0, $cantidad - $yaSeleccionadas->count());
 
         $nuevas = $disponibles
-            ->reject(fn($s) => $yaSeleccionadas->contains($s['id']))
+            ->reject(fn ($s) => $yaSeleccionadas->contains($s['id']))
             ->pluck('id')
             ->take($faltantes);
 
-        $series = $yaSeleccionadas->merge($nuevas)->take($cantidad)->unique()->values()->all();
-        $this->items[$index]['series'] = $series;
-
-        if ($cantidad === 0 && count($series) > 0) {
-            $this->items[$index]['cantidad'] = count($series);
-        }
+        $this->items[$index]['series'] = $yaSeleccionadas->merge($nuevas)->take($cantidad)->unique()->values()->all();
     }
 
-    public function save()
+    public function save(InventarioUnidadService $inventario)
     {
         $this->validate();
 
+        $unidadId = $this->unidadActualId();
+        if (! $unidadId) {
+            $this->addError('unidad', 'El usuario actual no tiene una unidad asignada.');
+            return;
+        }
+
+        $destino = User::query()->whereKey($this->policia_id)->where('unidad_id', $unidadId)->first();
+        if (! $destino) {
+            $this->addError('policia_id', 'El usuario destino no pertenece a la misma unidad.');
+            return;
+        }
+
         foreach ($this->items as $idx => $item) {
+            $articulo = Articulo::find($item['articulo_id']);
+            if (! $articulo) {
+                continue;
+            }
+
             if (($item['seguimiento'] ?? '') === 'serie') {
                 $cantidad = (int) ($item['cantidad'] ?? 0);
                 $seleccionadas = is_array($item['series']) ? count($item['series']) : 0;
@@ -229,15 +247,34 @@ class Create extends Component
                     $this->addError("items.$idx.series", "Debes seleccionar exactamente {$cantidad} series.");
                     return;
                 }
+
+                $seriesValidas = ArticuloSerie::query()
+                    ->whereIn('id', $item['series'])
+                    ->where('articulo_id', $articulo->id)
+                    ->where('unidad_id', $unidadId)
+                    ->where('estado', 'disponible')
+                    ->count();
+
+                if ($seriesValidas !== $cantidad) {
+                    $this->addError("items.$idx.series", 'Alguna serie no pertenece a la unidad o no esta disponible.');
+                    return;
+                }
+            } else {
+                $stock = $inventario->ensure($unidadId, $articulo->id);
+                if ((float) $stock->cantidad_disponible < (float) $item['cantidad']) {
+                    $this->addError("items.$idx.cantidad", 'Stock insuficiente en la unidad para el articulo seleccionado.');
+                    return;
+                }
             }
         }
 
-        DB::transaction(function () {
+        DB::transaction(function () use ($unidadId, $inventario) {
             $operacion = Operacion::create([
                 'tipo' => 'asignacion',
                 'evento_id' => $this->evento_id,
-                'policia_id' => $this->policia_id,
+                'usuario_destino_id' => $this->policia_id,
                 'actor_id' => Auth::id(),
+                'unidad_id' => $unidadId,
                 'fecha' => now(),
                 'observaciones' => $this->observaciones,
             ]);
@@ -250,7 +287,7 @@ class Create extends Component
                     'condicion' => 'bueno',
                 ]);
 
-                if (($item['seguimiento'] ?? '') === 'serie' && !empty($item['series'])) {
+                if (($item['seguimiento'] ?? '') === 'serie' && ! empty($item['series'])) {
                     foreach ($item['series'] as $serieId) {
                         OperacionDetalleSerie::create([
                             'operacion_detalle_id' => $detalle->id,
@@ -262,6 +299,12 @@ class Create extends Component
                             'operacion_detalle_id_actual' => $detalle->id,
                         ]);
                     }
+                } else {
+                    $inventario->assign(
+                        $unidadId,
+                        Articulo::findOrFail($item['articulo_id']),
+                        (float) $item['cantidad']
+                    );
                 }
             }
 

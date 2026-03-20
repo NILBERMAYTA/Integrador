@@ -40,7 +40,7 @@
                             <td class="px-6 py-3">
                                 <div class="font-medium text-[var(--color-on-surface-strong)]">{{ $item['articulo'] }}</div>
                                 <div class="text-xs text-[var(--color-on-surface)] opacity-70">
-                                    Seguimiento: {{ strtoupper($item['seguimiento']) }}
+                                    Gestion: {{ $item['seguimiento'] === 'serie' ? 'Por serie' : 'Por cantidad' }}
                                 </div>
                             </td>
                             <td class="px-6 py-3 text-center">{{ $item['cantidad_prestada'] }}</td>

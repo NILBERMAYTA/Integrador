@@ -7,6 +7,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
@@ -27,6 +30,7 @@ class User extends Authenticatable
         'numero_escalafon',
         'fecha_ingreso',
         'foto',
+        'unidad_id',
         'remember_token',
     ];
 
@@ -36,9 +40,36 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'fecha_ingreso'     => 'date',
         'can_login'         => 'boolean',
-        // enums de Postgres se manejan como string
         'role'              => 'string',
+        'unidad_id'         => 'integer',
     ];
+
+    public function unidad(): BelongsTo
+    {
+        return $this->belongsTo(Unidad::class, 'unidad_id');
+    }
+
+    public function asignacionesUnidad(): HasMany
+    {
+        return $this->hasMany(UserUnidadAsignacion::class, 'user_id');
+    }
+
+    public function unidadActualAsignacion(): HasOne
+    {
+        return $this->hasOne(UserUnidadAsignacion::class, 'user_id')->latestOfMany('fecha_transferencia');
+    }
+
+    public function getUnidadActualAttribute(): ?Unidad
+    {
+        return $this->relationLoaded('unidad')
+            ? $this->getRelation('unidad')
+            : $this->unidad()->first();
+    }
+
+    public function getUnidadActualIdAttribute(): ?int
+    {
+        return $this->unidad_id;
+    }
 
     // Ordena por el apellido completo concatenado
     public function scopeOrderByApellidos(Builder $query, string $direction = 'asc'): Builder
@@ -69,7 +100,17 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->isAdministradorGeneral() || $this->isAdministradorUnidad();
+    }
+
+    public function isAdministradorGeneral(): bool
+    {
+        return $this->hasRole('administrador_general');
+    }
+
+    public function isAdministradorUnidad(): bool
+    {
+        return $this->hasRole('administrador_unidad');
     }
 
     /**
@@ -91,7 +132,7 @@ class User extends Authenticatable
     // Operaciones donde el usuario es el receptor/afectado (policía)
     public function operacionesComoPolicia()
     {
-        return $this->hasMany(Operacion::class, 'policia_id');
+        return $this->hasMany(Operacion::class, 'usuario_destino_id');
     }
 
     // Operaciones registradas por el usuario (furriel/admin)
@@ -118,6 +159,20 @@ class User extends Authenticatable
     public function incidenciasComoPolicia()
     {
         return $this->hasMany(Incidencia::class, 'policia_id');
+    }
+
+    public function scopeForUnidad(Builder $query, ?int $unidadId): Builder
+    {
+        return $query->when($unidadId, fn (Builder $builder) => $builder->where('unidad_id', $unidadId));
+    }
+
+    public function scopeVisibleTo(Builder $query, ?self $actor): Builder
+    {
+        if (! $actor || $actor->isAdministradorGeneral()) {
+            return $query;
+        }
+
+        return $query->where('unidad_id', $actor->unidad_id);
     }
 
     public function initials(): string

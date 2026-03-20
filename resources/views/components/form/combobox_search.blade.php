@@ -2,9 +2,9 @@
     'label' => null,
     'name',
     'options' => [],
-    'placeholder' => 'Please select',
-    'searchPlaceholder' => 'Search',
-    'noResultsText' => 'No matches found',
+    'placeholder' => 'Seleccione una opcion',
+    'searchPlaceholder' => 'Buscar',
+    'noResultsText' => 'No se encontraron coincidencias',
     'value' => null,
     'required' => false,
 ])
@@ -136,7 +136,7 @@
                     type="text"
                     class="w-full border-b border-outline bg-surface-alt py-2.5 pl-11 pr-4 text-sm text-on-surface focus:outline-hidden focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-75 dark:border-outline-dark dark:bg-surface-dark-alt dark:text-on-surface-dark dark:focus-visible:border-primary-dark"
                     name="searchField"
-                    aria-label="Search"
+                    aria-label="Buscar"
                     x-on:input="getFilteredOptions($el.value)"
                     x-ref="searchField"
                     x-on:keydown.stop
@@ -158,7 +158,7 @@
                         tabindex="0"
                     >
                         <span x-bind:class="selectedOption == item ? 'font-bold' : null" x-text="item.label"></span>
-                        <span class="sr-only" x-text="selectedOption == item ? 'selected' : null"></span>
+                        <span class="sr-only" x-text="selectedOption == item ? 'seleccionado' : null"></span>
                         <svg x-cloak x-show="selectedOption == item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" class="size-4" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
                         </svg>

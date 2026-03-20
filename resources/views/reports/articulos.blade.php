@@ -23,8 +23,7 @@
         <th>Nombre</th>
         <th>CategorÃ­a</th>
         <th>Tipo</th>
-        <th>Seguimiento</th>
-        <th>Unidad</th>
+        <th>Gestion</th>
       </tr>
     </thead>
     <tbody>
@@ -34,8 +33,7 @@
           <td>{{ $art->nombre }}</td>
           <td>{{ $art->categoria?->nombre ?? 'â€”' }}</td>
           <td>{{ $art->tipo }}</td>
-          <td>{{ $art->seguimiento }}</td>
-          <td>{{ $art->unidad_medida }}</td>
+          <td>{{ $art->tipo === 'reutilizable' ? 'Serie' : 'Cantidad' }}</td>
         </tr>
       @endforeach
     </tbody>

@@ -43,9 +43,9 @@
           <td>{{ $art->nombre }}</td>
           <td>{{ $art->categoria?->nombre ?? 'â€”' }}</td>
           <td>{{ ucfirst($art->tipo ?? '') }}</td>
-          <td class="center">+{{ number_format($entrada, $art->seguimiento === 'cantidad' ? 2 : 0) }}</td>
-          <td class="center">-{{ number_format($salida, $art->seguimiento === 'cantidad' ? 2 : 0) }}</td>
-          <td class="center">{{ number_format($total, $art->seguimiento === 'cantidad' ? 2 : 0) }}</td>
+          <td class="center">+{{ number_format($entrada, $art->isCantidad() ? 2 : 0) }}</td>
+          <td class="center">-{{ number_format($salida, $art->isCantidad() ? 2 : 0) }}</td>
+          <td class="center">{{ number_format($total, $art->isCantidad() ? 2 : 0) }}</td>
           <td>{{ $ultimo ?? 'â€”' }}</td>
         </tr>
       @endforeach

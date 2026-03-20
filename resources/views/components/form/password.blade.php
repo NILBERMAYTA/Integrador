@@ -1,7 +1,7 @@
 @props([
-    'label' => 'Password',
+    'label' => 'Contrasena',
     'name' => 'password',
-    'placeholder' => 'Ingrese la contraseña',
+    'placeholder' => 'Ingrese la contrasena',
     'autocomplete' => 'current-password',
     'required' => false,
     'value' => null,
@@ -37,7 +37,7 @@
             type="button"
             x-on:click="showPassword = !showPassword"
             class="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface/70 hover:text-on-surface dark:text-on-surface-dark/70 dark:hover:text-on-surface-dark"
-            aria-label="Mostrar/Ocultar password"
+            aria-label="Mostrar u ocultar contrasena"
         >
             <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="size-5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />

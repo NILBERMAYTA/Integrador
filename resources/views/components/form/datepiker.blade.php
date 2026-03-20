@@ -1,7 +1,7 @@
 @props([
     'label' => null,
     'name',
-    'placeholder' => 'Select date',
+    'placeholder' => 'Selecciona una fecha',
     'value' => null,
     'format' => 'YYYY-MM-DD',
     'required' => false,
@@ -23,8 +23,8 @@
         datePickerDay: '',
         datePickerDaysInMonth: [],
         datePickerBlankDaysInMonth: [],
-        datePickerMonthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-        datePickerDays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        datePickerMonthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+        datePickerDays: ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
         allowEmpty: @js($allowEmpty),
         ensureContextDate() {
             const monthNum = Number(this.datePickerMonth);

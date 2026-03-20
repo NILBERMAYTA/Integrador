@@ -25,15 +25,15 @@
         >
             <div x-show="!showRecoveryInput">
                 <x-auth-header
-                    :title="__('Authentication Code')"
-                    :description="__('Enter the authentication code provided by your authenticator application.')"
+                    :title="__('Codigo de autenticacion')"
+                    :description="__('Ingresa el codigo generado por tu aplicacion autenticadora.')"
                 />
             </div>
 
             <div x-show="showRecoveryInput">
                 <x-auth-header
-                    :title="__('Recovery Code')"
-                    :description="__('Please confirm access to your account by entering one of your emergency recovery codes.')"
+                    :title="__('Codigo de recuperacion')"
+                    :description="__('Confirma el acceso a tu cuenta ingresando uno de tus codigos de recuperacion.')"
                 />
             </div>
 
@@ -82,15 +82,15 @@
                         type="submit"
                         class="w-full"
                     >
-                        {{ __('Continue') }}
+                        {{ __('Continuar') }}
                     </flux:button>
                 </div>
 
                 <div class="mt-5 space-x-0.5 text-sm leading-5 text-center">
-                    <span class="opacity-50">{{ __('or you can') }}</span>
+                    <span class="opacity-50">{{ __('o puedes') }}</span>
                     <div class="inline font-medium underline cursor-pointer opacity-80">
-                        <span x-show="!showRecoveryInput" @click="toggleInput()">{{ __('login using a recovery code') }}</span>
-                        <span x-show="showRecoveryInput" @click="toggleInput()">{{ __('login using an authentication code') }}</span>
+                        <span x-show="!showRecoveryInput" @click="toggleInput()">{{ __('ingresar con un codigo de recuperacion') }}</span>
+                        <span x-show="showRecoveryInput" @click="toggleInput()">{{ __('ingresar con un codigo de autenticacion') }}</span>
                     </div>
                 </div>
             </form>

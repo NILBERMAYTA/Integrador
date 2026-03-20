@@ -12,10 +12,10 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
+                <flux:navlist.group :heading="__('Plataforma')" class="grid">
                     @role('policia')
                         @can('prestamos.view')
-                            <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Mis Prestamos</flux:navlist.item>
+                            <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Mis prestamos</flux:navlist.item>
                         @endcan
                     @else
                         @can('dashboard.view')
@@ -23,6 +23,9 @@
                         @endcan
                         @can('users.manage')
                             <flux:navlist.item icon="user" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Usuarios</flux:navlist.item>
+                        @endcan
+                        @can('units.manage')
+                            <flux:navlist.item icon="building-office-2" :href="route('unidades.index')" :current="request()->routeIs('unidades.*')" wire:navigate>Unidades</flux:navlist.item>
                         @endcan
                         @can('articulos.manage')
                             <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
@@ -35,7 +38,7 @@
                             <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos</flux:navlist.item>
                         @endcan
                         @can('prestamos.manage')
-                            <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos y Devoluciones</flux:navlist.item>
+                            <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos y devoluciones</flux:navlist.item>
                         @endcan
                         @can('mantenimientos.manage')
                             <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
@@ -90,7 +93,7 @@
                     <flux:menu.separator />
 
                     <flux:menu.radio.group>
-                        <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
+                        <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Configuracion') }}</flux:menu.item>
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
@@ -98,7 +101,7 @@
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
+                            {{ __('Cerrar sesion') }}
                         </flux:menu.item>
                     </form>
                 </flux:menu>
@@ -140,7 +143,7 @@
                     <flux:menu.separator />
 
                     <flux:menu.radio.group>
-                        <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
+                        <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Configuracion') }}</flux:menu.item>
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
@@ -148,7 +151,7 @@
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
+                            {{ __('Cerrar sesion') }}
                         </flux:menu.item>
                     </form>
                 </flux:menu>

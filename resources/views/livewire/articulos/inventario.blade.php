@@ -29,7 +29,7 @@
     </div>
 
     {{-- Filtros --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)]">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)]">
     
         <div>
             <label class="block text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] mb-2">
@@ -52,8 +52,21 @@
             </select>
         </div>
 
+        <div>
+            <label class="block text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] mb-2">
+                Unidad
+            </label>
+            <select wire:model.live="unidad_id" 
+                            class="w-full px-3 py-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]">
+                <option value="">Todas las unidades</option>
+                @foreach($unidades as $unidad)
+                    <option value="{{ $unidad->id }}">{{ ($unidad->sigla ? $unidad->sigla.' - ' : '').$unidad->nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+
         <div class="flex items-end">
-            <button type="button" wire:click="$set('search', ''); $set('categoria_id', null);"
+            <button type="button" wire:click="$set('search', ''); $set('categoria_id', null); $set('unidad_id', null);"
                             class="w-full px-4 py-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] font-medium hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-all">
                 Limpiar filtros
             </button>
@@ -129,17 +142,17 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold bg-[var(--color-success)]/10 text-[var(--color-success)]">
-                                    +{{ number_format($entrada, $art->seguimiento === 'cantidad' ? 2 : 0) }}
+                                    +{{ number_format($entrada, $art->isCantidad() ? 2 : 0) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold bg-[var(--color-danger)]/10 text-[var(--color-danger)]">
-                                    -{{ number_format($salida, $art->seguimiento === 'cantidad' ? 2 : 0) }}
+                                    -{{ number_format($salida, $art->isCantidad() ? 2 : 0) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <span class="inline-flex px-3 py-1 rounded-full text-sm font-bold {{ $isNegative ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' : ($isZero ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : ($isLow ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : 'bg-[var(--color-success)]/10 text-[var(--color-success)]')) }}">
-                                    {{ number_format($total, $art->seguimiento === 'cantidad' ? 2 : 0) }}
+                                    {{ number_format($total, $art->isCantidad() ? 2 : 0) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-left text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] text-xs opacity-75">

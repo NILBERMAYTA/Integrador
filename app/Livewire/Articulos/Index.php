@@ -4,10 +4,10 @@ namespace App\Livewire\Articulos;
 
 use App\Models\Articulo;
 use App\Models\Categoria;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Url;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class Index extends Component
 {
@@ -16,38 +16,27 @@ class Index extends Component
     protected $listeners = [
         'closeAjuste' => 'closeAjuste',
     ];
-    // Ajuste de stock: carga de modal con componente independiente
+
     public ?Articulo $ajusteArticulo = null;
 
-    // ---------------------------
-    // Filtros (persisten en URL)
-    // ---------------------------
     #[Url(except: '')]
     public string $search = '';
 
     #[Url(except: '')]
-    public string $categoria = '';   // id de categoria
+    public string $categoria = '';
 
     #[Url(except: '')]
-    public string $tipo = '';        // reutilizable|consumible
+    public string $tipo = '';
 
-    #[Url(except: '')]
-    public string $seguimiento = ''; // serie|cantidad
-
-    // ---------------------------
-    // Orden
-    // ---------------------------
     #[Url(except: 'nombre')]
     public string $sortField = 'nombre';
 
     #[Url(except: 'asc')]
     public string $sortDirection = 'asc';
 
-    // Resetear página al cambiar filtros/búsqueda
-    public function updatedSearch()     { $this->resetPage(); }
-    public function updatedCategoria()  { $this->resetPage(); }
-    public function updatedTipo()       { $this->resetPage(); }
-    public function updatedSeguimiento(){ $this->resetPage(); }
+    public function updatedSearch() { $this->resetPage(); }
+    public function updatedCategoria() { $this->resetPage(); }
+    public function updatedTipo() { $this->resetPage(); }
 
     public function sortBy(string $field): void
     {
@@ -60,23 +49,17 @@ class Index extends Component
         $this->resetPage();
     }
 
-    /**
-     * Eliminar artículo (soft delete)
-     */
     public function confirmarEliminacion(int $id): void
     {
         try {
             $art = Articulo::findOrFail($id);
-            $art->delete(); // soft
-            session()->flash('success', 'Artículo eliminado exitosamente.');
+            $art->delete();
+            session()->flash('success', 'Articulo eliminado exitosamente.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Error al eliminar el artículo: '.$e->getMessage());
+            session()->flash('error', 'Error al eliminar el articulo: '.$e->getMessage());
         }
     }
 
-    /**
-     * Exportar PDF respetando filtros/orden actuales
-     */
     public function exportPdf()
     {
         $dir = $this->sortDirection === 'desc' ? 'DESC' : 'ASC';
@@ -87,23 +70,19 @@ class Index extends Component
                 $term = "%{$this->search}%";
                 $q->where(function ($qq) use ($term) {
                     $qq->where('nombre', 'ILIKE', $term)
-                       ->orWhere('unidad_medida', 'ILIKE', $term)
-                       ->orWhereHas('categoria', fn($qc)=>$qc->where('nombre', 'ILIKE', $term));
+                        ->orWhereHas('categoria', fn ($qc) => $qc->where('nombre', 'ILIKE', $term));
                 });
             })
-            ->when($this->categoria !== '', fn($q) => $q->where('categoria_id', (int)$this->categoria))
-            ->when($this->tipo !== '',       fn($q) => $q->where('tipo', $this->tipo))
-            ->when($this->seguimiento !== '',fn($q) => $q->where('seguimiento', $this->seguimiento))
+            ->when($this->categoria !== '', fn ($q) => $q->where('categoria_id', (int) $this->categoria))
+            ->when($this->tipo !== '', fn ($q) => $q->where('tipo', $this->tipo))
             ->when(true, function ($q) use ($dir) {
                 switch ($this->sortField) {
                     case 'categoria':
-                        $q->join('categorias','categorias.id','=','articulos.categoria_id')
-                          ->orderByRaw("LOWER(categorias.nombre) $dir NULLS LAST")
-                          ->select('articulos.*'); // evitar columnas ambiguas
+                        $q->join('categorias', 'categorias.id', '=', 'articulos.categoria_id')
+                            ->orderByRaw("LOWER(categorias.nombre) $dir NULLS LAST")
+                            ->select('articulos.*');
                         break;
                     case 'tipo':
-                    case 'seguimiento':
-                    case 'unidad_medida':
                     case 'nombre':
                         $q->orderByRaw("LOWER({$this->sortField}) $dir NULLS LAST");
                         break;
@@ -113,16 +92,13 @@ class Index extends Component
             })
             ->get();
 
-        $pdf = PDF::loadView('reports.articulos', compact('articulos'))
-                  ->setPaper('a4', 'portrait');
+        $pdf = PDF::loadView('reports.articulos', compact('articulos'))->setPaper('a4', 'portrait');
 
         return response()->streamDownload(
-            fn() => print($pdf->output()),
+            fn () => print($pdf->output()),
             'articulos_'.now()->format('Ymd_His').'.pdf'
         );
     }
-
-    
 
     public function render()
     {
@@ -130,33 +106,23 @@ class Index extends Component
 
         $query = Articulo::query()
             ->with('categoria:id,nombre')
-
-            // Búsqueda por nombre, unidad o categoría
             ->when($this->search !== '', function ($q) {
                 $term = "%{$this->search}%";
                 $q->where(function ($qq) use ($term) {
                     $qq->where('nombre', 'ILIKE', $term)
-                       ->orWhere('unidad_medida', 'ILIKE', $term)
-                       ->orWhereHas('categoria', fn($qc)=>$qc->where('nombre', 'ILIKE', $term));
+                        ->orWhereHas('categoria', fn ($qc) => $qc->where('nombre', 'ILIKE', $term));
                 });
             })
-
-            // Filtros
-            ->when($this->categoria !== '', fn($q) => $q->where('categoria_id', (int)$this->categoria))
-            ->when($this->tipo !== '',       fn($q) => $q->where('tipo', $this->tipo))
-            ->when($this->seguimiento !== '',fn($q) => $q->where('seguimiento', $this->seguimiento))
-
-            // Orden
+            ->when($this->categoria !== '', fn ($q) => $q->where('categoria_id', (int) $this->categoria))
+            ->when($this->tipo !== '', fn ($q) => $q->where('tipo', $this->tipo))
             ->when(true, function ($q) use ($dir) {
                 switch ($this->sortField) {
                     case 'categoria':
-                        $q->join('categorias','categorias.id','=','articulos.categoria_id')
-                          ->orderByRaw("LOWER(categorias.nombre) $dir NULLS LAST")
-                          ->select('articulos.*');
+                        $q->join('categorias', 'categorias.id', '=', 'articulos.categoria_id')
+                            ->orderByRaw("LOWER(categorias.nombre) $dir NULLS LAST")
+                            ->select('articulos.*');
                         break;
                     case 'tipo':
-                    case 'seguimiento':
-                    case 'unidad_medida':
                     case 'nombre':
                         $q->orderByRaw("LOWER({$this->sortField}) $dir NULLS LAST");
                         break;
@@ -167,16 +133,11 @@ class Index extends Component
             });
 
         $articulos = $query->paginate(10);
+        $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
 
-        // Catálogo de categorías para el filtro
-        $categorias = Categoria::orderBy('nombre')->get(['id','nombre']);
-
-        return view('livewire.articulos.index', compact('articulos','categorias'));
+        return view('livewire.articulos.index', compact('articulos', 'categorias'));
     }
 
-    /**
-     * Abrir modal para ajuste: carga el modelo Articulo y muestra el modal.
-     */
     public function abrirAjuste(int $id): void
     {
         $this->ajusteArticulo = Articulo::find($id);

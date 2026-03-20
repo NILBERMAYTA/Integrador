@@ -69,7 +69,7 @@
                     <tr>
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Articulo (catalogo)</th>
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Cantidad</th>
-                        <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Seguimiento</th>
+                        <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Gestion</th>
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Series (si aplica)</th>
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-right">Acciones</th>
                     </tr>
@@ -93,9 +93,9 @@
                             </td>
                             <td class="px-6 py-3 text-center">
                                 @if($row['seguimiento'] === 'serie')
-                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">SERIE</span>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">POR SERIE</span>
                                 @elseif($row['seguimiento'] === 'cantidad')
-                                    <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-bold">CANTIDAD</span>
+                                    <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-bold">POR CANTIDAD</span>
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif
@@ -121,7 +121,7 @@
                                         @error("items.{$i}.series.*") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                     </div>
                                 @else
-                                    <p class="text-xs text-[var(--color-on-surface)] opacity-60">No requiere series.</p>
+                                    <p class="text-xs text-[var(--color-on-surface)] opacity-60">Gestionado por cantidad.</p>
                                 @endif
                             </td>
                             <td class="px-6 py-3 text-right">

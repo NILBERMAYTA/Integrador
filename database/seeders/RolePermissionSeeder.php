@@ -17,6 +17,8 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             'dashboard.view',
             'users.manage',
+            'users.transfer',
+            'units.manage',
             'categorias.manage',
             'articulos.manage',
             'eventos.manage',
@@ -30,11 +32,23 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission);
         }
 
-        $admin = Role::findOrCreate('admin');
+        $adminGeneral = Role::findOrCreate('administrador_general');
+        $adminUnidad = Role::findOrCreate('administrador_unidad');
         $furriel = Role::findOrCreate('furriel');
         $policia = Role::findOrCreate('policia');
 
-        $admin->syncPermissions($permissions);
+        $adminGeneral->syncPermissions($permissions);
+        $adminUnidad->syncPermissions([
+            'dashboard.view',
+            'users.manage',
+            'categorias.manage',
+            'articulos.manage',
+            'eventos.manage',
+            'mantenimientos.manage',
+            'prestamos.view',
+            'prestamos.manage',
+            'activity_logs.view',
+        ]);
         $furriel->syncPermissions([
             'dashboard.view',
             'articulos.manage',
@@ -46,7 +60,7 @@ class RolePermissionSeeder extends Seeder
             'prestamos.view',
         ]);
 
-        $validRoles = ['admin', 'furriel', 'policia'];
+        $validRoles = ['administrador_general', 'administrador_unidad', 'furriel', 'policia'];
 
         User::query()
             ->whereNotNull('role')

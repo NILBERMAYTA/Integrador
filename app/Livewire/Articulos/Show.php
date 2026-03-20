@@ -2,42 +2,123 @@
 
 namespace App\Livewire\Articulos;
 
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\Articulo;
 use App\Models\ArticuloSerie;
 use App\Models\OperacionDetalle;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\DB;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class Show extends Component
 {
     use WithPagination;
 
     public Articulo $articulo;
-
-    // Opcional: número de items por página para series
     public int $perPage = 15;
+    public string $searchSerie = '';
+    public string $estadoFiltro = '';
+    public string $condicionFiltro = '';
+    public array $condicionesActuales = [];
 
     public function mount(Articulo $articulo)
     {
         $this->articulo = $articulo;
     }
 
+    public function updatingSearchSerie(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingEstadoFiltro(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCondicionFiltro(): void
+    {
+        $this->resetPage();
+    }
+
+    public function guardarCondicion(int $serieId): void
+    {
+        abort_unless(auth()->user()?->can('articulos.manage'), 403);
+
+        $condicion = $this->condicionesActuales[$serieId] ?? null;
+        if (! in_array($condicion, $this->condicionesDisponibles(), true)) {
+            $this->addError("condicionesActuales.$serieId", 'Condicion no valida.');
+            return;
+        }
+
+        $serie = ArticuloSerie::query()
+            ->where('articulo_id', $this->articulo->id)
+            ->whereKey($serieId)
+            ->firstOrFail();
+
+        $serie->update([
+            'condicion_actual' => $condicion,
+        ]);
+
+        session()->flash('success', 'Condicion fisica actualizada.');
+    }
+
     public function render()
     {
-        // Si el artículo es por series, devolvemos la paginación de series.
-        if ($this->articulo->seguimiento === 'serie') {
-            $series = ArticuloSerie::query()
+        if ($this->articulo->isSerializado()) {
+            $baseSeries = ArticuloSerie::query()
+                ->with([
+                    'unidad',
+                    'operacionDetalleActual.operacion.usuarioDestino',
+                    'mantenimientos' => fn ($q) => $q->latest('fecha_inicio'),
+                    'inspecciones' => fn ($q) => $q->latest('realizada_en'),
+                    'incidencias.tipo',
+                    'incidencias' => fn ($q) => $q->latest('fecha'),
+                ])
                 ->where('articulo_id', $this->articulo->id)
-                ->whereNull('deleted_at')
+                ->whereNull('deleted_at');
+
+            $series = (clone $baseSeries)
+                ->when($this->searchSerie !== '', fn ($q) => $q->where('codigo_serie', 'ILIKE', '%'.$this->searchSerie.'%'))
+                ->when($this->estadoFiltro !== '', fn ($q) => $q->where('estado', $this->estadoFiltro))
+                ->when($this->condicionFiltro !== '', fn ($q) => $q->where('condicion_actual', $this->condicionFiltro))
                 ->orderBy('created_at', 'desc')
                 ->paginate($this->perPage);
 
-            return view('livewire.articulos.show', compact('series'));
+            $seriesResumen = (clone $baseSeries)->get();
+
+            $resumen = [
+                'total' => $seriesResumen->count(),
+                'disponibles' => $seriesResumen->where('estado', 'disponible')->count(),
+                'asignados' => $seriesResumen->where('estado', 'asignado')->count(),
+                'mantenimiento' => $seriesResumen->where('estado', 'en_mantenimiento')->count(),
+                'observados' => $seriesResumen->where('estado', 'observado')->count(),
+                'inoperativos' => $seriesResumen->where('estado', 'inoperativo')->count(),
+                'baja' => $seriesResumen->where('estado', 'dado_de_baja')->count(),
+                'cond_bueno' => $seriesResumen->where('condicion_actual', 'bueno')->count(),
+                'cond_defectos' => $seriesResumen->where('condicion_actual', 'con_defectos')->count(),
+                'cond_malo' => $seriesResumen->where('condicion_actual', 'malo')->count(),
+                'cond_inoperativo' => $seriesResumen->where('condicion_actual', 'inoperativo')->count(),
+            ];
+
+            $estadosDisponibles = [
+                'disponible',
+                'asignado',
+                'en_mantenimiento',
+                'observado',
+                'inoperativo',
+                'dado_de_baja',
+            ];
+
+            foreach ($series as $serie) {
+                $this->condicionesActuales[$serie->id] = $this->condicionesActuales[$serie->id] ?? $serie->condicion_actual;
+            }
+
+            $condicionesDisponibles = $this->condicionesDisponibles();
+
+            return view('livewire.articulos.show', compact('series', 'resumen', 'estadosDisponibles', 'condicionesDisponibles'));
         }
 
-        // Para artículos por cantidad, mostramos los movimientos (operacion_detalles)
         $detalles = OperacionDetalle::query()
             ->with('operacion')
             ->where('articulo_id', $this->articulo->id)
@@ -47,14 +128,11 @@ class Show extends Component
         return view('livewire.articulos.show', compact('detalles'));
     }
 
-    /**
-     * Exportar PDF del artÃ­culo actual
-     */
     public function exportPdf()
     {
         $articulo = $this->articulo->load('categoria');
 
-        if ($articulo->seguimiento === 'serie') {
+        if ($articulo->isSerializado()) {
             $series = ArticuloSerie::query()
                 ->where('articulo_id', $articulo->id)
                 ->whereNull('deleted_at')
@@ -65,6 +143,14 @@ class Show extends Component
                 'total' => $series->count(),
                 'disponibles' => $series->where('estado', 'disponible')->count(),
                 'asignados' => $series->where('estado', 'asignado')->count(),
+                'mantenimiento' => $series->where('estado', 'en_mantenimiento')->count(),
+                'observados' => $series->where('estado', 'observado')->count(),
+                'inoperativos' => $series->where('estado', 'inoperativo')->count(),
+                'baja' => $series->where('estado', 'dado_de_baja')->count(),
+                'cond_bueno' => $series->where('condicion_actual', 'bueno')->count(),
+                'cond_defectos' => $series->where('condicion_actual', 'con_defectos')->count(),
+                'cond_malo' => $series->where('condicion_actual', 'malo')->count(),
+                'cond_inoperativo' => $series->where('condicion_actual', 'inoperativo')->count(),
             ];
 
             $pdf = PDF::loadView('reports.articulo', [
@@ -109,8 +195,18 @@ class Show extends Component
         }
 
         return response()->streamDownload(
-            fn() => print($pdf->output()),
+            fn () => print($pdf->output()),
             'articulo_'.$articulo->id.'_'.now()->format('Ymd_His').'.pdf'
         );
+    }
+
+    private function condicionesDisponibles(): array
+    {
+        return [
+            'bueno',
+            'con_defectos',
+            'malo',
+            'inoperativo',
+        ];
     }
 }

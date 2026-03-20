@@ -21,7 +21,7 @@
                 @else
                     @can('dashboard.view')
                         <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                            {{ __('Dashboard') }}
+                            {{ __('Inicio') }}
                         </flux:navbar.item>
                     @endcan
                 @endrole
@@ -30,25 +30,25 @@
             <flux:spacer />
 
             <flux:navbar class="me-1.5 space-x-0.5 rtl:space-x-reverse py-0!">
-                <flux:tooltip :content="__('Search')" position="bottom">
-                    <flux:navbar.item class="!h-10 [&>div>svg]:size-5" icon="magnifying-glass" href="#" :label="__('Search')" />
+                <flux:tooltip :content="__('Buscar')" position="bottom">
+                    <flux:navbar.item class="!h-10 [&>div>svg]:size-5" icon="magnifying-glass" href="#" :label="__('Buscar')" />
                 </flux:tooltip>
-                <flux:tooltip :content="__('Repository')" position="bottom">
+                <flux:tooltip :content="__('Repositorio')" position="bottom">
                     <flux:navbar.item
                         class="h-10 max-lg:hidden [&>div>svg]:size-5"
                         icon="folder-git-2"
                         href="https://github.com/laravel/livewire-starter-kit"
                         target="_blank"
-                        :label="__('Repository')"
+                        :label="__('Repositorio')"
                     />
                 </flux:tooltip>
-                <flux:tooltip :content="__('Documentation')" position="bottom">
+                <flux:tooltip :content="__('Documentacion')" position="bottom">
                     <flux:navbar.item
                         class="h-10 max-lg:hidden [&>div>svg]:size-5"
                         icon="book-open-text"
                         href="https://laravel.com/docs/starter-kits#livewire"
                         target="_blank"
-                        label="Documentation"
+                        label="Documentacion"
                     />
                 </flux:tooltip>
             </flux:navbar>
@@ -83,7 +83,7 @@
                     <flux:menu.separator />
 
                     <flux:menu.radio.group>
-                        <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
+                        <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Configuracion') }}</flux:menu.item>
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
@@ -91,7 +91,7 @@
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
+                            {{ __('Cerrar sesion') }}
                         </flux:menu.item>
                     </form>
                 </flux:menu>
@@ -107,7 +107,7 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')">
+                <flux:navlist.group :heading="__('Plataforma')">
                     @role('policia')
                         @can('prestamos.view')
                             <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>
@@ -117,7 +117,7 @@
                     @else
                         @can('dashboard.view')
                             <flux:navlist.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                              {{ __('Dashboard') }}
+                              {{ __('Inicio') }}
                             </flux:navlist.item>
                         @endcan
                     @endrole
@@ -128,11 +128,11 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
+                    {{ __('Repositorio') }}
                 </flux:navlist.item>
 
                 <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
+                    {{ __('Documentacion') }}
                 </flux:navlist.item>
             </flux:navlist>
         </flux:sidebar>

@@ -2,37 +2,39 @@
 
 namespace App\Livewire\Users;
 
+use App\Models\Unidad;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Url;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class Index extends Component
 {
     use WithPagination;
 
-    // Filtros
     #[Url(except: '')]
     public string $search = '';
-    
+
     #[Url(except: '')]
     public string $rango = '';
-    
+
     #[Url(except: '')]
     public string $rol = '';
 
-    // Orden
+    #[Url(except: '')]
+    public string $unidad = '';
+
     #[Url(except: 'apellidos')]
     public string $sortField = 'apellidos';
-    
+
     #[Url(except: 'asc')]
     public string $sortDirection = 'asc';
 
-    // Resetear página al cambiar filtros/búsqueda
     public function updatedSearch() { $this->resetPage(); }
-    public function updatedRango()  { $this->resetPage(); }
-    public function updatedRol()    { $this->resetPage(); }
+    public function updatedRango() { $this->resetPage(); }
+    public function updatedRol() { $this->resetPage(); }
+    public function updatedUnidad() { $this->resetPage(); }
 
     public function sortBy(string $field): void
     {
@@ -42,47 +44,32 @@ class Index extends Component
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
+
         $this->resetPage();
     }
 
-    /**
-     * Eliminar usuario (soft delete)
-     */
     public function confirmarEliminacion(int $userId): void
     {
         try {
             $user = User::findOrFail($userId);
-            $user->delete(); 
+            $user->delete();
 
             session()->flash('success', 'Usuario eliminado exitosamente.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Error al eliminar el usuario: ' . $e->getMessage());
+            session()->flash('error', 'Error al eliminar el usuario: '.$e->getMessage());
         }
     }
 
     public function exportPdf()
     {
-        // Mismo orden y filtros de tu vista principal
         $dir = $this->sortDirection === 'desc' ? 'DESC' : 'ASC';
 
-        $users = \App\Models\User::query()
-            ->when($this->search !== '', function ($q) {
-                $term = "%{$this->search}%";
-                $q->where(function ($q) use ($term) {
-                    $q->where('name', 'ILIKE', $term)
-                    ->orWhere('apellido_paterno', 'ILIKE', $term)
-                    ->orWhere('apellido_materno', 'ILIKE', $term)
-                    ->orWhereRaw("(apellido_paterno || ' ' || apellido_materno) ILIKE ?", [$term])
-                    ->orWhere('numero_escalafon', 'ILIKE', $term);
-                });
-            })
-            ->when($this->rango !== '', fn($q) => $q->where('rango', $this->rango))
-            ->when($this->rol   !== '', fn($q) => $q->where('role',  $this->rol))
+        $users = $this->baseQuery()
             ->when(true, function ($q) use ($dir) {
                 switch ($this->sortField) {
                     case 'apellidos':
                         $q->orderByRaw("LOWER(apellido_paterno) $dir NULLS LAST")
-                        ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
+                            ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
                         break;
                     case 'name':
                     case 'numero_escalafon':
@@ -92,16 +79,15 @@ class Index extends Component
                         break;
                     default:
                         $q->orderByRaw("LOWER(apellido_paterno) $dir NULLS LAST")
-                        ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
+                            ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
                 }
             })
             ->get();
 
-        $pdf = PDF::loadView('reports.users', compact('users'))
-                ->setPaper('a4', 'portrait');
+        $pdf = PDF::loadView('reports.users', compact('users'))->setPaper('a4', 'portrait');
 
         return response()->streamDownload(
-            fn() => print($pdf->output()),
+            fn () => print($pdf->output()),
             'usuarios_'.now()->format('Ymd_His').'.pdf'
         );
     }
@@ -110,28 +96,12 @@ class Index extends Component
     {
         $dir = $this->sortDirection === 'desc' ? 'DESC' : 'ASC';
 
-        $users = User::query()
-            // Buscar por nombre, apellidos o número de escalafón
-            ->when($this->search !== '', function ($q) {
-                $term = "%{$this->search}%";
-                $q->where(function ($q) use ($term) {
-                    $q->where('name', 'ILIKE', $term)
-                      ->orWhere('apellido_paterno', 'ILIKE', $term)
-                      ->orWhere('apellido_materno', 'ILIKE', $term)
-                      ->orWhereRaw("CONCAT(apellido_paterno, ' ', apellido_materno) ILIKE ?", [$term])
-                      ->orWhere('numero_escalafon', 'ILIKE', $term);
-                });
-            })
-            // Filtros por rango y rol
-            ->when($this->rango !== '', fn($q) => $q->where('rango', $this->rango))
-            ->when($this->rol !== '',   fn($q) => $q->where('role',  $this->rol))
-
-            // Ordenamiento
+        $users = $this->baseQuery()
             ->when(true, function ($q) use ($dir) {
                 switch ($this->sortField) {
                     case 'apellidos':
                         $q->orderByRaw("LOWER(apellido_paterno) $dir NULLS LAST")
-                          ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
+                            ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
                         break;
                     case 'name':
                     case 'numero_escalafon':
@@ -141,16 +111,39 @@ class Index extends Component
                         break;
                     default:
                         $q->orderByRaw("LOWER(apellido_paterno) $dir NULLS LAST")
-                          ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
+                            ->orderByRaw("LOWER(apellido_materno) $dir NULLS LAST");
                         break;
                 }
             })
             ->paginate(10);
 
-        // Catálogos para selects
         $rangos = User::select('rango')->distinct()->whereNotNull('rango')->pluck('rango')->sort()->values();
-        $roles  = User::select('role')->distinct()->whereNotNull('role')->pluck('role')->sort()->values();
+        $roles = User::select('role')->distinct()->whereNotNull('role')->pluck('role')->sort()->values();
+        $unidades = Unidad::query()
+            ->when(! auth()->user()?->isAdministradorGeneral(), fn ($q) => $q->where('id', auth()->user()?->unidad_id))
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'sigla']);
 
-        return view('livewire.users.index', compact('users', 'rangos', 'roles'));
+        return view('livewire.users.index', compact('users', 'rangos', 'roles', 'unidades'));
+    }
+
+    private function baseQuery()
+    {
+        return User::query()
+            ->with('unidad')
+            ->visibleTo(auth()->user())
+            ->when($this->search !== '', function ($q) {
+                $term = "%{$this->search}%";
+                $q->where(function ($q) use ($term) {
+                    $q->where('name', 'ILIKE', $term)
+                        ->orWhere('apellido_paterno', 'ILIKE', $term)
+                        ->orWhere('apellido_materno', 'ILIKE', $term)
+                        ->orWhereRaw("(apellido_paterno || ' ' || apellido_materno) ILIKE ?", [$term])
+                        ->orWhere('numero_escalafon', 'ILIKE', $term);
+                });
+            })
+            ->when($this->rango !== '', fn ($q) => $q->where('rango', $this->rango))
+            ->when($this->rol !== '', fn ($q) => $q->where('role', $this->rol))
+            ->when($this->unidad !== '', fn ($q) => $q->where('unidad_id', $this->unidad));
     }
 }

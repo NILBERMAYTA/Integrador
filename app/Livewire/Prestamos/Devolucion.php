@@ -6,6 +6,7 @@ use App\Models\ArticuloSerie;
 use App\Models\Operacion;
 use App\Models\OperacionDetalle;
 use App\Models\OperacionDetalleSerie;
+use App\Services\InventarioUnidadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -20,6 +21,7 @@ class Devolucion extends Component
     {
         abort_unless(auth()->user()?->isAdmin() || auth()->user()?->isFurriel(), 403);
         abort_unless($operacion->tipo === 'asignacion', 404);
+        abort_unless(auth()->user()?->isAdministradorGeneral() || auth()->user()?->unidad_id === $operacion->unidad_id, 403);
 
         $this->operacion = $operacion->load(['detalles.articulo', 'detalles.series.serie']);
         $this->calcularDevueltosCantidad();
@@ -53,7 +55,7 @@ class Devolucion extends Component
                 'detalle_id' => $detalle->id,
                 'articulo_id' => $detalle->articulo_id,
                 'articulo' => $detalle->articulo?->nombre ?? 'Articulo',
-                'seguimiento' => $detalle->articulo?->seguimiento ?? 'cantidad',
+                'seguimiento' => $detalle->articulo?->isSerializado() ? 'serie' : 'cantidad',
                 'cantidad_prestada' => $detalle->cantidad,
                 'cantidad_pendiente' => $pendienteCantidad,
                 'cantidad_devolver' => $pendienteCantidad,
@@ -76,7 +78,7 @@ class Devolucion extends Component
         ];
     }
 
-    public function save()
+    public function save(InventarioUnidadService $inventario)
     {
         $this->validate();
 
@@ -99,8 +101,9 @@ class Devolucion extends Component
             $op = Operacion::create([
                 'tipo' => 'devolucion',
                 'evento_id' => $this->operacion->evento_id,
-                'policia_id' => $this->operacion->policia_id,
+                'usuario_destino_id' => $this->operacion->usuario_destino_id,
                 'actor_id' => Auth::id(),
+                'unidad_id' => $this->operacion->unidad_id,
                 'fecha' => now(),
                 'observaciones' => 'Devolucion de operacion '.$this->operacion->id,
                 'operacion_padre_id' => $this->operacion->id,
@@ -141,6 +144,12 @@ class Devolucion extends Component
                         'cantidad' => $item['cantidad_devolver'],
                         'condicion' => 'bueno',
                     ]);
+
+                    $inventario->returnAssigned(
+                        $this->operacion->unidad_id,
+                        \App\Models\Articulo::findOrFail($item['articulo_id']),
+                        (float) $item['cantidad_devolver']
+                    );
                 }
             }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Categoria;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,16 +12,31 @@ class ArticuloFactory extends Factory
 {
     public function definition(): array
     {
-        $tipo = fake()->randomElement(['reutilizable','consumible']);
-        $seg  = $tipo==='reutilizable' ? 'serie' : 'cantidad';
-
+        $tipo = fake()->randomElement(['reutilizable', 'consumible']);
         return [
-            'categoria_id' => 1, // cámbialo/relaciónalo en el seeder con ->for()
+            'categoria_id' => Categoria::query()->inRandomOrder()->value('id') ?? Categoria::factory(),
             'nombre' => ucfirst(fake()->unique()->words(2, true)),
-            'unidad_medida' => $seg==='serie' ? 'unidad' : fake()->randomElement(['unidad','caja','cartucho']),
+            'unidad_medida' => null,
             'descripcion' => null,
             'tipo' => $tipo,
-            'seguimiento' => $seg,
+            'seguimiento' => $tipo === 'reutilizable' ? 'serie' : 'cantidad',
         ];
+    }
+
+    public function serie(): static
+    {
+        return $this->state(fn () => [
+            'tipo' => 'reutilizable',
+            'seguimiento' => 'serie',
+            'unidad_medida' => null,
+        ]);
+    }
+
+    public function cantidad(): static
+    {
+        return $this->state(fn () => [
+            'tipo' => 'consumible',
+            'seguimiento' => 'cantidad',
+        ]);
     }
 }

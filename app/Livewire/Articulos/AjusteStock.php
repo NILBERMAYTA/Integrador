@@ -6,6 +6,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Articulo;
+use App\Services\InventarioUnidadService;
 
 class AjusteStock extends Component
 {
@@ -19,6 +20,11 @@ class AjusteStock extends Component
     public string $observaciones = '';
     public string $fecha_ajuste;
 
+    private function unidadActualId(): ?int
+    {
+        return Auth::user()?->unidad_id;
+    }
+
     protected function rules() 
     {
         $rules = [
@@ -27,7 +33,7 @@ class AjusteStock extends Component
             'fecha_ajuste'  => ['required', 'date'],
         ];
 
-        if ($this->articulo->seguimiento === 'cantidad') {
+        if ($this->articulo->isCantidad()) {
             $rules['cantidad'] = ['required', 'numeric', 'gt:0'];
         } else {
             // Requerir la serie si el modo es 'serie'
@@ -43,12 +49,18 @@ class AjusteStock extends Component
         $this->fecha_ajuste = now()->format('Y-m-d H:i'); // Inicializar con fecha actual
     }
 
-    public function saveAjuste()
+    public function saveAjuste(InventarioUnidadService $inventario)
     {
         $this->validate();
         
         // La lógica de la PROMPT va aquí
-        DB::transaction(function () {
+        $unidadId = $this->unidadActualId();
+        if (!$unidadId) {
+            $this->addError('unidad', 'El usuario actual no tiene una unidad asignada.');
+            return;
+        }
+
+        DB::transaction(function () use ($unidadId) {
             // Operación de ajuste (usamos el tipo 'ajuste' definido en los enums)
             $now = now();
             $fecha = $this->fecha_ajuste ? \Carbon\Carbon::parse($this->fecha_ajuste) : $now;
@@ -56,8 +68,9 @@ class AjusteStock extends Component
             $opId = DB::table('operaciones')->insertGetId([
                 'tipo' => 'ajuste',
                 'evento_id' => null,
-                'policia_id' => null,
+                'usuario_destino_id' => null,
                 'actor_id' => Auth::id(),
+                'unidad_id' => $unidadId,
                 'fecha' => $fecha,
                 'observaciones' => $this->observaciones ?: 'Ajuste manual',
                 'created_at' => $now,
@@ -65,7 +78,7 @@ class AjusteStock extends Component
             ]);
 
             // Si el artículo es por cantidad, insertamos el detalle con cantidad positiva/negativa
-            if ($this->articulo->seguimiento === 'cantidad') {
+            if ($this->articulo->isCantidad()) {
                 $cantidad = (float) $this->cantidad;
                 if ($this->tipo_ajuste === 'negativo') {
                     $cantidad = -1 * abs($cantidad);
@@ -78,6 +91,12 @@ class AjusteStock extends Component
                     'created_at'   => $now,
                     'updated_at'   => $now,
                 ]);
+
+                if ($cantidad >= 0) {
+                    $inventario->addInitialStock($unidadId, $this->articulo->id, abs($cantidad));
+                } else {
+                    $inventario->consume($unidadId, $this->articulo, abs($cantidad));
+                }
 
             } else {
                 // Seguimiento por serie
@@ -93,7 +112,9 @@ class AjusteStock extends Component
                     // Crear la serie
                     $serieId = DB::table('articulo_series')->insertGetId([
                         'articulo_id'   => $this->articulo->id,
+                        'unidad_id'     => $unidadId,
                         'codigo_serie'  => trim($this->codigo_serie),
+                        'estado'        => 'disponible',
                         'observaciones' => null,
                         'created_at'    => $now,
                         'updated_at'    => $now,
@@ -131,7 +152,7 @@ class AjusteStock extends Component
                     // Soft-delete de la serie (marcar como retirada)
                     DB::table('articulo_series')
                         ->where('id', $serie->id)
-                        ->update(['deleted_at' => $now, 'updated_at' => $now]);
+                        ->update(['estado' => 'dado_de_baja', 'deleted_at' => $now, 'updated_at' => $now]);
                 }
             }
         });
