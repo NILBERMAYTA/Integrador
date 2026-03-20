@@ -87,7 +87,6 @@
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Nombre</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Tipo</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Gestion</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
@@ -104,9 +103,7 @@
                                     {{ ucfirst($a->tipo) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
-                                {{ $a->seguimientoLabel() }}
-                            </td>
+                            
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-2" x-data="{ modalIsOpen: false, modalAjuste: false }">
                                     <x-form.outline_button variant="edit" href="{{ route('articulos.update', $a) }}" wire:navigate>

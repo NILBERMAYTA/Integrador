@@ -1,67 +1,24 @@
 <div class="space-y-6">
-    {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-                Prestamos / Asignaciones
+                Prestamos y asignaciones
             </h1>
             <p class="text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
-                Historial de prestamos realizados a personal.
+                Historial de prestamos realizados a personal dentro de la unidad.
             </p>
         </div>
-        <div class="flex flex-col gap-3 w-full">
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="relative">
-                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-on-surface)] opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input
-                        type="text"
-                        wire:model.debounce.300ms="search"
-                        placeholder="Buscar por policia..."
-                        class="pl-10 pr-4 py-2.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-on-surface)] focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                    />
-                </div>
-                <div>
-                    <select wire:model="eventoId" class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]">
-                        <option value="">Todos los eventos</option>
-                        @foreach($eventos as $ev)
-                            <option value="{{ $ev->id }}">{{ $ev->nombre ?? 'ID '.$ev->id }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <select wire:model="estado" class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]">
-                        <option value="">Todos los estados</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="concluido">Concluido</option>
-                    </select>
-                </div>
-                <div>
-                    <select wire:model="unidadId" class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]">
-                        <option value="">Todas las unidades</option>
-                        @foreach($unidades as $unidad)
-                            <option value="{{ $unidad->id }}">{{ ($unidad->sigla ? $unidad->sigla.' - ' : '').$unidad->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="flex justify-end">
-                <a
-                    href="{{ route('prestamos.create') }}"
-                    wire:navigate
-                    class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-primary)] border border-[var(--color-primary)] px-6 py-2.5 text-sm font-medium tracking-wide text-[var(--color-on-primary)] transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Nueva asignacion
-                </a>
-            </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <x-form.header_button variant="primary" href="{{ route('prestamos.create') }}" wire:navigate>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nueva asignacion
+            </x-form.header_button>
         </div>
     </div>
 
-    {{-- Mensajes --}}
     @if (session()->has('success'))
         <div class="p-4 rounded-[var(--radius-radius)] bg-[var(--color-success)]/10 border border-[var(--color-success)] text-[var(--color-success)] flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,23 +28,67 @@
         </div>
     @endif
 
-    {{-- Tabla --}}
+    <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="flex-1 min-w-[260px]">
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input
+                        type="text"
+                        wire:model.debounce.300ms="search"
+                        placeholder="Buscar por policia..."
+                        class="w-full pl-10 pr-4 py-2.5 rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent transition-all"
+                    />
+                </div>
+            </div>
+
+            <div class="min-w-[180px]">
+                <select wire:model="eventoId" class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
+                    <option value="">Todos los conflictos</option>
+                    @foreach($eventos as $ev)
+                        <option value="{{ $ev->id }}">{{ $ev->nombre ?? 'ID '.$ev->id }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="min-w-[160px]">
+                <select wire:model="estado" class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="concluido">Concluido</option>
+                </select>
+            </div>
+
+            <div class="min-w-[200px]">
+                <select wire:model="unidadId" class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-4 py-2.5 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
+                    <option value="">Todas las unidades</option>
+                    @foreach($unidades as $unidad)
+                        <option value="{{ $unidad->id }}">{{ ($unidad->sigla ? $unidad->sigla.' - ' : '').$unidad->nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
-                <thead class="bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border-b border-[var(--color-outline)]">
+                <thead class="bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border-b border-[var(--color-outline)] dark:border-[var(--color-outline-dark)]">
                     <tr>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Fecha</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Evento</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Unidad</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Policia</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Items</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Estado</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Observaciones</th>
-                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-right">Acciones</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Conflicto</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Unidad</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Policia</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-center">Items</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-center">Estado</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Observaciones</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[var(--color-outline)] bg-[var(--color-surface)]">
+
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
                     @forelse($operaciones as $operacion)
                         @php
                             $devueltosCantidad = [];
@@ -98,6 +99,7 @@
                                     }
                                 }
                             }
+
                             $pendiente = false;
                             foreach ($operacion->detalles as $detOp) {
                                 if ($detOp->articulo?->isSerializado()) {
@@ -108,19 +110,20 @@
                                     if ($detOp->cantidad > $dev) { $pendiente = true; break; }
                                 }
                             }
+
                             $estadoPrestamo = $pendiente ? 'pendiente' : 'concluido';
                         @endphp
-                        <tr class="hover:bg-[var(--color-surface-alt)] transition-colors" x-data="{ open:false }" x-cloak>
-                            <td class="px-6 py-4 whitespace-nowrap text-[var(--color-on-surface)]">
+                        <tr class="hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-colors" x-data="{ open:false }" x-cloak>
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 {{ optional($operacion->fecha)->format('Y-m-d H:i') }}
                             </td>
-                            <td class="px-6 py-4 text-[var(--color-on-surface)]">
+                            <td class="px-6 py-4">
                                 {{ $operacion->evento->nombre ?? 'No especificado' }}
                             </td>
-                            <td class="px-6 py-4 text-[var(--color-on-surface)]">
+                            <td class="px-6 py-4">
                                 {{ $operacion->unidad?->sigla ?? $operacion->unidad?->nombre ?? 'No definida' }}
                             </td>
-                            <td class="px-6 py-4 text-[var(--color-on-surface)]">
+                            <td class="px-6 py-4">
                                 {{ $operacion->policia->name ?? 'No definido' }}
                             </td>
                             <td class="px-6 py-4 text-center">
@@ -135,24 +138,16 @@
                                     <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Pendiente</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-[var(--color-on-surface)]">{{ $operacion->observaciones }}</td>
+                            <td class="px-6 py-4">
+                                {{ $operacion->observaciones ?: '-' }}
+                            </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <x-form.outline_button
-                                        type="button"
-                                        variant="details"
-                                        @click="open = true"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                                        </svg>
+                                    <x-form.outline_button type="button" variant="details" @click="open = true">
                                         Detalles
                                     </x-form.outline_button>
-                                    <x-form.outline_button
-                                        variant="return"
-                                        href="{{ route('prestamos.devolucion', $operacion) }}"
-                                        wire:navigate
-                                    >
+
+                                    <x-form.outline_button variant="return" href="{{ route('prestamos.devolucion', $operacion) }}" wire:navigate>
                                         Devolver
                                     </x-form.outline_button>
                                 </div>
@@ -171,6 +166,7 @@
                                             </div>
                                             <button class="text-[var(--color-on-surface)] hover:text-[var(--color-danger)]" @click="open = false">Cerrar</button>
                                         </div>
+
                                         <div class="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
                                             <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
                                                 <div>
@@ -178,7 +174,7 @@
                                                     <p class="font-medium">{{ optional($operacion->fecha)->format('Y-m-d H:i') }}</p>
                                                 </div>
                                                 <div>
-                                                    <p class="text-xs opacity-60">Evento</p>
+                                                    <p class="text-xs opacity-60">Conflicto</p>
                                                     <p class="font-medium">{{ $operacion->evento->nombre ?? 'No especificado' }}</p>
                                                 </div>
                                                 <div>
@@ -190,10 +186,12 @@
                                                     <p class="font-medium">{{ $operacion->policia->name ?? 'No definido' }}</p>
                                                 </div>
                                             </div>
+
                                             <div>
                                                 <p class="text-xs opacity-60 mb-1">Observaciones</p>
                                                 <p class="text-[var(--color-on-surface)]">{{ $operacion->observaciones ?: 'Sin observaciones' }}</p>
                                             </div>
+
                                             <div class="overflow-x-auto">
                                                 <table class="w-full text-left text-sm">
                                                     <thead>
@@ -272,8 +270,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-[var(--color-on-surface)] opacity-70">
-                                No hay operaciones registradas.
+                            <td colspan="8" class="px-6 py-12 text-center">
+                                <p class="mt-4 font-medium">No hay operaciones registradas</p>
+                                <p class="mt-1 text-sm opacity-60">Intenta ajustar los filtros de busqueda</p>
                             </td>
                         </tr>
                     @endforelse
@@ -281,8 +280,10 @@
             </table>
         </div>
 
-        <div class="px-6 py-4 border-t border-[var(--color-outline)] bg-[var(--color-surface-alt)]">
-            {{ $operaciones->links() }}
-        </div>
+        @if($operaciones->hasPages())
+            <div class="px-6 py-4 border-t border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)]">
+                {{ $operaciones->links() }}
+            </div>
+        @endif
     </div>
 </div>
