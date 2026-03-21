@@ -28,20 +28,19 @@
                             <flux:navlist.item icon="building-office-2" :href="route('unidades.index')" :current="request()->routeIs('unidades.*')" wire:navigate>Unidades</flux:navlist.item>
                         @endcan
                         @can('articulos.manage')
-                            <flux:navlist.item icon="cube" :href="route('articulos.inventario')" :current="request()->routeIs('articulos.inventario')" wire:navigate>Inventario</flux:navlist.item>
-                            <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*') && !request()->routeIs('articulos.inventario')" wire:navigate>Articulos</flux:navlist.item>
+                            <flux:navlist.item icon="fire" :href="route('articulos.index')" :current="request()->routeIs('articulos.*')" wire:navigate>Articulos</flux:navlist.item>
                         @endcan
                         @can('categorias.manage')
                             <flux:navlist.item icon="tag" :href="route('categorias.index')" :current="request()->routeIs('categorias.*')" wire:navigate>Categorias</flux:navlist.item>
-                        @endcan
-                        @can('eventos.manage')
-                            <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos</flux:navlist.item>
                         @endcan
                         @can('prestamos.manage')
                             <flux:navlist.item icon="arrows-right-left" :href="route('prestamos.index')" :current="request()->routeIs('prestamos.*')" wire:navigate>Prestamos y devoluciones</flux:navlist.item>
                         @endcan
                         @can('mantenimientos.manage')
                             <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
+                        @endcan
+                        @can('eventos.manage')
+                            <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Conflictos e incidencias</flux:navlist.item>
                         @endcan
                         @can('activity_logs.view')
                             <flux:navlist.item icon="clipboard-document-list" :href="route('activity-logs.index')" :current="request()->routeIs('activity-logs.*')" wire:navigate>Auditoria</flux:navlist.item>

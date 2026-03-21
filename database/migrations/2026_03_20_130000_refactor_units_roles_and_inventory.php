@@ -172,7 +172,22 @@ return new class extends Migration
         )::estado_serie_enum_new;
         SQL);
 
-        DB::unprepared('ALTER TYPE estado_serie_enum_new RENAME TO estado_serie_enum;');
+        DB::unprepared(<<<'SQL'
+        DO $$
+        BEGIN
+            IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_serie_enum')
+               AND EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_serie_enum_new') THEN
+                DROP TYPE estado_serie_enum;
+            END IF;
+
+            IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_serie_enum_new')
+               AND NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_serie_enum') THEN
+                ALTER TYPE estado_serie_enum_new RENAME TO estado_serie_enum;
+            END IF;
+        END
+        $$;
+        SQL);
+
         DB::unprepared("ALTER TABLE articulo_series ALTER COLUMN estado SET DEFAULT 'disponible';");
     }
 

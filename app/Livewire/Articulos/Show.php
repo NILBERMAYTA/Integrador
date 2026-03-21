@@ -4,6 +4,7 @@ namespace App\Livewire\Articulos;
 
 use App\Models\Articulo;
 use App\Models\ArticuloSerie;
+use App\Models\InventarioUnidadArticulo;
 use App\Models\OperacionDetalle;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\DB;
@@ -15,13 +16,13 @@ class Show extends Component
     use WithPagination;
 
     public Articulo $articulo;
-    public int $perPage = 15;
+    public int $perPage = 10;
     public string $searchSerie = '';
     public string $estadoFiltro = '';
     public string $condicionFiltro = '';
     public array $condicionesActuales = [];
 
-    public function mount(Articulo $articulo)
+    public function mount(Articulo $articulo): void
     {
         $this->articulo = $articulo;
     }
@@ -70,36 +71,43 @@ class Show extends Component
                 ->with([
                     'unidad',
                     'operacionDetalleActual.operacion.usuarioDestino',
-                    'mantenimientos' => fn ($q) => $q->latest('fecha_inicio'),
-                    'inspecciones' => fn ($q) => $q->latest('realizada_en'),
-                    'incidencias.tipo',
-                    'incidencias' => fn ($q) => $q->latest('fecha'),
                 ])
                 ->where('articulo_id', $this->articulo->id)
                 ->whereNull('deleted_at');
+
+            $seriesResumen = (clone $baseSeries)->get();
 
             $series = (clone $baseSeries)
                 ->when($this->searchSerie !== '', fn ($q) => $q->where('codigo_serie', 'ILIKE', '%'.$this->searchSerie.'%'))
                 ->when($this->estadoFiltro !== '', fn ($q) => $q->where('estado', $this->estadoFiltro))
                 ->when($this->condicionFiltro !== '', fn ($q) => $q->where('condicion_actual', $this->condicionFiltro))
-                ->orderBy('created_at', 'desc')
+                ->orderBy('codigo_serie')
                 ->paginate($this->perPage);
 
-            $seriesResumen = (clone $baseSeries)->get();
+            foreach ($series as $serie) {
+                $this->condicionesActuales[$serie->id] = $this->condicionesActuales[$serie->id] ?? $serie->condicion_actual;
+            }
 
             $resumen = [
                 'total' => $seriesResumen->count(),
                 'disponibles' => $seriesResumen->where('estado', 'disponible')->count(),
                 'asignados' => $seriesResumen->where('estado', 'asignado')->count(),
                 'mantenimiento' => $seriesResumen->where('estado', 'en_mantenimiento')->count(),
-                'observados' => $seriesResumen->where('estado', 'observado')->count(),
-                'inoperativos' => $seriesResumen->where('estado', 'inoperativo')->count(),
-                'baja' => $seriesResumen->where('estado', 'dado_de_baja')->count(),
-                'cond_bueno' => $seriesResumen->where('condicion_actual', 'bueno')->count(),
-                'cond_defectos' => $seriesResumen->where('condicion_actual', 'con_defectos')->count(),
-                'cond_malo' => $seriesResumen->where('condicion_actual', 'malo')->count(),
-                'cond_inoperativo' => $seriesResumen->where('condicion_actual', 'inoperativo')->count(),
+                'inoperativos' => $seriesResumen->whereIn('estado', ['inoperativo', 'dado_de_baja'])->count(),
+                'condicion_predominante' => $seriesResumen
+                    ->groupBy(fn ($serie) => $serie->condicion_actual ?: 'bueno')
+                    ->sortByDesc(fn ($group) => $group->count())
+                    ->keys()
+                    ->first() ?? 'bueno',
+                'unidades' => $seriesResumen->pluck('unidad.sigla')->filter()->unique()->values(),
             ];
+
+            $movimientosRecientes = OperacionDetalle::query()
+                ->with(['operacion', 'series.serie'])
+                ->where('articulo_id', $this->articulo->id)
+                ->latest('created_at')
+                ->limit(8)
+                ->get();
 
             $estadosDisponibles = [
                 'disponible',
@@ -110,22 +118,54 @@ class Show extends Component
                 'dado_de_baja',
             ];
 
-            foreach ($series as $serie) {
-                $this->condicionesActuales[$serie->id] = $this->condicionesActuales[$serie->id] ?? $serie->condicion_actual;
-            }
-
             $condicionesDisponibles = $this->condicionesDisponibles();
 
-            return view('livewire.articulos.show', compact('series', 'resumen', 'estadosDisponibles', 'condicionesDisponibles'));
+            return view('livewire.articulos.show', compact(
+                'series',
+                'resumen',
+                'estadosDisponibles',
+                'condicionesDisponibles',
+                'movimientosRecientes'
+            ));
         }
+
+        $inventarios = InventarioUnidadArticulo::query()
+            ->with('unidad:id,nombre,sigla')
+            ->where('articulo_id', $this->articulo->id)
+            ->orderBy('unidad_id')
+            ->get();
+
+        $entrada = (float) DB::table('operacion_detalles as od')
+            ->join('operaciones as o', 'o.id', '=', 'od.operacion_id')
+            ->whereNull('od.deleted_at')
+            ->where('od.articulo_id', $this->articulo->id)
+            ->whereIn('o.tipo', ['ajuste', 'devolucion', 'mantenimiento_retorno'])
+            ->sum('od.cantidad');
+
+        $salida = (float) DB::table('operacion_detalles as od')
+            ->join('operaciones as o', 'o.id', '=', 'od.operacion_id')
+            ->whereNull('od.deleted_at')
+            ->where('od.articulo_id', $this->articulo->id)
+            ->whereIn('o.tipo', ['asignacion', 'consumo', 'mantenimiento_salida'])
+            ->sum('od.cantidad');
+
+        $totalDisponible = (float) $inventarios->sum('cantidad_disponible');
+
+        $resumen = [
+            'entrada' => $entrada,
+            'salida' => $salida,
+            'total' => $totalDisponible,
+            'estado' => $totalDisponible <= 0 ? 'agotado' : ($totalDisponible <= 5 ? 'bajo_stock' : 'disponible'),
+            'unidades' => $inventarios->pluck('unidad.sigla')->filter()->unique()->values(),
+        ];
 
         $detalles = OperacionDetalle::query()
             ->with('operacion')
             ->where('articulo_id', $this->articulo->id)
-            ->orderBy('created_at', 'desc')
+            ->latest('created_at')
             ->paginate($this->perPage);
 
-        return view('livewire.articulos.show', compact('detalles'));
+        return view('livewire.articulos.show', compact('detalles', 'inventarios', 'resumen'));
     }
 
     public function exportPdf()

@@ -55,8 +55,8 @@ class DemoOperacionSeeder extends Seeder
                 ]);
 
                 foreach ([
-                    'Granada de humo' => 24,
-                    'Munición 9mm' => 180,
+                    'Municion 9 mm' => 180,
+                    'Municion calibre 12' => 90,
                 ] as $nombre => $cantidad) {
                     if (! isset($articulos[$nombre])) {
                         continue;
@@ -79,7 +79,7 @@ class DemoOperacionSeeder extends Seeder
                     ->orderBy('id')
                     ->first();
 
-                if (! $seriePrestamo || ! isset($articulos['Granada de humo'])) {
+                if (! $seriePrestamo || ! isset($articulos['Municion 9 mm'])) {
                     return;
                 }
 
@@ -95,12 +95,12 @@ class DemoOperacionSeeder extends Seeder
 
                 OperacionDetalle::create([
                     'operacion_id' => $prestamo->id,
-                    'articulo_id' => $articulos['Granada de humo']->id,
-                    'cantidad' => 2,
+                    'articulo_id' => $articulos['Municion 9 mm']->id,
+                    'cantidad' => 24,
                     'condicion' => 'bueno',
                 ]);
 
-                $inventario->assign($unidad->id, $articulos['Granada de humo'], 2);
+                $inventario->assign($unidad->id, $articulos['Municion 9 mm'], 24);
 
                 $detalleSerie = OperacionDetalle::create([
                     'operacion_id' => $prestamo->id,

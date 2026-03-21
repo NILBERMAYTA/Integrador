@@ -31,10 +31,13 @@ class UserFactory extends Factory
         $role = $this->faker->randomElement(['policia', 'furriel', 'administrador_unidad']);
         $unidadId = Unidad::query()->inRandomOrder()->value('id') ?? Unidad::factory()->create()->id;
 
+        $nombres = ['Juan Carlos', 'Luis Fernando', 'Jose Luis', 'Marco Antonio', 'Victor Hugo', 'Rene', 'Jhonny', 'Cristian', 'Edwin', 'Milton'];
+        $apellidos = ['Mamani', 'Quispe', 'Choque', 'Condori', 'Apaza', 'Flores', 'Ticona', 'Huanca', 'Patzi', 'Callisaya', 'Cutipa', 'Laura'];
+
         return [
-            'name' => $this->faker->firstName(),
-            'apellido_paterno' => $this->faker->lastName(),
-            'apellido_materno' => $this->faker->lastName(),
+            'name' => fake()->randomElement($nombres),
+            'apellido_paterno' => fake()->randomElement($apellidos),
+            'apellido_materno' => fake()->randomElement($apellidos),
             'email' => $this->faker->unique()->safeEmail(),
             'password' => Hash::make('password123'),
             'role' => $role,

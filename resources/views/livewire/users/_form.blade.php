@@ -39,31 +39,55 @@
     </div>
   @endif
 
-  <div class="flex flex-col md:flex-row md:items-center gap-4">
-    <div class="h-16 w-16 rounded-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center">
-      @if (!empty($foto))
-        <img src="{{ $foto->temporaryUrl() }}" alt="Foto" class="h-full w-full object-cover" />
-      @elseif (!empty($foto_actual))
-        <img src="{{ asset('storage/'.$foto_actual) }}" alt="Foto" class="h-full w-full object-cover" />
-      @else
-        <span class="text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Sin foto</span>
-      @endif
-    </div>
-    <div class="flex-1">
+  <div class="space-y-3">
+    <div>
       <label class="block text-sm font-medium mb-1">Foto</label>
+      <label
+        for="foto-upload"
+        class="group flex cursor-pointer items-center gap-4 rounded-[var(--radius-radius)] border-2 border-dashed border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-4 transition-colors hover:border-[var(--color-primary)]"
+      >
+        <div class="h-24 w-24 overflow-hidden rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center shrink-0">
+          @if (!empty($foto))
+            <img src="{{ $foto->temporaryUrl() }}" alt="Foto" class="h-full w-full object-cover" />
+          @elseif (!empty($foto_actual))
+            <img src="{{ asset('storage/'.$foto_actual) }}" alt="Foto" class="h-full w-full object-cover" />
+          @else
+            <div class="text-center px-2">
+              <div class="text-xs font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Sin foto</div>
+            </div>
+          @endif
+        </div>
+
+        <div class="flex-1">
+          <p class="text-sm font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
+            Arrastra una imagen aqui o haz clic para seleccionar
+          </p>
+          <p class="mt-1 text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
+            Formatos permitidos: JPG, PNG o WEBP. Tamano maximo: 2 MB.
+          </p>
+          @if (!empty($foto))
+            <p class="mt-2 text-xs font-medium text-[var(--color-primary)]">
+              {{ $foto->getClientOriginalName() }}
+            </p>
+          @endif
+        </div>
+      </label>
+
       <input
+        id="foto-upload"
         type="file"
         accept="image/*"
         wire:model="foto"
-        class="block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] px-3 py-2 text-sm"
+        class="sr-only"
       />
+
       @error('foto')
         <p class="mt-1 text-xs text-[var(--color-danger)]">{{ $message }}</p>
       @enderror
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
     <x-form.combobox
       name="role"
       label="Rol"
@@ -72,7 +96,5 @@
       required
       wire:model.defer="role"
     />
-
-    <x-checkbox name="can_login" label="Puede iniciar sesion" description="Habilitar acceso al sistema para este usuario" wire:model.defer="can_login" />
   </div>
 </div>

@@ -20,7 +20,7 @@ class Update extends Component
     public $name, $apellido_paterno, $apellido_materno;
     public $email, $password;
     public $rango, $numero_escalafon, $fecha_ingreso;
-    public $role, $can_login;
+    public $role;
     public $unidad_id;
     public $foto;
     public $foto_actual = null;
@@ -43,7 +43,6 @@ class Update extends Component
             'numero_escalafon' => $user->numero_escalafon,
             'fecha_ingreso' => optional($user->fecha_ingreso)->format('Y-m-d'),
             'role' => $user->role,
-            'can_login' => (bool) $user->can_login,
             'unidad_id' => $user->unidad_id,
             'foto_actual' => $user->foto,
         ]);
@@ -61,7 +60,6 @@ class Update extends Component
             'numero_escalafon' => ['nullable', 'string', 'max:255'],
             'fecha_ingreso' => ['nullable', 'date'],
             'role' => ['required', Rule::in($this->allowedRoles())],
-            'can_login' => ['boolean'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ];
     }
@@ -79,7 +77,7 @@ class Update extends Component
             'numero_escalafon' => $data['numero_escalafon'] ?? null,
             'fecha_ingreso' => $data['fecha_ingreso'] ?? null,
             'role' => $data['role'],
-            'can_login' => (bool) $data['can_login'],
+            'can_login' => true,
         ]);
 
         if (! empty($data['password'])) {

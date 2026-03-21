@@ -19,7 +19,6 @@ class Create extends Component
     public $email, $password;
     public $rango, $numero_escalafon, $fecha_ingreso;
     public $role = 'policia';
-    public $can_login = true;
     public $unidad_id;
     public $foto;
     public $foto_actual = null;
@@ -46,7 +45,6 @@ class Create extends Component
             'numero_escalafon' => ['nullable', 'string', 'max:255'],
             'fecha_ingreso' => ['nullable', 'date'],
             'role' => ['required', Rule::in($this->allowedRoles())],
-            'can_login' => ['boolean'],
             'unidad_id' => [
                 'required',
                 'exists:unidades,id',
@@ -74,7 +72,7 @@ class Create extends Component
         $user->numero_escalafon = $data['numero_escalafon'] ?? null;
         $user->fecha_ingreso = $data['fecha_ingreso'] ?? null;
         $user->role = $data['role'];
-        $user->can_login = (bool) $data['can_login'];
+        $user->can_login = true;
         $user->unidad_id = (int) $data['unidad_id'];
 
         if (! empty($data['foto'])) {

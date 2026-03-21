@@ -2,18 +2,19 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Reporte de ArtÃ­culos</title>
+  <title>Reporte de Articulos</title>
   <style>
-    body { font-family: DejaVu Sans, sans-serif; font-size: 12px; margin: 30px; }
-    h1 { font-size: 18px; text-align: center; margin-bottom: 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 6px; }
-    th { background: #f3f3f3; text-align: left; }
-    .footer { font-size: 10px; text-align: right; margin-top: 10px; color: #666; }
+    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; margin: 28px; color: #1f2937; }
+    h1 { font-size: 18px; margin: 0 0 8px 0; }
+    p { margin: 0 0 12px 0; color: #4b5563; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #d1d5db; padding: 7px; vertical-align: top; }
+    th { background: #e5e7eb; text-align: left; font-size: 10px; text-transform: uppercase; }
+    .footer { font-size: 10px; text-align: right; margin-top: 10px; color: #6b7280; }
   </style>
 </head>
 <body>
-  <h1>Reporte de ArtÃ­culos</h1>
+  <h1>Reporte operativo de articulos</h1>
   <p>Generado el {{ now()->format('d/m/Y H:i:s') }}</p>
 
   <table>
@@ -21,26 +22,32 @@
       <tr>
         <th>ID</th>
         <th>Nombre</th>
-        <th>CategorÃ­a</th>
+        <th>Categoria</th>
+        <th>Estado</th>
+        <th>Condicion</th>
+        <th>Unidad</th>
         <th>Tipo</th>
-        <th>Gestion</th>
+        <th>Cantidad / Serie</th>
       </tr>
     </thead>
     <tbody>
       @foreach ($articulos as $art)
         <tr>
-          <td>{{ $art->id }}</td>
-          <td>{{ $art->nombre }}</td>
-          <td>{{ $art->categoria?->nombre ?? 'â€”' }}</td>
-          <td>{{ $art->tipo }}</td>
-          <td>{{ $art->tipo === 'reutilizable' ? 'Serie' : 'Cantidad' }}</td>
+          <td>{{ data_get($art, 'id') }}</td>
+          <td>{{ data_get($art, 'nombre') }}</td>
+          <td>{{ data_get($art, 'categoria', '-') }}</td>
+          <td>{{ data_get($art, 'estado', '-') }}</td>
+          <td>{{ data_get($art, 'condicion', '-') }}</td>
+          <td>{{ data_get($art, 'unidad', '-') }}</td>
+          <td>{{ ucfirst((string) data_get($art, 'tipo')) }}</td>
+          <td>{{ data_get($art, 'cantidad_serie', '-') }}</td>
         </tr>
       @endforeach
     </tbody>
   </table>
 
   <div class="footer">
-    Sistema ARMUTOP â€” {{ config('app.name') }}
+    Sistema ARMUTOP - {{ config('app.name') }}
   </div>
 </body>
 </html>
