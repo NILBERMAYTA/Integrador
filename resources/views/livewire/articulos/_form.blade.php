@@ -24,11 +24,17 @@
     <x-textarea name="descripcion" label="Descripcion" rows="3" placeholder="Notas o especificaciones..." wire:model.defer="descripcion" />
   </div>
 
-  <div class="rounded-[var(--radius-radius)] border border-outline dark:border-outline-dark p-3 text-sm bg-surface-alt/60 dark:bg-surface-dark-alt/60">
-    <span class="font-medium">Reglas:</span>
-    <ul class="list-disc ml-5 mt-1 space-y-1">
-      <li>Si el articulo es <strong>reutilizable</strong>, el sistema lo gestionara por <strong>serie</strong>.</li>
-      <li>Si el articulo es <strong>consumible</strong>, el sistema lo gestionara por <strong>cantidad</strong>.</li>
-    </ul>
+  <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)]/70 p-4">
+    <p class="text-xs uppercase tracking-wider opacity-60">Reglas de gestion</p>
+    <div class="mt-3 grid gap-3 md:grid-cols-2">
+      <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+        <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">Reutilizable</p>
+        <p class="mt-1 text-sm opacity-75">Se controla por serie y permite seguimiento individual de estado, condicion y custodio.</p>
+      </div>
+      <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+        <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">Consumible</p>
+        <p class="mt-1 text-sm opacity-75">Se consolida por cantidad y su disponibilidad se administra por unidad.</p>
+      </div>
+    </div>
   </div>
 </div>

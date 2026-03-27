@@ -7,8 +7,8 @@
             <div class="relative px-6 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div class="space-y-2">
                     <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)]/70">Panel operativo</p>
-                    <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)]">Resumen tactico</h1>
-                    <p class="text-sm text-[var(--color-on-surface)]/75">Prestamos, personal y devoluciones en un vistazo.</p>
+                    <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)]">Resumen</h1>
+                    <p class="text-sm text-[var(--color-on-surface)]/75">Prestamos, personal y devoluciones.</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2 rounded-full bg-[var(--color-surface)]/70 px-3 py-2 text-xs font-semibold border border-[var(--color-outline)]">
@@ -61,123 +61,195 @@
             @endforeach
         </div>
 
-        <div class="grid gap-5 xl:grid-cols-3">
+        <div class="grid items-start gap-5 xl:grid-cols-3">
             {{-- Balance operativo --}}
-            <div class="xl:col-span-2 rounded-[20px] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm">
-                @php
-                    $chartData = collect($prestamosRecientes ?? [])
-                        ->groupBy(function ($row) {
-                            if (!empty($row['fecha'])) {
-                                try {
-                                    return \Carbon\Carbon::parse($row['fecha'])->format('M');
-                                } catch (\Throwable $th) {
-                                    return $row['fecha'];
-                                }
-                            }
-                            return 'N/A';
-                        })
-                        ->map(function ($group, $label) {
-                            $activos = $group->where('estado', 'pendiente')->count();
-                            $cerrados = $group->where('estado', 'concluido')->count();
-                            return [
-                                'label' => $label,
-                                'activos' => $activos,
-                                'cerrados' => $cerrados,
-                            ];
-                        })
-                        ->values();
-                    $chartMax = max(1, $chartData->map(fn($p) => $p['activos'] + $p['cerrados'])->max() ?? 1);
-                @endphp
+            <div class="xl:col-span-2 self-start h-fit rounded-[20px] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm">
                 <div class="p-5 flex items-center justify-between">
                     <div>
-                        <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)]/70">Tendencia</p>
-                        <h2 class="text-xl font-semibold text-[var(--color-on-surface-strong)]">Movimiento de prestamos</h2>
+                        <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)]/70">Situacion del material</p>
+                        <h2 class="text-xl font-semibold text-[var(--color-on-surface-strong)]">Condicion actual del armamento</h2>
                     </div>
-                    <div class="flex gap-2 text-xs font-semibold bg-[var(--color-surface-alt)] rounded-full px-2 py-1 border border-[var(--color-outline)]">
-                        <span class="px-3 py-1 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">Activos</span>
-                        <span class="px-3 py-1 text-[var(--color-on-surface)]/70">Cerrados</span>
+                    <div class="rounded-full bg-[var(--color-surface-alt)] px-3 py-2 text-xs font-semibold border border-[var(--color-outline)] text-[var(--color-on-surface)]/75">
+                        Total evaluado: {{ $totalArmamento }}
                     </div>
                 </div>
                 <div class="px-5 pb-5">
-                    @if($chartData->isEmpty())
+                    @if($condicionArmamento->sum('total') === 0)
                         <div class="h-48 w-full rounded-[14px] border border-dashed border-[var(--color-outline)] flex items-center justify-center text-sm text-[var(--color-on-surface)]/60">
-                            Sin datos recientes para graficar.
+                            Sin armamento serializado para graficar.
                         </div>
                     @else
-                        <div class="h-48 w-full rounded-[14px] bg-gradient-to-br from-[var(--color-primary)]/12 to-[var(--color-secondary)]/10 relative overflow-hidden flex items-center justify-center">
-                            <svg viewBox="0 0 {{ max(1, $chartData->count()) * 80 + 40 }} 200" class="w-[96%] h-[90%]">
-                                <line x1="32" y1="160" x2="{{ max(1, $chartData->count()) * 80 + 20 }}" y2="160" stroke="var(--color-outline)" stroke-width="1" />
-                                <line x1="32" y1="40" x2="32" y2="160" stroke="var(--color-outline)" stroke-width="1" />
-                                @foreach($chartData as $index => $point)
+                        <div class="rounded-[14px] bg-gradient-to-br from-[var(--color-primary)]/12 to-[var(--color-secondary)]/10 p-4">
+                            <div class="space-y-4">
+                                @foreach($condicionArmamento as $item)
                                     @php
-                                        $x = 40 + ($index * 80);
-                                        $actHeight = ($point['activos'] / $chartMax) * 110;
-                                        $cerrHeight = ($point['cerrados'] / $chartMax) * 110;
-                                        $baseY = 160;
+                                        $width = $condicionMax > 0 ? max(6, round(($item['total'] / $condicionMax) * 100)) : 0;
+                                        $share = $totalArmamento > 0 ? round(($item['total'] / $totalArmamento) * 100) : 0;
                                     @endphp
-                                    <rect x="{{ $x }}" y="{{ $baseY - $actHeight }}" width="20" height="{{ $actHeight }}" rx="4" fill="var(--color-primary)" opacity="0.85" />
-                                    <rect x="{{ $x + 28 }}" y="{{ $baseY - $cerrHeight }}" width="20" height="{{ $cerrHeight }}" rx="4" fill="var(--color-secondary)" opacity="0.75" />
-                                    <text x="{{ $x + 10 }}" y="175" text-anchor="middle" class="text-[10px] fill-[var(--color-on-surface)]/70">{{ $point['label'] }}</text>
-                                    <text x="{{ $x + 10 }}" y="{{ $baseY - $actHeight - 6 }}" text-anchor="middle" class="text-[10px] fill-[var(--color-on-surface)]/70">{{ $point['activos'] }}</text>
-                                    <text x="{{ $x + 38 }}" y="{{ $baseY - $cerrHeight - 6 }}" text-anchor="middle" class="text-[10px] fill-[var(--color-on-surface)]/70">{{ $point['cerrados'] }}</text>
+                                    <div class="grid gap-2 sm:grid-cols-[140px_1fr_56px] sm:items-center">
+                                        <div class="flex items-center gap-2">
+                                            <span class="h-2.5 w-2.5 rounded-full {{ $item['color'] }}"></span>
+                                            <span class="text-sm font-semibold text-[var(--color-on-surface-strong)]">{{ $item['label'] }}</span>
+                                        </div>
+                                        <div class="h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface)]">
+                                            <div class="h-full rounded-full {{ $item['color'] }}" style="width: {{ $width }}%"></div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-semibold {{ $item['text'] }}">{{ $item['total'] }}</p>
+                                            <p class="text-[11px] text-[var(--color-on-surface)]/60">{{ $share }}%</p>
+                                        </div>
+                                    </div>
                                 @endforeach
-                                <text x="8" y="52" class="text-[10px] fill-[var(--color-on-surface)]/50" transform="rotate(-90 8 52)">Cantidad</text>
-                            </svg>
+                            </div>
                         </div>
                     @endif
                     <div class="mt-4 grid gap-3 sm:grid-cols-3">
                         <div class="rounded-[12px] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-3 py-2">
-                            <p class="text-xs text-[var(--color-on-surface)]/60">Activos</p>
-                            <p class="text-lg font-semibold text-[var(--color-on-surface-strong)]">{{ $prestamosActivos }}</p>
+                            <p class="text-xs text-[var(--color-on-surface)]/60">Series disponibles</p>
+                            <p class="text-lg font-semibold text-[var(--color-success)]">{{ $seriesDisponibles }}</p>
                         </div>
                         <div class="rounded-[12px] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-3 py-2">
-                            <p class="text-xs text-[var(--color-on-surface)]/60">Pendientes</p>
-                            <p class="text-lg font-semibold text-[var(--color-warning)]">{{ $devolucionesPendientes }}</p>
+                            <p class="text-xs text-[var(--color-on-surface)]/60">En mantenimiento</p>
+                            <p class="text-lg font-semibold text-[var(--color-warning)]">{{ $seriesMantenimiento }}</p>
                         </div>
                         <div class="rounded-[12px] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-3 py-2">
-                            <p class="text-xs text-[var(--color-on-surface)]/60">Personal disponible</p>
-                            <p class="text-lg font-semibold text-[var(--color-success)]">{{ $personalActivo }}</p>
+                            <p class="text-xs text-[var(--color-on-surface)]/60">Consumibles en alerta</p>
+                            <p class="text-lg font-semibold text-[var(--color-danger)]">{{ $consumiblesBajoStock + $consumiblesAgotados }}</p>
                         </div>
+                    </div>
+
+                    <div class="mt-5 rounded-[16px] border border-[var(--color-outline)] bg-[var(--color-surface-alt)]/70 p-4">
+                        <div class="mb-3">
+                            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)]/70">Asistente</p>
+                            <h3 class="text-lg font-semibold text-[var(--color-on-surface-strong)]">Recomendaciones operativas</h3>
+                        </div>
+                        @livewire('recomendacion.recomendador')
                     </div>
                 </div>
             </div>
 
             {{-- Lista de movimientos --}}
-            <div class="rounded-[20px] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm">
+            <div class="self-start h-fit rounded-[20px] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm">
                 <div class="p-5 flex items-center justify-between">
                     <div>
-                        <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)]/70">Movimientos</p>
+                        <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)]/70">Tendencia</p>
                         <h3 class="text-lg font-semibold text-[var(--color-on-surface-strong)]">Prestamos recientes</h3>
                     </div>
                     <a href="{{ route('prestamos.index') }}" class="text-xs font-semibold text-[var(--color-primary)] hover:underline">Ver todos</a>
                 </div>
-                <div class="px-5 pb-5 space-y-3">
-                    @forelse($prestamosRecientes as $row)
-                        <div class="flex items-center gap-3 rounded-[14px] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-3 py-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[var(--color-primary)]/12 text-[var(--color-primary)] font-semibold">
-                                {{ \Illuminate\Support\Str::of($row['policia'])->explode(' ')->map(fn($p)=>\Illuminate\Support\Str::substr($p,0,1))->take(2)->implode('') }}
+                <div class="px-5 pb-5 space-y-4">
+                    @php
+                        $trend = collect($prestamosTendencia ?? []);
+                        $trendMax = max(1, $trend->max('total') ?? 1);
+                        $chartWidth = 320;
+                        $chartHeight = 170;
+                        $leftPad = 18;
+                        $rightPad = 18;
+                        $topPad = 20;
+                        $bottomPad = 34;
+                        $plotWidth = $chartWidth - $leftPad - $rightPad;
+                        $plotHeight = $chartHeight - $topPad - $bottomPad;
+                        $stepX = $trend->count() > 1 ? $plotWidth / ($trend->count() - 1) : 0;
+                        $points = $trend->values()->map(function ($point, $index) use ($leftPad, $topPad, $plotHeight, $trendMax, $stepX) {
+                            $x = $leftPad + ($index * $stepX);
+                            $y = $topPad + $plotHeight - (($point['total'] / $trendMax) * $plotHeight);
+
+                            return [
+                                'x' => round($x, 2),
+                                'y' => round($y, 2),
+                                'label' => $point['label'],
+                                'full_label' => $point['full_label'],
+                                'total' => $point['total'],
+                            ];
+                        });
+                        $linePath = $points->map(fn ($point, $index) => ($index === 0 ? 'M' : 'L').$point['x'].' '.$point['y'])->implode(' ');
+                        $areaPath = $points->isNotEmpty()
+                            ? $linePath.' L '.$points->last()['x'].' '.($topPad + $plotHeight).' L '.$points->first()['x'].' '.($topPad + $plotHeight).' Z'
+                            : '';
+                    @endphp
+
+                    @if($trend->sum('total') === 0)
+                        <div class="h-[220px] rounded-[16px] border border-dashed border-[var(--color-outline)] flex items-center justify-center text-sm text-[var(--color-on-surface)]/60">
+                            Sin prestamos recientes para graficar.
+                        </div>
+                    @else
+                        <div class="rounded-[16px] border border-[var(--color-outline)] bg-gradient-to-br from-fuchsia-500/10 via-sky-500/5 to-[var(--color-surface-alt)] p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-[0.18em] text-[var(--color-on-surface)]/60">Ultimos 6 meses</p>
+                                    <p class="mt-1 text-2xl font-bold text-[var(--color-on-surface-strong)]">{{ $trend->sum('total') }}</p>
+                                    <p class="text-xs text-[var(--color-on-surface)]/70">Prestamos registrados</p>
+                                </div>
+                                <div class="rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-fuchsia-600 border border-fuchsia-200">
+                                    Pico: {{ $trend->max('total') }}
+                                </div>
                             </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">{{ $row['policia'] }}</p>
-                                <p class="text-xs text-[var(--color-on-surface)]/70">{{ $row['articulo'] }}</p>
-                                <p class="text-[11px] text-[var(--color-on-surface)]/60">{{ $row['fecha'] }}</p>
+
+                            <div class="mt-4">
+                                <svg viewBox="0 0 {{ $chartWidth }} {{ $chartHeight }}" class="w-full h-[170px] overflow-visible">
+                                    <defs>
+                                        <linearGradient id="prestamosAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="#d946ef" stop-opacity="0.28" />
+                                            <stop offset="100%" stop-color="#d946ef" stop-opacity="0.03" />
+                                        </linearGradient>
+                                    </defs>
+
+                                    @for($i = 0; $i <= 3; $i++)
+                                        @php
+                                            $gridY = $topPad + (($plotHeight / 3) * $i);
+                                        @endphp
+                                        <line x1="{{ $leftPad }}" y1="{{ $gridY }}" x2="{{ $chartWidth - $rightPad }}" y2="{{ $gridY }}" stroke="rgba(148, 163, 184, 0.25)" stroke-dasharray="4 4" />
+                                    @endfor
+
+                                    <path d="{{ $areaPath }}" fill="url(#prestamosAreaGradient)" />
+                                    <path d="{{ $linePath }}" fill="none" stroke="#d946ef" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+                                    @foreach($points as $point)
+                                        <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="4.5" fill="#ffffff" stroke="#d946ef" stroke-width="2.5" />
+                                        <text x="{{ $point['x'] }}" y="{{ $chartHeight - 10 }}" text-anchor="middle" class="fill-[var(--color-on-surface)]/60 text-[10px]">{{ strtoupper($point['label']) }}</text>
+                                    @endforeach
+                                </svg>
                             </div>
-                            <div>
-                                @if($row['estado'] === 'pendiente')
-                                    <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--color-warning)]/15 text-[var(--color-warning)] border border-[var(--color-warning)]/40">Pendiente</span>
-                                @else
-                                    <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--color-success)]/15 text-[var(--color-success)] border border-[var(--color-success)]/40">Concluido</span>
-                                @endif
+
+                            <div class="mt-3 grid grid-cols-3 gap-2">
+                                @foreach($trend->take(3) as $point)
+                                    <div class="rounded-[12px] bg-[var(--color-surface)]/80 border border-[var(--color-outline)] px-3 py-2">
+                                        <p class="text-[11px] uppercase tracking-wide text-[var(--color-on-surface)]/60">{{ $point['label'] }}</p>
+                                        <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">{{ $point['total'] }} prestamos</p>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
-                    @empty
-                        <p class="text-sm text-[var(--color-on-surface)]/60">Sin prestamos recientes.</p>
-                    @endforelse
+                    @endif
+
+                    <div class="space-y-3">
+                        @forelse($prestamosRecientes as $row)
+                            <div class="flex items-center gap-3 rounded-[14px] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-3 py-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[var(--color-primary)]/12 text-[var(--color-primary)] font-semibold">
+                                    {{ \Illuminate\Support\Str::of($row['policia'])->explode(' ')->map(fn($p)=>\Illuminate\Support\Str::substr($p,0,1))->take(2)->implode('') }}
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">{{ $row['policia'] }}</p>
+                                    <p class="text-xs text-[var(--color-on-surface)]/70">{{ $row['articulo'] }}</p>
+                                    <p class="text-[11px] text-[var(--color-on-surface)]/60">{{ $row['fecha'] }}</p>
+                                </div>
+                                <div>
+                                    @if($row['estado'] === 'pendiente')
+                                        <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--color-warning)]/15 text-[var(--color-warning)] border border-[var(--color-warning)]/40">Pendiente</span>
+                                    @else
+                                        <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--color-success)]/15 text-[var(--color-success)] border border-[var(--color-success)]/40">Concluido</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-sm text-[var(--color-on-surface)]/60">Sin prestamos recientes.</p>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid gap-5 lg:grid-cols-3">
+        <div class="grid items-start gap-5 lg:grid-cols-3">
             {{-- Inventario por categoria --}}
             <div class="lg:col-span-2 rounded-[20px] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm p-5">
                 <div class="flex items-center justify-between mb-4">
@@ -244,11 +316,37 @@
                                 <p class="text-sm text-[var(--color-on-surface)]/80">{{ $personalActivo }} oficiales disponibles.</p>
                             </div>
                         </div>
+                        @if($seriesInoperativas > 0)
+                            <div class="flex gap-3 rounded-[14px] border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 p-3">
+                                <div class="flex-shrink-0">
+                                    <span class="w-9 h-9 rounded-full bg-[var(--color-danger)]/25 border border-[var(--color-danger)]/50 flex items-center justify-center text-[var(--color-danger)]">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 6h.008v.008H12v-.008z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">Armamento inoperativo</p>
+                                    <p class="text-sm text-[var(--color-on-surface)]/80">{{ $seriesInoperativas }} series requieren evaluacion o baja.</p>
+                                </div>
+                            </div>
+                        @endif
+                        @if(($consumiblesBajoStock + $consumiblesAgotados) > 0)
+                            <div class="flex gap-3 rounded-[14px] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 p-3">
+                                <div class="flex-shrink-0">
+                                    <span class="w-9 h-9 rounded-full bg-[var(--color-warning)]/25 border border-[var(--color-warning)]/50 flex items-center justify-center text-[var(--color-warning)]">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M6.75 3.75v6m10.5-6v6M4.5 10.5h15v8.25a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V10.5z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-[var(--color-on-surface-strong)]">Consumibles con alerta</p>
+                                    <p class="text-sm text-[var(--color-on-surface)]/80">{{ $consumiblesBajoStock }} con bajo stock y {{ $consumiblesAgotados }} agotados.</p>
+                                </div>
+                            </div>
+                        @endif
                     </div>
-                </div>
-
-                <div class="rounded-[20px] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm p-4">
-                    @livewire('recomendacion.recomendador')
                 </div>
             </div>
         </div>

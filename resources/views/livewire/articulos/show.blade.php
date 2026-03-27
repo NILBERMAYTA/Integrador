@@ -1,18 +1,23 @@
 <div class="w-full max-w-7xl mx-auto p-6 space-y-6">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-[var(--color-on-surface-strong)]">{{ $articulo->nombre }}</h1>
+            <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $articulo->nombre }}</h1>
             <p class="text-sm text-[var(--color-on-surface)] opacity-70">
                 Detalle del articulo, su situacion actual y movimientos recientes.
             </p>
         </div>
-        <div class="flex items-center gap-2">
-            <button type="button" wire:click="exportPdf" class="px-3 py-2 rounded border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
+        <div class="flex flex-wrap items-center gap-3">
+            <x-form.header_button variant="export" type="button" wire:click="exportPdf">
                 Exportar PDF
-            </button>
-            <a href="{{ route('articulos.index') }}" wire:navigate class="px-3 py-2 rounded bg-[var(--color-surface)] border border-[var(--color-outline)] text-sm">
+            </x-form.header_button>
+            @can('articulos.manage')
+                <x-form.header_button variant="neutral" href="{{ route('articulos.update', $articulo) }}" wire:navigate>
+                    Editar articulo
+                </x-form.header_button>
+            @endcan
+            <x-form.header_button variant="neutral" href="{{ route('articulos.index') }}" wire:navigate>
                 Volver
-            </a>
+            </x-form.header_button>
         </div>
     </div>
 
@@ -33,7 +38,7 @@
                 </div>
                 <div>
                     <p class="text-xs opacity-60">Gestion</p>
-                    <p class="font-medium">{{ $articulo->seguimientoLabel() }}</p>
+                    <p class="font-medium">{{ $articulo->isSerializado() ? 'Por serie' : 'Por cantidad' }}</p>
                 </div>
                 <div>
                     <p class="text-xs opacity-60">Descripcion</p>
@@ -93,6 +98,31 @@
             @endif
         </div>
     </div>
+
+    @if($articulo->isSerializado())
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+                <p class="text-xs uppercase tracking-wider opacity-60">Total de series</p>
+                <p class="mt-2 text-2xl font-semibold text-zinc-700">{{ $resumen['total'] }}</p>
+            </div>
+            <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+                <p class="text-xs uppercase tracking-wider opacity-60">Disponibles</p>
+                <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ $resumen['disponibles'] }}</p>
+            </div>
+            <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+                <p class="text-xs uppercase tracking-wider opacity-60">Asignadas</p>
+                <p class="mt-2 text-2xl font-semibold text-sky-600">{{ $resumen['asignados'] }}</p>
+            </div>
+            <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+                <p class="text-xs uppercase tracking-wider opacity-60">Mantenimiento</p>
+                <p class="mt-2 text-2xl font-semibold text-amber-600">{{ $resumen['mantenimiento'] }}</p>
+            </div>
+            <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
+                <p class="text-xs uppercase tracking-wider opacity-60">Inoperativas</p>
+                <p class="mt-2 text-2xl font-semibold text-rose-600">{{ $resumen['inoperativos'] }}</p>
+            </div>
+        </div>
+    @endif
 
     @if($articulo->isSerializado())
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] overflow-hidden">
@@ -167,9 +197,13 @@
                                     {{ $custodio?->nombre_completo ?? 'Sin custodio asignado' }}
                                 </td>
                                 <td class="px-5 py-4">
-                                    <a href="{{ route('articulos.update', $articulo) }}" wire:navigate class="text-sm text-[var(--color-primary)] hover:underline">
-                                        Editar articulo
-                                    </a>
+                                    @can('articulos.manage')
+                                        <x-form.outline_button variant="details" href="{{ route('articulos.update', $articulo) }}" wire:navigate>
+                                            Editar
+                                        </x-form.outline_button>
+                                    @else
+                                        <span class="text-sm opacity-60">Solo consulta</span>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

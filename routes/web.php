@@ -34,6 +34,8 @@ use App\Livewire\Users\Delete;
 use App\Livewire\Users\Index;
 use App\Livewire\Users\Transfer;
 use App\Livewire\Users\Update;
+use App\Models\ArticuloSerie;
+use App\Models\InventarioUnidadArticulo;
 use App\Models\Operacion;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -103,6 +105,21 @@ Route::get('dashboard', function () {
         ];
     });
 
+    $prestamosTendencia = collect(range(5, 0))
+        ->map(function (int $offset) use ($prestamos) {
+            $month = now()->startOfMonth()->subMonths($offset);
+            $total = $prestamos->filter(function ($op) use ($month) {
+                return optional($op->fecha)?->format('Y-m') === $month->format('Y-m');
+            })->count();
+
+            return [
+                'label' => $month->locale('es')->translatedFormat('M'),
+                'full_label' => $month->translatedFormat('F Y'),
+                'total' => $total,
+            ];
+        })
+        ->values();
+
     $categorias = \App\Models\Articulo::select('categoria_id', DB::raw('count(*) as total'))
         ->with('categoria')
         ->groupBy('categoria_id')
@@ -110,14 +127,61 @@ Route::get('dashboard', function () {
         ->get();
     $totalInventario = $categorias->sum('total');
 
+    $seriesBase = ArticuloSerie::query()
+        ->when(! $user?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId));
+
+    $condicionArmamento = collect([
+        ['key' => 'bueno', 'label' => 'Bueno', 'color' => 'bg-emerald-500', 'text' => 'text-emerald-600'],
+        ['key' => 'con_defectos', 'label' => 'Con defectos', 'color' => 'bg-amber-500', 'text' => 'text-amber-600'],
+        ['key' => 'malo', 'label' => 'Malo', 'color' => 'bg-orange-500', 'text' => 'text-orange-600'],
+        ['key' => 'inoperativo', 'label' => 'Inoperativo', 'color' => 'bg-rose-500', 'text' => 'text-rose-600'],
+    ])->map(function (array $item) use ($seriesBase) {
+        $item['total'] = (clone $seriesBase)
+            ->where('condicion_actual', $item['key'])
+            ->count();
+
+        return $item;
+    });
+
+    $totalArmamento = $condicionArmamento->sum('total');
+    $condicionMax = max(1, $condicionArmamento->max('total') ?? 1);
+
+    $seriesDisponibles = (clone $seriesBase)->where('estado', 'disponible')->count();
+    $seriesAsignadas = (clone $seriesBase)->where('estado', 'asignado')->count();
+    $seriesMantenimiento = (clone $seriesBase)->where('estado', 'en_mantenimiento')->count();
+    $seriesInoperativas = (clone $seriesBase)->where('estado', 'inoperativo')->count();
+
+    $consumiblesBase = InventarioUnidadArticulo::query()
+        ->whereHas('articulo', fn ($query) => $query->where('tipo', 'consumible'))
+        ->when(! $user?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId));
+
+    $consumiblesBajoStock = (clone $consumiblesBase)
+        ->where('cantidad_disponible', '>', 0)
+        ->where('cantidad_disponible', '<=', 10)
+        ->count();
+
+    $consumiblesAgotados = (clone $consumiblesBase)
+        ->where('cantidad_disponible', '<=', 0)
+        ->count();
+
     return view('dashboard', [
         'prestamosActivos' => $prestamosActivos,
         'prestamosConcluidos' => $prestamosConcluidos,
         'devolucionesPendientes' => $devolucionesPendientes,
         'personalActivo' => $personalActivo,
         'prestamosRecientes' => $prestamosRecientes,
+        'prestamosTendencia' => $prestamosTendencia,
         'categorias' => $categorias,
         'totalInventario' => $totalInventario,
+        'condicionArmamento' => $condicionArmamento,
+        'totalArmamento' => $totalArmamento,
+        'condicionMax' => $condicionMax,
+        'seriesDisponibles' => $seriesDisponibles,
+        'seriesAsignadas' => $seriesAsignadas,
+        'seriesMantenimiento' => $seriesMantenimiento,
+        'seriesInoperativas' => $seriesInoperativas,
+        'consumiblesBajoStock' => $consumiblesBajoStock,
+        'consumiblesAgotados' => $consumiblesAgotados,
     ]);
 })
     ->middleware(['auth', 'verified', 'role:administrador_general|administrador_unidad|furriel', 'permission:dashboard.view'])

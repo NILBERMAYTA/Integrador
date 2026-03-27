@@ -239,9 +239,6 @@
                                             <a href="{{ route('articulos.update', $row['articulo_id']) }}" wire:navigate class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
                                                 Editar
                                             </a>
-                                            <button type="button" wire:click="abrirAjuste({{ $row['articulo_id'] }})" @click="openMenu = false" class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
-                                                Ajustar
-                                            </button>
                                             <button type="button" @click="modalIsOpen = true; openMenu = false" class="block w-full px-4 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10">
                                                 Eliminar
                                             </button>
