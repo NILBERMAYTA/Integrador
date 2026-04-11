@@ -39,6 +39,9 @@
                         @can('mantenimientos.manage')
                             <flux:navlist.item icon="wrench-screwdriver" :href="route('mantenimientos.index')" :current="request()->routeIs('mantenimientos.*')" wire:navigate>Mantenimientos</flux:navlist.item>
                         @endcan
+                        @can('predicciones.view')
+                            <flux:navlist.item icon="chart-bar" :href="route('predicciones.index')" :current="request()->routeIs('predicciones.*')" wire:navigate>Predicciones</flux:navlist.item>
+                        @endcan
                         @can('eventos.manage')
                             <flux:navlist.item icon="hand-raised" :href="route('eventos.index')" :current="request()->routeIs('eventos.*')" wire:navigate>Operativos</flux:navlist.item>
                         @endcan
@@ -46,6 +49,9 @@
                             <flux:navlist.item icon="clipboard-document-list" :href="route('activity-logs.index')" :current="request()->routeIs('activity-logs.*')" wire:navigate>Auditoria</flux:navlist.item>
                         @endcan
                     @endrole
+                    @can('reposicion.view')
+                        <flux:navlist.item icon="archive-box" :href="route('reposicion.index')" :current="request()->routeIs('reposicion.*')" wire:navigate>Reposicion</flux:navlist.item>
+                    @endcan
                 </flux:navlist.group>
             </flux:navlist>
 

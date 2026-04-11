@@ -58,7 +58,14 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve --host=127.0.0.1 --port=8000\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+        ],
+        "dev:ml": [
+            "powershell -NoProfile -ExecutionPolicy Bypass -Command \"cd ml_service; if (-not (Test-Path .venv)) { python -m venv .venv }; .\\.venv\\Scripts\\python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8002\""
+        ],
+        "dev:full": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#86efac\" \"php artisan serve --host=127.0.0.1 --port=8000\" \"php artisan queue:listen --tries=1\" \"npm run dev\" \"composer run dev:ml\" --names='server,queue,vite,ml'"
         ],
         "test": [
             "@php artisan config:clear --ansi",

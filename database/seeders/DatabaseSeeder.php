@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             ArticuloSeeder::class,
             EventoSeeder::class,
             DemoOperacionSeeder::class,
+            PrediccionDemoSeeder::class,
         ]);
     }
 }

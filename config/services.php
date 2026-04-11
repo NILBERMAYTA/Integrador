@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'prediccion_api' => [
+        'url' => env('PREDICCION_API_URL', 'http://127.0.0.1:8002'),
+        'timeout' => (int) env('PREDICCION_API_TIMEOUT', 30),
+    ],
 ];

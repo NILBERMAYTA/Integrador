@@ -23,6 +23,9 @@ class RolePermissionSeeder extends Seeder
             'articulos.manage',
             'eventos.manage',
             'mantenimientos.manage',
+            'predicciones.view',
+            'predicciones.train',
+            'reposicion.view',
             'prestamos.view',
             'prestamos.manage',
             'activity_logs.view',
@@ -45,6 +48,9 @@ class RolePermissionSeeder extends Seeder
             'articulos.manage',
             'eventos.manage',
             'mantenimientos.manage',
+            'predicciones.view',
+            'predicciones.train',
+            'reposicion.view',
             'prestamos.view',
             'prestamos.manage',
             'activity_logs.view',
@@ -53,11 +59,14 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'articulos.manage',
             'mantenimientos.manage',
+            'predicciones.view',
+            'reposicion.view',
             'prestamos.view',
             'prestamos.manage',
         ]);
         $policia->syncPermissions([
             'prestamos.view',
+            'reposicion.view',
         ]);
 
         $validRoles = ['administrador_general', 'administrador_unidad', 'furriel', 'policia'];

@@ -19,6 +19,8 @@ use App\Livewire\Mantenimientos\Create as MantenimientosCreate;
 use App\Livewire\Mantenimientos\Delete as MantenimientosDelete;
 use App\Livewire\Mantenimientos\Index as MantenimientosIndex;
 use App\Livewire\Mantenimientos\Update as MantenimientosUpdate;
+use App\Livewire\Predicciones\Index as PrediccionesIndex;
+use App\Livewire\Reposicion\Index as ReposicionIndex;
 use App\Livewire\Prestamos\Create as PrestamosCreate;
 use App\Livewire\Prestamos\Devolucion as PrestamosDevolucion;
 use App\Livewire\Prestamos\Index as PrestamosIndex;
@@ -242,6 +244,9 @@ Route::middleware(['auth', 'role:administrador_general|administrador_unidad|furr
     Route::get('mantenimientos/create', MantenimientosCreate::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.create');
     Route::get('mantenimientos/{mantenimiento}/update', MantenimientosUpdate::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.update');
     Route::get('mantenimientos/deleted', MantenimientosDelete::class)->middleware(['permission:mantenimientos.manage'])->name('mantenimientos.delete.index');
+
+    Route::get('predicciones', PrediccionesIndex::class)->middleware(['permission:predicciones.view'])->name('predicciones.index');
+    Route::get('reposicion', ReposicionIndex::class)->middleware(['permission:reposicion.view'])->name('reposicion.index');
 
     Route::get('prestamos/create', PrestamosCreate::class)->middleware(['permission:prestamos.manage'])->name('prestamos.create');
     Route::get('prestamos/{operacion}/devolucion', PrestamosDevolucion::class)->middleware(['permission:prestamos.manage'])->name('prestamos.devolucion');
