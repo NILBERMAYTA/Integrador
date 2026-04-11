@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import text
 
-from app.db import get_engine
-from app.settings import get_settings
+from app.config import get_engine, get_settings
 
 
 def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
@@ -14,7 +14,7 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
     engine = get_engine()
 
     query = text(
-        f"""
+        """
         WITH operaciones_agregadas AS (
             SELECT
                 ods.serie_id,
@@ -139,8 +139,6 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
 
 
 def build_prediction_frame(df: pd.DataFrame) -> pd.DataFrame:
-    frame = df.copy()
-
     columns = [
         "articulo_id",
         "unidad_id",
@@ -160,9 +158,32 @@ def build_prediction_frame(df: pd.DataFrame) -> pd.DataFrame:
         "ultimo_resultado_inspeccion",
         "dias_desde_ultima_inspeccion",
     ]
+    return df[columns].copy()
 
-    return frame[columns].copy()
+
+def export_dataset_csv(output_path: str = "data/dataset_armamento.csv") -> Path:
+    df = load_armamento_dataset()
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path, index=False)
+    return path
+
+
+def dataset_summary() -> dict[str, object]:
+    df = load_armamento_dataset()
+    return {
+        "total_registros": int(len(df)),
+        "clases_resultado": {str(k): int(v) for k, v in df["resultado"].value_counts(dropna=False).to_dict().items()},
+        "condicion_actual": {str(k): int(v) for k, v in df["condicion_actual"].value_counts(dropna=False).to_dict().items()},
+        "estado_actual": {str(k): int(v) for k, v in df["estado_actual"].value_counts(dropna=False).to_dict().items()},
+    }
 
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+if __name__ == "__main__":
+    path = export_dataset_csv()
+    print(f"Dataset exportado en: {path}")
+    print(dataset_summary())

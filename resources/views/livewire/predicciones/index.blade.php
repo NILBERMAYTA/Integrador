@@ -4,9 +4,6 @@
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                 Predicciones de armamento
             </h1>
-            <p class="max-w-3xl text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-75">
-                Consulta el estado del servicio ML, revisa el nivel de riesgo por serie y, si tienes permiso, vuelve a entrenar el modelo desde Laravel.
-            </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -17,10 +14,19 @@
                 Actualizar
             </x-form.header_button>
 
+            @can('reposicion.view')
+                <x-form.header_button variant="neutral" href="{{ route('reposicion.index') }}" wire:navigate>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0l-8 8-8-8" />
+                    </svg>
+                    Cálculo de reposiciones
+                </x-form.header_button>
+            @endcan
+
             @can('predicciones.train')
                 <x-form.header_button variant="primary" type="button" wire:click="entrenarArmamento">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-4m3 8H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-4m3 8H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 01-2 2z" />
                     </svg>
                     Reentrenar modelo
                 </x-form.header_button>
@@ -33,7 +39,7 @@
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-5 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
-            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Estado ML</p>
+            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Estado</p>
             <div class="mt-3 flex items-center gap-3">
                 <span class="inline-flex h-3 w-3 rounded-full {{ $modelReady ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                 <p class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
@@ -54,7 +60,7 @@
             <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Riesgo alto</p>
             <p class="mt-3 text-3xl font-bold text-rose-600">{{ $stats['alto'] }}</p>
             <p class="mt-2 text-sm text-[var(--color-on-surface)] opacity-75 dark:text-[var(--color-on-surface-dark)]">
-                Series con atencion inmediata recomendada.
+                Articulos con atencion inmediata recomendada.
             </p>
         </div>
 
@@ -162,7 +168,7 @@
 
         <div class="space-y-6">
             <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
-                <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Salud del servicio</h2>
+                <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Estado del servicio</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div class="flex items-center justify-between gap-4">
                         <dt class="text-[var(--color-on-surface)] opacity-70 dark:text-[var(--color-on-surface-dark)]">Estado</dt>

@@ -1,12 +1,49 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel
 
-from app.model_registry import model_exists
-from app.predict import list_armamento_predictions
-from app.schemas import HealthResponse, PersistResponse, PredictionItem, TrainResponse
-from app.settings import get_settings
-from app.train import train_armamento_model
+from app.config import get_settings
+from app.ml import list_armamento_predictions, model_exists, train_armamento_model
+
+
+class HealthResponse(BaseModel):
+    status: str
+    model_ready: bool
+    model_path: str
+    model_version: str
+
+
+class TrainResponse(BaseModel):
+    message: str
+    model_path: str
+    model_version: str
+    total_registros: int
+    total_entrenamiento: int
+    total_prueba: int
+    accuracy: float
+    precision: float
+    recall: float
+    f1: float
+    roc_auc: float | None = None
+
+
+class PredictionItem(BaseModel):
+    serie_id: int
+    articulo_id: int
+    unidad_id: int | None = None
+    codigo_serie: str
+    estado_predicho: str
+    probabilidad: float
+    nivel_riesgo: str
+    recomendacion: str
+    fecha_prediccion: str
+    modelo_version: str
+
+
+class PersistResponse(BaseModel):
+    message: str
+    total: int
 
 
 app = FastAPI(
@@ -19,7 +56,6 @@ app = FastAPI(
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     settings = get_settings()
-
     return HealthResponse(
         status="ok",
         model_ready=model_exists(),

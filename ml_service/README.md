@@ -21,7 +21,7 @@ Configura `DB_PASSWORD` en `ml_service/.env`.
 ```powershell
 cd ml_service
 .venv\Scripts\activate
-python -m app.train
+python -m app.ml
 ```
 
 Si falla por falta de clases, exporta el dataset y revisa la distribucion:
@@ -29,7 +29,7 @@ Si falla por falta de clases, exporta el dataset y revisa la distribucion:
 ```powershell
 cd ml_service
 .venv\Scripts\activate
-python -m app.dataset_tools
+python -m app.data
 ```
 
 ## Levantar API

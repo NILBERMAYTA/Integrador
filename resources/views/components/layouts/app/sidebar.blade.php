@@ -49,9 +49,6 @@
                             <flux:navlist.item icon="clipboard-document-list" :href="route('activity-logs.index')" :current="request()->routeIs('activity-logs.*')" wire:navigate>Auditoria</flux:navlist.item>
                         @endcan
                     @endrole
-                    @can('reposicion.view')
-                        <flux:navlist.item icon="archive-box" :href="route('reposicion.index')" :current="request()->routeIs('reposicion.*')" wire:navigate>Reposicion</flux:navlist.item>
-                    @endcan
                 </flux:navlist.group>
             </flux:navlist>
 

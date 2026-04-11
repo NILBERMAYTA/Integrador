@@ -9,8 +9,8 @@ use Livewire\Component;
 
 class Index extends Component
 {
-    #[Url(except: 25)]
-    public int $limit = 25;
+    #[Url(except: 100)]
+    public int $limit = 100;
 
     public array $predicciones = [];
 
