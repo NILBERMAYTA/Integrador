@@ -1,4 +1,23 @@
 <div class="space-y-6">
+    @php
+        $totalRecomendaciones = max(1, count($recomendaciones));
+        $urgenciaConteo = collect($recomendaciones)->countBy('urgencia');
+        $inmediata = (int) ($urgenciaConteo['inmediata'] ?? 0);
+        $proxima = (int) ($urgenciaConteo['proxima'] ?? 0);
+        $planificada = (int) ($urgenciaConteo['planificada'] ?? 0);
+        $estable = (int) ($urgenciaConteo['estable'] ?? 0);
+
+        $inmediataDeg = round(($inmediata / $totalRecomendaciones) * 360, 2);
+        $proximaDeg = round(($proxima / $totalRecomendaciones) * 360, 2);
+        $planificadaDeg = round(($planificada / $totalRecomendaciones) * 360, 2);
+
+        $ahora = $inmediata;
+        $pronto = $proxima;
+        $luego = $planificada + $estable;
+        $ahoraDeg = round(($ahora / $totalRecomendaciones) * 360, 2);
+        $prontoDeg = round(($pronto / $totalRecomendaciones) * 360, 2);
+    @endphp
+
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div class="space-y-2">
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
@@ -25,6 +44,82 @@
 
     <x-form.toast_notification :message="session('success')" variant="success" />
     <x-form.toast_notification :message="session('error')" variant="danger" />
+
+    <div class="grid gap-6 xl:grid-cols-2">
+        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div
+                    class="relative h-36 w-36 shrink-0 rounded-full"
+                    style="background: conic-gradient(#f43f5e 0deg {{ $inmediataDeg }}deg, #f59e0b {{ $inmediataDeg }}deg {{ $inmediataDeg + $proximaDeg }}deg, #38bdf8 {{ $inmediataDeg + $proximaDeg }}deg {{ $inmediataDeg + $proximaDeg + $planificadaDeg }}deg, #10b981 {{ $inmediataDeg + $proximaDeg + $planificadaDeg }}deg 360deg);"
+                >
+                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-center">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Urgencia</p>
+                            <p class="text-2xl font-bold">{{ count($recomendaciones) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribucion de urgencia</h2>
+                    <div class="mt-4 space-y-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-rose-500"></span><span>Inmediata</span></div>
+                            <span class="font-semibold">{{ $inmediata }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-amber-500"></span><span>Proxima</span></div>
+                            <span class="font-semibold">{{ $proxima }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-sky-400"></span><span>Planificada</span></div>
+                            <span class="font-semibold">{{ $planificada }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-emerald-500"></span><span>Estable</span></div>
+                            <span class="font-semibold">{{ $estable }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div
+                    class="relative h-36 w-36 shrink-0 rounded-full"
+                    style="background: conic-gradient(#f43f5e 0deg {{ $ahoraDeg }}deg, #f59e0b {{ $ahoraDeg }}deg {{ $ahoraDeg + $prontoDeg }}deg, #10b981 {{ $ahoraDeg + $prontoDeg }}deg 360deg);"
+                >
+                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-center">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Ventana</p>
+                            <p class="text-2xl font-bold">{{ count($recomendaciones) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Cuando conviene pedir</h2>
+                    <div class="mt-4 space-y-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-rose-500"></span><span>Ahora</span></div>
+                            <span class="font-semibold">{{ $ahora }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-amber-500"></span><span>Pronto</span></div>
+                            <span class="font-semibold">{{ $pronto }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-emerald-500"></span><span>Luego</span></div>
+                            <span class="font-semibold">{{ $luego }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-5 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
@@ -112,7 +207,15 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                 <p class="font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-                                    {{ number_format((float) $item['salud_operativa'], 1) }}% operativo
+                                    @if (($item['urgencia'] ?? '') === 'inmediata')
+                                        Estado critico
+                                    @elseif (($item['urgencia'] ?? '') === 'proxima')
+                                        Requiere atencion
+                                    @elseif (($item['urgencia'] ?? '') === 'planificada')
+                                        Seguimiento preventivo
+                                    @else
+                                        Estado estable
+                                    @endif
                                 </p>
                                 <p class="mt-1">Total: {{ $item['total_series'] }}</p>
                                 <p>{{ $item['inoperativas'] }} inoperativas</p>

@@ -2,9 +2,6 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Registro de Asignacion</h1>
-            <p class="mt-1 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
-                Captura prestamos a personal usando el mismo look de Penguin UI.
-            </p>
         </div>
 
         <div class="flex items-center gap-2">

@@ -1,4 +1,17 @@
 <div class="space-y-6">
+    @php
+        $totalPredicciones = max(1, count($predicciones));
+        $alto = (int) ($stats['alto'] ?? 0);
+        $medio = (int) ($stats['medio'] ?? 0);
+        $bajo = (int) ($stats['bajo'] ?? 0);
+        $inoperativoCount = collect($predicciones)->where('estado_predicho', 'inoperativo')->count();
+        $operativoCount = max(0, count($predicciones) - $inoperativoCount);
+
+        $altoDeg = round(($alto / $totalPredicciones) * 360, 2);
+        $medioDeg = round(($medio / $totalPredicciones) * 360, 2);
+        $inoperativoDeg = round(($inoperativoCount / $totalPredicciones) * 360, 2);
+    @endphp
+
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div class="space-y-2">
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
@@ -36,6 +49,89 @@
 
     <x-form.toast_notification :message="session('success')" variant="success" />
     <x-form.toast_notification :message="session('error')" variant="danger" />
+
+    <div class="grid gap-6 xl:grid-cols-2">
+        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div
+                    class="relative h-36 w-36 shrink-0 rounded-full"
+                    style="background: conic-gradient(#f43f5e 0deg {{ $altoDeg }}deg, #f59e0b {{ $altoDeg }}deg {{ $altoDeg + $medioDeg }}deg, #10b981 {{ $altoDeg + $medioDeg }}deg 360deg);"
+                >
+                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-center">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Riesgo</p>
+                            <p class="text-2xl font-bold">{{ count($predicciones) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribucion de riesgo</h2>
+                    <div class="mt-4 space-y-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="h-3 w-3 rounded-full bg-rose-500"></span>
+                                <span>Alto</span>
+                            </div>
+                            <span class="font-semibold">{{ $alto }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="h-3 w-3 rounded-full bg-amber-500"></span>
+                                <span>Medio</span>
+                            </div>
+                            <span class="font-semibold">{{ $medio }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
+                                <span>Bajo</span>
+                            </div>
+                            <span class="font-semibold">{{ $bajo }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div
+                    class="relative h-36 w-36 shrink-0 rounded-full"
+                    style="background: conic-gradient(#f43f5e 0deg {{ $inoperativoDeg }}deg, #10b981 {{ $inoperativoDeg }}deg 360deg);"
+                >
+                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-center">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Estado</p>
+                            <p class="text-2xl font-bold">{{ count($predicciones) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Estado predicho</h2>
+                    <div class="mt-4 space-y-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
+                                <span>Operativo</span>
+                            </div>
+                            <span class="font-semibold">{{ $operativoCount }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="h-3 w-3 rounded-full bg-rose-500"></span>
+                                <span>Inoperativo</span>
+                            </div>
+                            <span class="font-semibold">{{ $inoperativoCount }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-5 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
