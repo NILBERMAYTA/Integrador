@@ -3,6 +3,7 @@
 namespace App\Livewire\Predicciones;
 
 use App\Services\PrediccionApiService;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Arr;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -55,14 +56,30 @@ class Index extends Component
         $this->cargarDatos();
     }
 
+    public function exportPdf()
+    {
+        abort_unless(auth()->user()?->can('predicciones.view'), 403);
+
+        $stats = $this->buildStats();
+        $pdf = PDF::loadView('reports.predicciones-armamento', [
+            'predicciones' => $this->predicciones,
+            'health' => $this->health,
+            'trainingSummary' => $this->trainingSummary,
+            'stats' => $stats,
+            'limit' => $this->limit,
+            'generatedAt' => now(),
+            'generatedBy' => auth()->user(),
+        ])->setPaper('a4', 'landscape');
+
+        return response()->streamDownload(
+            fn () => print($pdf->output()),
+            'predicciones_armamento_'.now()->format('Ymd_His').'.pdf'
+        );
+    }
+
     public function render()
     {
-        $stats = [
-            'total' => count($this->predicciones),
-            'alto' => count(array_filter($this->predicciones, fn (array $item) => ($item['nivel_riesgo'] ?? null) === 'alto')),
-            'medio' => count(array_filter($this->predicciones, fn (array $item) => ($item['nivel_riesgo'] ?? null) === 'medio')),
-            'bajo' => count(array_filter($this->predicciones, fn (array $item) => ($item['nivel_riesgo'] ?? null) === 'bajo')),
-        ];
+        $stats = $this->buildStats();
 
         return view('livewire.predicciones.index', [
             'stats' => $stats,
@@ -84,5 +101,19 @@ class Index extends Component
             $this->error = $exception->getMessage();
             session()->flash('error', $this->error);
         }
+    }
+
+    protected function buildStats(): array
+    {
+        $inoperativo = count(array_filter($this->predicciones, fn (array $item) => ($item['estado_predicho'] ?? null) === 'inoperativo'));
+
+        return [
+            'total' => count($this->predicciones),
+            'alto' => count(array_filter($this->predicciones, fn (array $item) => ($item['nivel_riesgo'] ?? null) === 'alto')),
+            'medio' => count(array_filter($this->predicciones, fn (array $item) => ($item['nivel_riesgo'] ?? null) === 'medio')),
+            'bajo' => count(array_filter($this->predicciones, fn (array $item) => ($item['nivel_riesgo'] ?? null) === 'bajo')),
+            'inoperativo' => $inoperativo,
+            'operativo' => max(0, count($this->predicciones) - $inoperativo),
+        ];
     }
 }
