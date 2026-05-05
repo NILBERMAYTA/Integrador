@@ -1,0 +1,7 @@
+Clases del modelo YOLO
+==================================================
+
+Clase 0: rodilleras
+Clase 1: chaleco
+Clase 2: casco
+Clase 3: escudo
