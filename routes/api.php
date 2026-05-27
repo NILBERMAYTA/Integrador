@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
@@ -11,15 +12,32 @@ Route::post('/detecciones', function (Request $request) {
 
     $file = $request->file('imagen');
 
-    $response = Http::attach(
-        'file',
-        file_get_contents($file->getRealPath()),
-        $file->getClientOriginalName()
-    )->post('http://127.0.0.1:8001/detect'); 
+    $baseUrl = rtrim((string) config('services.deteccion_api.url'), '/');
+    $timeout = max(1, (int) config('services.deteccion_api.timeout', 30));
 
-    if ($response->failed()) {
-        return response()->json(['message' => 'Error YOLO'], 500);
+    try {
+        $response = Http::baseUrl($baseUrl)
+            ->timeout($timeout)
+            ->acceptJson()
+            ->attach(
+                'file',
+                file_get_contents($file->getRealPath()),
+                $file->getClientOriginalName()
+            )
+            ->post('/detect');
+    } catch (ConnectionException $exception) {
+        return response()->json([
+            'message' => 'No se pudo conectar con la API de deteccion.',
+            'detail' => $exception->getMessage(),
+        ], 503);
     }
 
-    return $response->json(); 
+    if ($response->failed()) {
+        return response()->json([
+            'message' => 'Error en la API de deteccion.',
+            'detail' => $response->json('detail') ?? $response->json('message') ?? $response->body(),
+        ], $response->status() >= 500 ? 502 : $response->status());
+    }
+
+    return $response->json();
 })->name('api.detecciones');

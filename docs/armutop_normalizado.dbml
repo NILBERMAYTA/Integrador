@@ -1,0 +1,418 @@
+Project armutop_mvp {
+  database_type: 'PostgreSQL'
+  Note: '''
+  Base de datos MVP para ARMUTOP.
+
+  No incluye tablas que Laravel o Spatie generan por defecto:
+  - password_reset_tokens, sessions, cache, jobs, failed_jobs, etc.
+  - roles, permissions, model_has_roles, model_has_permissions, role_has_permissions.
+  - activity_log u otras tablas de auditoria.
+
+  Las fotos se modelan como atributos tipo path/URL porque se guardaran en S3 o storage compatible.
+  '''
+}
+
+Enum tipo_articulo {
+  reutilizable
+  consumible
+}
+
+Enum estado_serie {
+  disponible
+  prestado
+  mantenimiento
+  inoperativo
+  perdido
+  robado
+  baja
+}
+
+Enum condicion_articulo {
+  bueno
+  regular
+  malo
+  inoperativo
+}
+
+Enum estado_prestamo {
+  abierto
+  parcial
+  cerrado
+  cerrado_con_incidencia
+  anulado
+}
+
+Enum resultado_devolucion {
+  devuelto
+  consumido
+  danado
+  perdido
+  robado
+}
+
+Enum estado_transferencia {
+  confirmada
+  cancelada
+}
+
+Enum nivel_riesgo {
+  bajo
+  medio
+  alto
+  critico
+}
+
+Table unidades {
+  id bigserial [pk]
+  nombre varchar(150) [not null, unique]
+  sigla varchar(50) [unique]
+  descripcion text
+  activo boolean [not null, default: true]
+}
+
+Table users {
+  id bigserial [pk]
+  unidad_id bigint [not null]
+  name varchar(150) [not null]
+  email varchar(150) [not null, unique]
+  password varchar(255) [not null]
+  ci varchar(30) [unique]
+  numero_escalafon varchar(50) [unique]
+  rango varchar(80)
+  telefono varchar(30)
+  foto_path varchar(500)
+  activo boolean [not null, default: true]
+  email_verified_at timestamptz
+  remember_token varchar(100)
+
+  indexes {
+    unidad_id
+    numero_escalafon
+  }
+}
+
+Table categorias {
+  id bigserial [pk]
+  nombre varchar(120) [not null, unique]
+  descripcion text
+}
+
+Table articulos {
+  id bigserial [pk]
+  categoria_id bigint [not null]
+  nombre varchar(150) [not null]
+  tipo tipo_articulo [not null]
+  unidad_medida varchar(30)
+  descripcion text
+  foto_path varchar(500)
+  stock_minimo numeric(12,2) [not null, default: 0]
+  activo boolean [not null, default: true]
+
+  indexes {
+    (categoria_id, nombre) [unique]
+    tipo
+  }
+}
+
+Table articulo_series {
+  id bigserial [pk]
+  articulo_id bigint [not null]
+  unidad_id bigint [not null]
+  codigo_serie varchar(120) [not null, unique]
+  estado estado_serie [not null, default: 'disponible']
+  condicion condicion_articulo [not null, default: 'bueno']
+  observaciones text
+
+  indexes {
+    articulo_id
+    unidad_id
+    estado
+    condicion
+  }
+}
+
+Table inventario_unidad_articulos {
+  id bigserial [pk]
+  unidad_id bigint [not null]
+  articulo_id bigint [not null]
+  cantidad_disponible numeric(12,2) [not null, default: 0]
+  cantidad_prestada numeric(12,2) [not null, default: 0]
+  cantidad_mantenimiento numeric(12,2) [not null, default: 0]
+
+  indexes {
+    (unidad_id, articulo_id) [unique]
+  }
+}
+
+Table eventos {
+  id bigserial [pk]
+  unidad_id bigint
+  nombre varchar(150) [not null]
+  lugar varchar(255)
+  fecha_inicio timestamptz
+  fecha_fin timestamptz
+  descripcion text
+
+  indexes {
+    unidad_id
+    fecha_inicio
+  }
+}
+
+Table prestamos {
+  id bigserial [pk]
+  unidad_id bigint [not null]
+  evento_id bigint
+  policia_id bigint [not null]
+  furriel_id bigint [not null]
+  estado estado_prestamo [not null, default: 'abierto']
+  fecha_prestamo timestamptz [not null]
+  observaciones text
+
+  indexes {
+    unidad_id
+    policia_id
+    furriel_id
+    estado
+    fecha_prestamo
+  }
+}
+
+Table prestamo_detalles {
+  id bigserial [pk]
+  prestamo_id bigint [not null]
+  articulo_id bigint [not null]
+  cantidad_prestada numeric(12,2) [not null]
+  cantidad_pendiente numeric(12,2) [not null]
+  observaciones text
+
+  indexes {
+    prestamo_id
+    articulo_id
+  }
+}
+
+Table prestamo_series {
+  id bigserial [pk]
+  prestamo_detalle_id bigint [not null]
+  articulo_serie_id bigint [not null]
+  condicion_salida condicion_articulo [not null]
+
+  indexes {
+    (prestamo_detalle_id, articulo_serie_id) [unique]
+    articulo_serie_id
+  }
+}
+
+Table devoluciones {
+  id bigserial [pk]
+  prestamo_id bigint [not null]
+  recibido_por bigint [not null]
+  fecha_devolucion timestamptz [not null]
+  observaciones text
+
+  indexes {
+    prestamo_id
+    recibido_por
+  }
+}
+
+Table devolucion_detalles {
+  id bigserial [pk]
+  devolucion_id bigint [not null]
+  prestamo_detalle_id bigint [not null]
+  articulo_id bigint [not null]
+  resultado resultado_devolucion [not null]
+  cantidad numeric(12,2) [not null]
+  condicion_retorno condicion_articulo
+  observaciones text
+
+  indexes {
+    devolucion_id
+    prestamo_detalle_id
+    articulo_id
+  }
+}
+
+Table devolucion_series {
+  id bigserial [pk]
+  devolucion_detalle_id bigint [not null]
+  articulo_serie_id bigint [not null]
+  resultado resultado_devolucion [not null]
+  condicion_retorno condicion_articulo
+  observaciones text
+
+  indexes {
+    (devolucion_detalle_id, articulo_serie_id) [unique]
+    articulo_serie_id
+  }
+}
+
+Table incidencias {
+  id bigserial [pk]
+  unidad_id bigint [not null]
+  prestamo_id bigint
+  articulo_id bigint [not null]
+  articulo_serie_id bigint
+  policia_id bigint
+  registrado_por bigint [not null]
+  tipo varchar(80) [not null]
+  fecha timestamptz [not null]
+  descripcion text
+  evidencia_path varchar(500)
+
+  indexes {
+    unidad_id
+    prestamo_id
+    articulo_id
+    articulo_serie_id
+    fecha
+  }
+}
+
+Table mantenimientos {
+  id bigserial [pk]
+  unidad_id bigint [not null]
+  articulo_id bigint [not null]
+  articulo_serie_id bigint
+  registrado_por bigint [not null]
+  tipo varchar(40) [not null]
+  fecha_inicio timestamptz [not null]
+  fecha_fin timestamptz
+  costo numeric(12,2)
+  descripcion text
+
+  indexes {
+    unidad_id
+    articulo_id
+    articulo_serie_id
+  }
+}
+
+Table transferencias_personal {
+  id bigserial [pk]
+  user_id bigint [not null]
+  unidad_origen_id bigint [not null]
+  unidad_destino_id bigint [not null]
+  transferido_por bigint [not null]
+  fecha_transferencia timestamptz [not null]
+  motivo varchar(255)
+}
+
+Table transferencias_armamento {
+  id bigserial [pk]
+  unidad_origen_id bigint [not null]
+  unidad_destino_id bigint [not null]
+  transferido_por bigint [not null]
+  estado estado_transferencia [not null, default: 'confirmada']
+  fecha_transferencia timestamptz [not null]
+  motivo varchar(255)
+}
+
+Table transferencia_armamento_detalles {
+  id bigserial [pk]
+  transferencia_armamento_id bigint [not null]
+  articulo_id bigint [not null]
+  cantidad numeric(12,2) [not null, default: 0]
+}
+
+Table transferencia_armamento_series {
+  id bigserial [pk]
+  transferencia_armamento_detalle_id bigint [not null]
+  articulo_serie_id bigint [not null]
+
+  indexes {
+    (transferencia_armamento_detalle_id, articulo_serie_id) [unique]
+  }
+}
+
+Table detecciones_imagen {
+  id bigserial [pk]
+  prestamo_id bigint
+  imagen_path varchar(500) [not null]
+  modelo varchar(120) [not null]
+  respuesta_json jsonb
+  created_by bigint [not null]
+}
+
+Table predicciones {
+  id bigserial [pk]
+  unidad_id bigint
+  articulo_id bigint
+  articulo_serie_id bigint
+  tipo varchar(80) [not null] // condicion_armamento, reposicion_armamento, probabilidad_conflicto
+  modelo varchar(120) [not null, default: 'random_forest']
+  nivel_riesgo nivel_riesgo
+  probabilidad numeric(5,4)
+  condicion_predicha condicion_articulo
+  cantidad_reposicion_sugerida numeric(12,2)
+  dias_reposicion_min int
+  dias_reposicion_max int
+  periodo_inicio date
+  periodo_fin date
+  datos_json jsonb
+
+  indexes {
+    unidad_id
+    articulo_id
+    articulo_serie_id
+    tipo
+  }
+}
+
+Ref: users.unidad_id > unidades.id
+
+Ref: articulos.categoria_id > categorias.id
+Ref: articulo_series.articulo_id > articulos.id
+Ref: articulo_series.unidad_id > unidades.id
+Ref: inventario_unidad_articulos.unidad_id > unidades.id
+Ref: inventario_unidad_articulos.articulo_id > articulos.id
+
+Ref: eventos.unidad_id > unidades.id
+Ref: prestamos.unidad_id > unidades.id
+Ref: prestamos.evento_id > eventos.id
+Ref: prestamos.policia_id > users.id
+Ref: prestamos.furriel_id > users.id
+Ref: prestamo_detalles.prestamo_id > prestamos.id
+Ref: prestamo_detalles.articulo_id > articulos.id
+Ref: prestamo_series.prestamo_detalle_id > prestamo_detalles.id
+Ref: prestamo_series.articulo_serie_id > articulo_series.id
+
+Ref: devoluciones.prestamo_id > prestamos.id
+Ref: devoluciones.recibido_por > users.id
+Ref: devolucion_detalles.devolucion_id > devoluciones.id
+Ref: devolucion_detalles.prestamo_detalle_id > prestamo_detalles.id
+Ref: devolucion_detalles.articulo_id > articulos.id
+Ref: devolucion_series.devolucion_detalle_id > devolucion_detalles.id
+Ref: devolucion_series.articulo_serie_id > articulo_series.id
+
+Ref: incidencias.unidad_id > unidades.id
+Ref: incidencias.prestamo_id > prestamos.id
+Ref: incidencias.articulo_id > articulos.id
+Ref: incidencias.articulo_serie_id > articulo_series.id
+Ref: incidencias.policia_id > users.id
+Ref: incidencias.registrado_por > users.id
+
+Ref: mantenimientos.unidad_id > unidades.id
+Ref: mantenimientos.articulo_id > articulos.id
+Ref: mantenimientos.articulo_serie_id > articulo_series.id
+Ref: mantenimientos.registrado_por > users.id
+
+Ref: transferencias_personal.user_id > users.id
+Ref: transferencias_personal.unidad_origen_id > unidades.id
+Ref: transferencias_personal.unidad_destino_id > unidades.id
+Ref: transferencias_personal.transferido_por > users.id
+Ref: transferencias_armamento.unidad_origen_id > unidades.id
+Ref: transferencias_armamento.unidad_destino_id > unidades.id
+Ref: transferencias_armamento.transferido_por > users.id
+Ref: transferencia_armamento_detalles.transferencia_armamento_id > transferencias_armamento.id
+Ref: transferencia_armamento_detalles.articulo_id > articulos.id
+Ref: transferencia_armamento_series.transferencia_armamento_detalle_id > transferencia_armamento_detalles.id
+Ref: transferencia_armamento_series.articulo_serie_id > articulo_series.id
+
+Ref: detecciones_imagen.prestamo_id > prestamos.id
+Ref: detecciones_imagen.created_by > users.id
+
+Ref: predicciones.unidad_id > unidades.id
+Ref: predicciones.articulo_id > articulos.id
+Ref: predicciones.articulo_serie_id > articulo_series.id

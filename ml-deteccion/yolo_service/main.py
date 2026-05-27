@@ -1,46 +1,60 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from io import BytesIO
+from pathlib import Path
 from PIL import Image
-import numpy as np
-import base64
+import os
 import time
 
 from ultralytics import YOLO
 
-app = FastAPI()
 
-# Carga el modelo una vez
-print("Cargando modelo YOLO...")
-model = YOLO("best.pt")
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = Path(os.getenv("YOLO_MODEL_PATH", BASE_DIR / "best.pt")).resolve()
+
+app = FastAPI(
+    title="Armutop ML Deteccion",
+    version="1.0.0",
+    description="API de deteccion de articulos con YOLO.",
+)
+
+print(f"Cargando modelo YOLO desde {MODEL_PATH}...")
+if not MODEL_PATH.exists():
+    raise RuntimeError(f"No existe el modelo YOLO en {MODEL_PATH}")
+
+model = YOLO(str(MODEL_PATH))
 print("Modelo cargado exitosamente.")
+
+
+@app.get("/health")
+def health() -> dict[str, object]:
+    return {
+        "status": "ok",
+        "model_ready": True,
+        "model_path": str(MODEL_PATH),
+    }
 
 
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
-
     start_time = time.time()
 
-    # Mostrar información del archivo recibido
     print("\n==============================")
     print("Solicitud recibida")
     print(f"Nombre archivo: {file.filename}")
     print(f"Tipo MIME: {file.content_type}")
 
-    # Leer bytes
     image_bytes = await file.read()
     print(f"Bytes recibidos: {len(image_bytes)}")
 
-    # Convertir imagen
     try:
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
-        print(f"Resolución imagen: {image.width}x{image.height}")
-    except Exception as e:
-        print("Error al leer imagen:", e)
-        return JSONResponse({"error": "No se pudo leer la imagen"}, status_code=400)
+        print(f"Resolucion imagen: {image.width}x{image.height}")
+    except Exception as exc:
+        print("Error al leer imagen:", exc)
+        raise HTTPException(status_code=400, detail="No se pudo leer la imagen") from exc
 
-    # Inferencia YOLO
-    print("Procesando detección...")
+    print("Procesando deteccion...")
     results = model.predict(
         image,
         imgsz=640,
@@ -53,10 +67,8 @@ async def detect(file: UploadFile = File(...)):
     boxes = det.boxes
     names = model.model.names if hasattr(model, "model") else model.names
 
-    # Debug detecciones
-    print(f"Número de objetos detectados: {len(boxes)}")
+    print(f"Numero de objetos detectados: {len(boxes)}")
 
-    # Agrupamos detecciones
     counts = {}
     detections_debug = []
 
@@ -80,9 +92,8 @@ async def detect(file: UploadFile = File(...)):
     print(f"Tiempo total procesamiento: {elapsed}s")
     print("==============================\n")
 
-    # Respuesta detallada (útil para debug)
     return JSONResponse(content={
         "summary": counts,
         "detections": detections_debug,
-        "processing_time": elapsed
+        "processing_time": elapsed,
     })
