@@ -56,5 +56,6 @@ RUN chmod +x /usr/local/bin/start \
     && composer run-script post-autoload-dump --no-interaction
 
 EXPOSE 8000
+ENV PORT=8000
 
 CMD ["start"]
