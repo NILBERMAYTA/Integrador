@@ -55,7 +55,7 @@ RUN chmod +x /usr/local/bin/start \
     && chown -R www-data:www-data storage bootstrap/cache \
     && composer run-script post-autoload-dump --no-interaction
 
-EXPOSE 8000
-ENV PORT=8000
+EXPOSE 80
+ENV PORT=80
 
 CMD ["start"]

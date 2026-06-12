@@ -30,7 +30,7 @@ En la pantalla del proyecto:
 3. Elige `Application`.
 4. Conecta tu repositorio de GitHub.
 5. Selecciona despliegue con `Dockerfile`.
-6. Puerto de la aplicacion: `8000`.
+6. Puerto de la aplicacion: `80`.
 
 ## 4. Variables de entorno
 
@@ -67,7 +67,7 @@ FILESYSTEM_DISK=public
 
 RUN_MIGRATIONS=true
 RUN_SEEDERS=false
-PORT=8000
+PORT=80
 ```
 
 Para una demo con datos de prueba, cambia temporalmente:
@@ -83,7 +83,7 @@ Despues del primer despliegue, vuelve a poner `RUN_SEEDERS=false`.
 1. En tu proveedor DNS crea un registro `A` apuntando a la IP del servidor.
 2. En Dokploy, entra al servicio Laravel.
 3. Agrega el dominio.
-4. Asegurate de que el puerto del dominio sea `8000`.
+4. Asegurate de que el puerto del dominio sea `80`.
 
 ## 6. Despliega
 
@@ -104,4 +104,3 @@ Si activaste `RUN_SEEDERS=true`, puedes entrar con:
 - `admin@armutop.local` / `admin123`
 - `utop-ea@armutop.local` / `adminunidad123`
 - `furriel.utop-ea@armutop.local` / `furriel123`
-
