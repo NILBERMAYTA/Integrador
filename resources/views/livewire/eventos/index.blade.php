@@ -40,11 +40,83 @@
     @endif
 
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
-        <p class="text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
-            Registro de conflictos y operativos con sus fechas de inicio y cierre.
-        </p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
+                Registro de conflictos y operativos con sus fechas de inicio y cierre.
+            </p>
+            <div class="flex w-fit rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-1">
+                <button type="button" wire:click="$set('viewMode', 'table')" class="px-3 py-2 text-sm font-semibold rounded-[calc(var(--radius-radius)-2px)] {{ $viewMode === 'table' ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-on-surface)] opacity-70' }}">
+                    Tabla
+                </button>
+                <button type="button" wire:click="$set('viewMode', 'cards')" class="px-3 py-2 text-sm font-semibold rounded-[calc(var(--radius-radius)-2px)] {{ $viewMode === 'cards' ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-on-surface)] opacity-70' }}">
+                    Cards
+                </button>
+            </div>
+        </div>
     </div>
 
+    @if($viewMode === 'cards')
+        <div>
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                @forelse ($eventos as $evento)
+                    @php
+                        $estadoEvento = $evento->fecha_fin && $evento->fecha_fin->isPast() ? 'Cerrado' : 'Activo';
+                        $estadoClasses = $estadoEvento === 'Activo' ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-700';
+                    @endphp
+                    <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-5 shadow-sm" x-data="{ modalIsOpen: false }">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Conflicto #{{ $evento->id }}</p>
+                                <h2 class="mt-1 truncate text-lg font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $evento->nombre }}</h2>
+                            </div>
+                            <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold {{ $estadoClasses }}">{{ $estadoEvento }}</span>
+                        </div>
+
+                        <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                            <div class="rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
+                                <p class="text-xs uppercase tracking-wider opacity-60">Fecha inicio</p>
+                                <p class="mt-1 font-semibold">{{ $evento->fecha_inicio ? $evento->fecha_inicio->format('Y-m-d') : '-' }}</p>
+                            </div>
+                            <div class="rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
+                                <p class="text-xs uppercase tracking-wider opacity-60">Fecha fin</p>
+                                <p class="mt-1 font-semibold">{{ $evento->fecha_fin ? $evento->fecha_fin->format('Y-m-d') : '-' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 flex flex-wrap items-center gap-2">
+                            <x-form.outline_button variant="edit" href="{{ route('eventos.update', $evento) }}" wire:navigate>Editar</x-form.outline_button>
+                            <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                        </div>
+
+                        <x-form.confirm-modal
+                            x-model="modalIsOpen"
+                            title="Confirmar eliminacion"
+                            icon="danger"
+                            confirmText="Eliminar conflicto"
+                            cancelText="Cancelar"
+                            :persistent="false"
+                            maxWidth="lg"
+                            @confirm="$wire.confirmarEliminacion({{ $evento->id }}); modalIsOpen = false"
+                        >
+                            <p class="font-medium mb-2">Estas seguro de que deseas eliminar este conflicto?</p>
+                            <p class="text-sm opacity-75">El registro se movera a la papelera y podra restaurarse despues.</p>
+                        </x-form.confirm-modal>
+                    </div>
+                @empty
+                    <div class="md:col-span-2 xl:col-span-3 rounded-[var(--radius-radius)] border border-dashed border-[var(--color-outline)] p-12 text-center">
+                        <p class="font-medium">No hay conflictos registrados</p>
+                        <p class="mt-1 text-sm opacity-60">Comienza creando un nuevo conflicto</p>
+                    </div>
+                @endforelse
+            </div>
+
+            @if($eventos->hasPages())
+                <div class="mt-4 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-6 py-4">
+                    {{ $eventos->links() }}
+                </div>
+            @endif
+        </div>
+    @else
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
@@ -117,4 +189,5 @@
             </div>
         @endif
     </div>
+    @endif
 </div>

@@ -31,6 +31,9 @@ class Index extends Component
     #[Url(except: 'asc')]
     public string $sortDirection = 'asc';
 
+    #[Url(except: 'table')]
+    public string $viewMode = 'table';
+
     public function updatedSearch() { $this->resetPage(); }
     public function updatedRango() { $this->resetPage(); }
     public function updatedRol() { $this->resetPage(); }

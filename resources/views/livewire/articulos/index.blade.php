@@ -68,7 +68,7 @@
     </div>
 
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-[260px]">
                 <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5">Buscar</label>
                 <div class="relative">
@@ -133,9 +133,107 @@
                     Limpiar filtros
                 </x-form.header_button>
             </div>
+
+            <div class="ml-auto flex rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-1">
+                <button type="button" wire:click="$set('viewMode', 'table')" class="px-3 py-2 text-sm font-semibold rounded-[calc(var(--radius-radius)-2px)] {{ $viewMode === 'table' ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-on-surface)] opacity-70' }}">
+                    Tabla
+                </button>
+                <button type="button" wire:click="$set('viewMode', 'cards')" class="px-3 py-2 text-sm font-semibold rounded-[calc(var(--radius-radius)-2px)] {{ $viewMode === 'cards' ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-on-surface)] opacity-70' }}">
+                    Cards
+                </button>
+            </div>
         </div>
     </div>
 
+    @if($viewMode === 'cards')
+        <div>
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                @forelse ($articulos as $row)
+                    @php
+                        $estadoClasses = match($row['estado']) {
+                            'disponible' => 'bg-emerald-100 text-emerald-700',
+                            'bajo_stock' => 'bg-amber-100 text-amber-700',
+                            'agotado' => 'bg-rose-100 text-rose-700',
+                            'asignado' => 'bg-sky-100 text-sky-700',
+                            'en_mantenimiento' => 'bg-orange-100 text-orange-700',
+                            'observado' => 'bg-yellow-100 text-yellow-700',
+                            'inoperativo' => 'bg-rose-100 text-rose-700',
+                            'dado_de_baja' => 'bg-zinc-200 text-zinc-700',
+                            default => 'bg-zinc-100 text-zinc-700',
+                        };
+
+                        $condicionClasses = match($row['condicion']) {
+                            'operativo', 'bueno' => 'bg-emerald-100 text-emerald-700',
+                            'con_defectos', 'regular', 'bajo_stock' => 'bg-amber-100 text-amber-700',
+                            'malo', 'danado' => 'bg-orange-100 text-orange-700',
+                            'inoperativo', 'sin_stock' => 'bg-rose-100 text-rose-700',
+                            default => 'bg-zinc-100 text-zinc-700',
+                        };
+                    @endphp
+                    <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-5 shadow-sm" x-data="{ modalIsOpen: false }">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold uppercase tracking-wider opacity-60">{{ $row['id'] }}</p>
+                                <h2 class="mt-1 truncate text-lg font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $row['nombre'] }}</h2>
+                                <p class="mt-1 text-sm opacity-70">{{ $row['categoria'] }}</p>
+                            </div>
+                            <span class="shrink-0 rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">{{ ucfirst($row['tipo']) }}</span>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $estadoClasses }}">{{ str_replace('_', ' ', ucfirst($row['estado'])) }}</span>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $condicionClasses }}">{{ str_replace('_', ' ', ucfirst($row['condicion'])) }}</span>
+                        </div>
+
+                        <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                            <div class="rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
+                                <p class="text-xs uppercase tracking-wider opacity-60">Unidad</p>
+                                <p class="mt-1 font-semibold">{{ $row['unidad'] }}</p>
+                            </div>
+                            <div class="rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
+                                <p class="text-xs uppercase tracking-wider opacity-60">Cantidad / Serie</p>
+                                <p class="mt-1 font-semibold">{{ $row['cantidad_serie'] }}</p>
+                            </div>
+                        </div>
+
+                        <p class="mt-4 text-sm opacity-70">{{ $row['detalle_principal'] }}</p>
+                        <p class="mt-1 text-xs opacity-60">{{ $row['detalle_secundario'] }}</p>
+
+                        <div class="mt-5 flex flex-wrap items-center gap-2">
+                            <x-form.outline_button variant="details" href="{{ route('articulos.show', $row['articulo_id']) }}" wire:navigate>Ver</x-form.outline_button>
+                            <x-form.outline_button variant="edit" href="{{ route('articulos.update', $row['articulo_id']) }}" wire:navigate>Editar</x-form.outline_button>
+                            <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                        </div>
+
+                        <x-form.confirm-modal
+                            x-model="modalIsOpen"
+                            title="Confirmar eliminacion"
+                            icon="danger"
+                            confirmText="Eliminar articulo"
+                            cancelText="Cancelar"
+                            :persistent="false"
+                            maxWidth="lg"
+                            @confirm="$wire.confirmarEliminacion({{ $row['articulo_id'] }}); modalIsOpen = false"
+                        >
+                            <p class="font-medium mb-2">Estas seguro de que deseas eliminar este articulo?</p>
+                            <p class="text-sm opacity-75">Esta accion movera el articulo a la papelera.</p>
+                        </x-form.confirm-modal>
+                    </div>
+                @empty
+                    <div class="md:col-span-2 xl:col-span-3 rounded-[var(--radius-radius)] border border-dashed border-[var(--color-outline)] p-12 text-center">
+                        <p class="font-medium">No hay material registrado</p>
+                        <p class="mt-1 text-sm opacity-60">Intenta ajustar los filtros de busqueda</p>
+                    </div>
+                @endforelse
+            </div>
+
+            @if($articulos->hasPages())
+                <div class="mt-4 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-6 py-4">
+                    {{ $articulos->links() }}
+                </div>
+            @endif
+        </div>
+    @else
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1120px] text-left">
@@ -279,6 +377,7 @@
             </div>
         @endif
     </div>
+    @endif
 
     @if($ajusteArticulo)
         <div class="fixed inset-0 z-50 flex items-start justify-center p-6">

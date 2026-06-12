@@ -3,12 +3,16 @@
 namespace App\Livewire\Eventos;
 
 use App\Models\Evento;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
     use WithPagination;
+
+    #[Url(except: 'table')]
+    public string $viewMode = 'table';
 
     public function confirmarEliminacion(int $id): void
     {

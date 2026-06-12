@@ -94,8 +94,89 @@
                 @endforeach
             </select>
         </div>
+
+        <div class="ml-auto flex rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-1">
+            <button type="button" wire:click="$set('viewMode', 'table')" class="px-3 py-2 text-sm font-semibold rounded-[calc(var(--radius-radius)-2px)] {{ $viewMode === 'table' ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-on-surface)] opacity-70' }}">
+                Tabla
+            </button>
+            <button type="button" wire:click="$set('viewMode', 'cards')" class="px-3 py-2 text-sm font-semibold rounded-[calc(var(--radius-radius)-2px)] {{ $viewMode === 'cards' ? 'bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm' : 'text-[var(--color-on-surface)] opacity-70' }}">
+                Cards
+            </button>
+        </div>
     </x-form.filter-bar>
 
+    @if($viewMode === 'cards')
+        <div>
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                @forelse ($users as $user)
+                    <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-5 shadow-sm" x-data="{ modalIsOpen: false }">
+                        <div class="flex items-start gap-4">
+                            <div class="h-14 w-14 shrink-0 rounded-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center">
+                                @if (!empty($user->foto))
+                                    <img src="{{ asset('storage/'.$user->foto) }}" alt="Foto" class="h-full w-full object-cover" />
+                                @else
+                                    <span class="text-sm font-semibold">{{ $user->initials() }}</span>
+                                @endif
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-wider opacity-60">{{ $user->numero_escalafon ?: 'Sin escalafon' }}</p>
+                                <h2 class="mt-1 truncate text-lg font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
+                                    {{ trim($user->name.' '.$user->apellido_paterno.' '.$user->apellido_materno) }}
+                                </h2>
+                                <p class="mt-1 text-sm opacity-70">{{ $user->email ?: 'Sin correo de acceso' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center rounded-full bg-[var(--color-primary)] text-[var(--color-on-primary)] px-2.5 py-1 text-xs font-medium">{{ $user->rango ?: 'Sin rango' }}</span>
+                            <span class="inline-flex items-center rounded-full bg-[var(--color-secondary)] text-[var(--color-on-secondary)] px-2.5 py-1 text-xs font-medium">{{ str_replace('_', ' ', $user->role) }}</span>
+                            <span class="inline-flex items-center rounded-full {{ $user->can_login ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-700' }} px-2.5 py-1 text-xs font-medium">
+                                {{ $user->can_login ? 'Con acceso' : 'Sin acceso' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-5 rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
+                            <p class="text-xs uppercase tracking-wider opacity-60">Unidad asignada</p>
+                            <p class="mt-1 font-semibold">{{ $user->unidad?->sigla ?? $user->unidad?->nombre ?? '-' }}</p>
+                        </div>
+
+                        <div class="mt-5 flex flex-wrap items-center gap-2">
+                            <x-form.outline_button variant="edit" href="{{ route('users.update', $user) }}" wire:navigate>Editar</x-form.outline_button>
+                            @if(auth()->user()?->isAdministradorGeneral())
+                                <x-form.outline_button variant="neutral" href="{{ route('users.transfer', $user) }}" wire:navigate>Transferir</x-form.outline_button>
+                            @endif
+                            <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                        </div>
+
+                        <x-form.confirm-modal
+                            x-model="modalIsOpen"
+                            title="Confirmar Eliminación"
+                            icon="danger"
+                            confirmText="Eliminar Usuario"
+                            cancelText="Cancelar"
+                            :persistent="false"
+                            maxWidth="lg"
+                            @confirm="$wire.confirmarEliminacion({{ $user->id }}); modalIsOpen = false"
+                        >
+                            <p class="font-medium mb-2">¿Está seguro de que desea eliminar este usuario?</p>
+                            <p class="text-sm opacity-75">Esta acción moverá el usuario a la papelera.</p>
+                        </x-form.confirm-modal>
+                    </div>
+                @empty
+                    <div class="md:col-span-2 xl:col-span-3 rounded-[var(--radius-radius)] border border-dashed border-[var(--color-outline)] p-12 text-center">
+                        <p class="font-medium">No hay usuarios registrados</p>
+                        <p class="mt-1 text-sm opacity-60">Intenta ajustar los filtros de búsqueda</p>
+                    </div>
+                @endforelse
+            </div>
+
+            @if($users->hasPages())
+                <div class="mt-4 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] px-6 py-4">
+                    {{ $users->links() }}
+                </div>
+            @endif
+        </div>
+    @else
     {{-- Tabla --}}
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] overflow-hidden">
         <div class="overflow-x-auto">
@@ -249,8 +330,8 @@
             </div>
         @endif
     </div>
+    @endif
 </div>
-
 
 
 

@@ -45,6 +45,9 @@ class Index extends Component
     #[Url(except: 'asc')]
     public string $sortDirection = 'asc';
 
+    #[Url(except: 'table')]
+    public string $viewMode = 'table';
+
     public int $perPage = 12;
 
     public function updatedSearch(): void
