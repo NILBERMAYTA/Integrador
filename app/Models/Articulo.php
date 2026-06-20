@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Articulo extends BaseModel
 {
@@ -14,6 +15,7 @@ class Articulo extends BaseModel
         'nombre',
         'unidad_medida',
         'descripcion',
+        'foto_path',
         'tipo',
         'seguimiento',
     ];
@@ -71,5 +73,14 @@ class Articulo extends BaseModel
     public function seguimientoLabel(): string
     {
         return $this->isSerializado() ? 'Serie' : 'Cantidad';
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (empty($this->foto_path) || ! Storage::disk('public')->exists($this->foto_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->foto_path);
     }
 }

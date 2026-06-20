@@ -19,6 +19,7 @@ class InventarioUnidadService
                 'cantidad_disponible' => 0,
                 'cantidad_asignada' => 0,
                 'cantidad_mantenimiento' => 0,
+                'stock_minimo' => 0,
             ]
         );
     }
@@ -27,6 +28,15 @@ class InventarioUnidadService
     {
         $inventario = $this->ensure($unidadId, $articuloId);
         $inventario->increment('cantidad_disponible', $cantidad);
+
+        return $inventario->refresh();
+    }
+
+    public function setMinimumStock(int $unidadId, int $articuloId, float $stockMinimo): InventarioUnidadArticulo
+    {
+        $inventario = $this->ensure($unidadId, $articuloId);
+        $inventario->stock_minimo = max(0, $stockMinimo);
+        $inventario->save();
 
         return $inventario->refresh();
     }

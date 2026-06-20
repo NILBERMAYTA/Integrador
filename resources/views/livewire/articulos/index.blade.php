@@ -62,7 +62,7 @@
             <p class="mt-2 text-2xl font-semibold text-rose-600">{{ $resumenCondicion['inoperativo'] }}</p>
         </div>
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
-            <p class="text-xs uppercase tracking-wider opacity-60">Total armamento</p>
+            <p class="text-xs uppercase tracking-wider opacity-60">Total registros</p>
             <p class="mt-2 text-2xl font-semibold text-zinc-700">{{ $resumenCondicion['total'] }}</p>
         </div>
     </div>
@@ -125,6 +125,8 @@
                     <option value="observado">Observado</option>
                     <option value="inoperativo">Inoperativo</option>
                     <option value="dado_de_baja">Dado de baja</option>
+                    <option value="perdido">Perdido</option>
+                    <option value="robado">Robado</option>
                 </select>
             </div>
 
@@ -147,7 +149,7 @@
 
     @if($viewMode === 'cards')
         <div>
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 @forelse ($articulos as $row)
                     @php
                         $estadoClasses = match($row['estado']) {
@@ -159,6 +161,10 @@
                             'observado' => 'bg-yellow-100 text-yellow-700',
                             'inoperativo' => 'bg-rose-100 text-rose-700',
                             'dado_de_baja' => 'bg-zinc-200 text-zinc-700',
+                            'perdido' => 'bg-zinc-200 text-zinc-700',
+                            'robado' => 'bg-rose-100 text-rose-700',
+                            'activo' => 'bg-emerald-100 text-emerald-700',
+                            'sin_series' => 'bg-zinc-100 text-zinc-700',
                             default => 'bg-zinc-100 text-zinc-700',
                         };
 
@@ -167,42 +173,86 @@
                             'con_defectos', 'regular', 'bajo_stock' => 'bg-amber-100 text-amber-700',
                             'malo', 'danado' => 'bg-orange-100 text-orange-700',
                             'inoperativo', 'sin_stock' => 'bg-rose-100 text-rose-700',
+                            'con_observaciones' => 'bg-amber-100 text-amber-700',
                             default => 'bg-zinc-100 text-zinc-700',
                         };
                     @endphp
-                    <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-5 shadow-sm" x-data="{ modalIsOpen: false }">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-xs font-semibold uppercase tracking-wider opacity-60">{{ $row['id'] }}</p>
-                                <h2 class="mt-1 truncate text-lg font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $row['nombre'] }}</h2>
-                                <p class="mt-1 text-sm opacity-70">{{ $row['categoria'] }}</p>
-                            </div>
-                            <span class="shrink-0 rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">{{ ucfirst($row['tipo']) }}</span>
-                        </div>
+                    <div class="group flex h-full flex-col overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]" x-data="{ modalIsOpen: false }">
+                        <div class="relative aspect-[4/3] w-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)]">
+                            @if(!empty($row['foto_url']))
+                                <img
+                                    src="{{ $row['foto_url'] }}"
+                                    alt="Imagen de {{ $row['nombre'] }}"
+                                    class="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-[1.025]"
+                                />
+                            @else
+                                <div class="flex h-full w-full items-center justify-center bg-[var(--color-primary)]/10">
+                                    <span class="text-7xl font-semibold text-[var(--color-primary)]">{{ mb_strtoupper(mb_substr($row['nombre'], 0, 1)) }}</span>
+                                </div>
+                            @endif
 
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $estadoClasses }}">{{ str_replace('_', ' ', ucfirst($row['estado'])) }}</span>
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $condicionClasses }}">{{ str_replace('_', ' ', ucfirst($row['condicion'])) }}</span>
-                        </div>
-
-                        <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
-                            <div class="rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
-                                <p class="text-xs uppercase tracking-wider opacity-60">Unidad</p>
-                                <p class="mt-1 font-semibold">{{ $row['unidad'] }}</p>
+                            <div class="absolute left-3 top-3">
+                                <span class="badge border-0 bg-black/65 text-white backdrop-blur-sm">{{ $row['id'] }}</span>
                             </div>
-                            <div class="rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
-                                <p class="text-xs uppercase tracking-wider opacity-60">Cantidad / Serie</p>
-                                <p class="mt-1 font-semibold">{{ $row['cantidad_serie'] }}</p>
+
+                            <div class="absolute right-3 top-3">
+                                <span class="badge badge-primary">{{ ucfirst($row['tipo']) }}</span>
                             </div>
                         </div>
 
-                        <p class="mt-4 text-sm opacity-70">{{ $row['detalle_principal'] }}</p>
-                        <p class="mt-1 text-xs opacity-60">{{ $row['detalle_secundario'] }}</p>
+                        <div class="flex flex-1 flex-col p-4">
+                            <h2 class="line-clamp-2 text-lg font-bold leading-tight text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $row['nombre'] }}</h2>
+                            <p class="mt-1 truncate text-sm opacity-70">{{ $row['categoria'] }}</p>
 
-                        <div class="mt-5 flex flex-wrap items-center gap-2">
-                            <x-form.outline_button variant="details" href="{{ route('articulos.show', $row['articulo_id']) }}" wire:navigate>Ver</x-form.outline_button>
-                            <x-form.outline_button variant="edit" href="{{ route('articulos.update', $row['articulo_id']) }}" wire:navigate>Editar</x-form.outline_button>
-                            <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $estadoClasses }}">{{ str_replace('_', ' ', ucfirst($row['estado'])) }}</span>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $condicionClasses }}">{{ str_replace('_', ' ', ucfirst($row['condicion'])) }}</span>
+                            </div>
+
+                            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                <div class="min-w-0 border-r border-[var(--color-outline)] pr-3 dark:border-[var(--color-outline-dark)]">
+                                    <p class="text-xs uppercase opacity-60">Unidad</p>
+                                    <p class="mt-1 truncate font-semibold">{{ $row['unidad'] }}</p>
+                                </div>
+                                <div class="min-w-0 pl-1">
+                                    <p class="text-xs uppercase opacity-60">Cantidad / Serie</p>
+                                    <p class="mt-1 truncate font-semibold" title="{{ $row['cantidad_serie'] }}">{{ $row['cantidad_serie'] }}</p>
+                                </div>
+                            </div>
+
+                            <p class="mt-4 line-clamp-2 text-sm opacity-70">{{ $row['detalle_principal'] }}</p>
+                            <p class="mt-1 line-clamp-2 text-xs opacity-60">{{ $row['detalle_secundario'] }}</p>
+
+                            <div class="mt-auto flex flex-wrap items-center gap-2 border-t border-[var(--color-outline)] pt-4 dark:border-[var(--color-outline-dark)]">
+                                @if($row['row_type'] === 'reutilizable')
+                                    <x-form.outline_button variant="details" href="{{ route('articulos.show', $row['articulo_id']) }}" wire:navigate>Ver serie</x-form.outline_button>
+                                @else
+                                    <x-form.outline_button variant="details" href="{{ route('articulos.show', $row['articulo_id']) }}" wire:navigate>Ver stock</x-form.outline_button>
+                                    <x-form.outline_button variant="success" type="button" wire:click="abrirAjuste({{ $row['articulo_id'] }})">Ingreso</x-form.outline_button>
+                                @endif
+                                <x-qr-modal
+                                :payload="[
+                                    'app' => config('app.name'),
+                                    'type' => $row['row_type'] === 'reutilizable' ? 'serie' : 'articulo',
+                                    'id' => $row['serie_id'] ?? $row['articulo_id'],
+                                    'articulo_id' => $row['articulo_id'],
+                                    'codigo' => $row['codigo_serie'] ?? $row['id'],
+                                    'nombre' => $row['nombre'],
+                                    'categoria' => $row['categoria'],
+                                    'tipo' => $row['tipo'],
+                                    'estado' => $row['estado'],
+                                    'unidad' => $row['unidad'],
+                                    'url' => route('articulos.show', $row['articulo_id']),
+                                ]"
+                                :title="$row['row_type'] === 'reutilizable' ? 'QR de serie' : 'QR de articulo'"
+                                :subtitle="$row['row_type'] === 'reutilizable' ? $row['nombre'].' - '.$row['codigo_serie'] : $row['nombre']"
+                                :filename="$row['row_type'] === 'reutilizable' ? 'qr-serie-'.$row['serie_id'] : 'qr-articulo-'.$row['articulo_id']"
+                                >
+                                    QR
+                                </x-qr-modal>
+                                <x-form.outline_button variant="edit" href="{{ route('articulos.update', $row['articulo_id']) }}" wire:navigate>Editar</x-form.outline_button>
+                                <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                            </div>
                         </div>
 
                         <x-form.confirm-modal
@@ -266,6 +316,10 @@
                                 'observado' => 'bg-yellow-100 text-yellow-700',
                                 'inoperativo' => 'bg-rose-100 text-rose-700',
                                 'dado_de_baja' => 'bg-zinc-200 text-zinc-700',
+                                'perdido' => 'bg-zinc-200 text-zinc-700',
+                                'robado' => 'bg-rose-100 text-rose-700',
+                                'activo' => 'bg-emerald-100 text-emerald-700',
+                                'sin_series' => 'bg-zinc-100 text-zinc-700',
                                 default => 'bg-zinc-100 text-zinc-700',
                             };
 
@@ -274,6 +328,7 @@
                                 'con_defectos', 'regular', 'bajo_stock' => 'bg-amber-100 text-amber-700',
                                 'malo', 'danado' => 'bg-orange-100 text-orange-700',
                                 'inoperativo', 'sin_stock' => 'bg-rose-100 text-rose-700',
+                                'con_observaciones' => 'bg-amber-100 text-amber-700',
                                 default => 'bg-zinc-100 text-zinc-700',
                             };
                         @endphp
@@ -282,14 +337,25 @@
                                 {{ $row['id'] }}
                             </td>
                             <td class="px-5 py-4 min-w-[260px]">
-                                <div class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-                                    {{ $row['nombre'] }}
-                                </div>
-                                <div class="mt-1 text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
-                                    {{ $row['categoria'] }}
-                                </div>
-                                <div class="mt-1 text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60">
-                                    {{ $row['detalle_principal'] }}
+                                <div class="flex items-center gap-3">
+                                    <div class="h-11 w-11 shrink-0 overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] flex items-center justify-center">
+                                        @if(!empty($row['foto_url']))
+                                            <img src="{{ $row['foto_url'] }}" alt="Imagen de {{ $row['nombre'] }}" class="h-full w-full object-cover" />
+                                        @else
+                                            <span class="text-xs font-semibold opacity-60">{{ mb_strtoupper(mb_substr($row['nombre'], 0, 1)) }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
+                                            {{ $row['nombre'] }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
+                                            {{ $row['categoria'] }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-60">
+                                            {{ $row['detalle_principal'] }}
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-5 py-4 whitespace-nowrap">
@@ -316,8 +382,29 @@
                             <td class="px-5 py-4 whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-2" x-data="{ openMenu: false, modalIsOpen: false }">
                                     <x-form.outline_button variant="details" href="{{ route('articulos.show', $row['articulo_id']) }}" wire:navigate>
-                                        Ver
+                                        {{ $row['row_type'] === 'reutilizable' ? 'Ver series' : 'Ver stock' }}
                                     </x-form.outline_button>
+
+                                    <x-qr-modal
+                                        :payload="[
+                                            'app' => config('app.name'),
+                                            'type' => $row['row_type'] === 'reutilizable' ? 'serie' : 'articulo',
+                                            'id' => $row['serie_id'] ?? $row['articulo_id'],
+                                            'articulo_id' => $row['articulo_id'],
+                                            'codigo' => $row['codigo_serie'] ?? $row['id'],
+                                            'nombre' => $row['nombre'],
+                                            'categoria' => $row['categoria'],
+                                            'tipo' => $row['tipo'],
+                                            'estado' => $row['estado'],
+                                            'unidad' => $row['unidad'],
+                                            'url' => route('articulos.show', $row['articulo_id']),
+                                        ]"
+                                        :title="$row['row_type'] === 'reutilizable' ? 'QR de serie' : 'QR de articulo'"
+                                        :subtitle="$row['row_type'] === 'reutilizable' ? $row['nombre'].' - '.$row['codigo_serie'] : $row['nombre']"
+                                        :filename="$row['row_type'] === 'reutilizable' ? 'qr-serie-'.$row['serie_id'] : 'qr-articulo-'.$row['articulo_id']"
+                                    >
+                                        QR
+                                    </x-qr-modal>
 
                                     <div class="relative">
                                         <button
@@ -337,6 +424,21 @@
                                             <a href="{{ route('articulos.update', $row['articulo_id']) }}" wire:navigate class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
                                                 Editar
                                             </a>
+                                            @if($row['row_type'] === 'reutilizable')
+                                                <a href="{{ route('articulos.update', $row['articulo_id']) }}?tab=series" wire:navigate class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
+                                                    Agregar serie
+                                                </a>
+                                                <a href="{{ route('articulos.show', $row['articulo_id']) }}" wire:navigate class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
+                                                    Historial
+                                                </a>
+                                            @else
+                                                <button type="button" wire:click="abrirAjuste({{ $row['articulo_id'] }})" @click="openMenu = false" class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
+                                                    Agregar ingreso
+                                                </button>
+                                                <button type="button" wire:click="abrirAjuste({{ $row['articulo_id'] }})" @click="openMenu = false" class="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
+                                                    Registrar salida
+                                                </button>
+                                            @endif
                                             <button type="button" @click="modalIsOpen = true; openMenu = false" class="block w-full px-4 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10">
                                                 Eliminar
                                             </button>

@@ -10,6 +10,7 @@ from sqlalchemy.engine import Engine
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR.parent / ".env")
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -22,8 +23,8 @@ class Settings:
         self.maintenance_lookback_days = int(os.getenv("PREDICTION_MAINTENANCE_LOOKBACK_DAYS", "180"))
         self.db_host = os.getenv("DB_HOST", "127.0.0.1")
         self.db_port = os.getenv("DB_PORT", "5432")
-        self.db_name = os.getenv("DB_NAME", "armutop")
-        self.db_user = os.getenv("DB_USER", "postgres")
+        self.db_name = os.getenv("DB_NAME", os.getenv("DB_DATABASE", "armutop"))
+        self.db_user = os.getenv("DB_USER", os.getenv("DB_USERNAME", "postgres"))
         self.db_password = os.getenv("DB_PASSWORD", "")
 
     @property

@@ -1,71 +1,136 @@
-<div class="bg-[var(--color-surface)] rounded-[var(--radius-radius)] border border-[var(--color-outline)] shadow-sm p-5 space-y-4">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <h3 class="text-lg font-semibold text-[var(--color-on-surface-strong)]">Asistente táctico</h3>
-            <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded"></span>
-        </div>
-        <button wire:click="resetForm" class="text-xs text-[var(--color-primary)] hover:underline">Limpiar</button>
+<div class="space-y-4">
+    <div class="rounded-2xl border border-[var(--color-info)]/25 bg-[var(--color-info)]/8 p-3 text-xs leading-5 text-[var(--color-on-surface)]/75 dark:text-[var(--color-on-surface-dark)]/75">
+        Orientación basada en el Manual de Mantenimiento y Restablecimiento del Orden Público. No reemplaza la apreciación del jefe operativo, la normativa vigente ni la línea de mando.
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-            <label class="text-xs font-medium text-[var(--color-on-surface)] opacity-70">Tipo de conflicto</label>
-            <select wire:model.live="tipo_conflicto" class="mt-1 w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 text-sm bg-[var(--color-surface)]">
+    <div class="grid gap-3">
+        <label class="grid gap-1.5">
+            <span class="text-xs font-semibold text-[var(--color-on-surface)]/70 dark:text-[var(--color-on-surface-dark)]/70">Situación observada</span>
+            <select wire:model.live="situacion" class="w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-2 text-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
                 <option value="">Seleccionar...</option>
-                @foreach($tipos as $key => $label)
-                    <option value="{{ $key }}">{{ $label }}</option>
+                @foreach($situaciones as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
                 @endforeach
             </select>
+        </label>
+
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <label class="grid gap-1.5">
+                <span class="text-xs font-semibold text-[var(--color-on-surface)]/70 dark:text-[var(--color-on-surface-dark)]/70">Carácter de la reunión</span>
+                <select wire:model.live="legalidad" class="w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-2 text-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+                    <option value="">Seleccionar...</option>
+                    @foreach($legalidades as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </label>
+
+            <label class="grid gap-1.5">
+                <span class="text-xs font-semibold text-[var(--color-on-surface)]/70 dark:text-[var(--color-on-surface-dark)]/70">Magnitud estimada</span>
+                <select wire:model.live="magnitud" class="w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-2 text-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+                    <option value="">Seleccionar...</option>
+                    @foreach($magnitudes as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </label>
         </div>
 
-        <div>
-            <label class="text-xs font-medium text-[var(--color-on-surface)] opacity-70">Nivel de agresividad</label>
-            <select wire:model.live="agresividad" class="mt-1 w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 text-sm bg-[var(--color-surface)]">
+        <label class="grid gap-1.5">
+            <span class="text-xs font-semibold text-[var(--color-on-surface)]/70 dark:text-[var(--color-on-surface-dark)]/70">Conducta actual o amenaza inminente</span>
+            <select wire:model.live="conducta" class="w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-2 text-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
                 <option value="">Seleccionar...</option>
-                @foreach($agresividades as $key => $label)
-                    <option value="{{ $key }}">{{ $label }}</option>
+                @foreach($conductas as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
                 @endforeach
             </select>
-        </div>
+        </label>
 
-        <div>
-            <label class="text-xs font-medium text-[var(--color-on-surface)] opacity-70">Aprox. personas</label>
-            <select wire:model.live="cantidad_personas" class="mt-1 w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 text-sm bg-[var(--color-surface)]">
-                <option value="">Seleccionar...</option>
-                @foreach($rangosPersonas as $key => $label)
-                    <option value="{{ $key }}">{{ $label }}</option>
-                @endforeach
-            </select>
+        <div class="grid gap-2">
+            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-outline)]/70 p-3 dark:border-[var(--color-outline-dark)]/70">
+                <input type="checkbox" wire:model.live="planificado" class="checkbox checkbox-sm mt-0.5">
+                <span>
+                    <span class="block text-sm font-medium">Evento conocido previamente</span>
+                    <span class="block text-xs opacity-60">Permite activar planificación, coordinación y contingencias.</span>
+                </span>
+            </label>
+            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-outline)]/70 p-3 dark:border-[var(--color-outline-dark)]/70">
+                <input type="checkbox" wire:model.live="vulnerables" class="checkbox checkbox-sm mt-0.5">
+                <span>
+                    <span class="block text-sm font-medium">Hay grupos vulnerables</span>
+                    <span class="block text-xs opacity-60">Niñez, personas mayores, discapacidad u otras condiciones.</span>
+                </span>
+            </label>
+            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-outline)]/70 p-3 dark:border-[var(--color-outline-dark)]/70">
+                <input type="checkbox" wire:model.live="zona_sensible" class="checkbox checkbox-sm mt-0.5">
+                <span>
+                    <span class="block text-sm font-medium">Zona sensible o espacio cerrado</span>
+                    <span class="block text-xs opacity-60">Hospital, colegio, asilo u otro lugar de especial protección.</span>
+                </span>
+            </label>
         </div>
     </div>
 
     @if($resultado)
-        <div class="p-4 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)]">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-xs uppercase tracking-wide opacity-60">Personal recomendado</p>
-                    <p class="text-2xl font-bold text-[var(--color-primary)]">{{ $resultado['personal'] }} efectivos</p>
+        @php
+            $riskClasses = [
+                'emerald' => 'border-emerald-500/30 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300',
+                'amber' => 'border-amber-500/30 bg-amber-500/8 text-amber-700 dark:text-amber-300',
+                'orange' => 'border-orange-500/30 bg-orange-500/8 text-orange-700 dark:text-orange-300',
+                'rose' => 'border-rose-500/30 bg-rose-500/8 text-rose-700 dark:text-rose-300',
+                'red' => 'border-red-500/30 bg-red-500/8 text-red-700 dark:text-red-300',
+            ];
+        @endphp
+
+        <div class="space-y-4 border-t border-[var(--color-outline)] pt-4 dark:border-[var(--color-outline-dark)]">
+            <div class="rounded-2xl border p-4 {{ $riskClasses[$resultado['color']] }}">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">{{ $resultado['nivel'] }}</p>
+                        <h4 class="mt-1 text-base font-bold">{{ $resultado['respuesta'] }}</h4>
+                    </div>
+                    <span class="rounded-full bg-black/5 px-2.5 py-1 text-[10px] font-bold uppercase dark:bg-white/10">{{ $resultado['riesgo'] }}</span>
                 </div>
-                <span class="px-2 py-1 rounded text-xs font-semibold {{ $agresividad === 'alto' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                    {{ $resultado['alerta'] }}
-                </span>
+                <p class="mt-3 text-xs leading-5 opacity-80">{{ $resultado['objetivo'] }}</p>
             </div>
 
-            <div class="mt-3">
-                <p class="text-xs uppercase tracking-wide opacity-60">Equipamiento sugerido</p>
-                <div class="mt-2 grid sm:grid-cols-2 gap-2">
-                    @foreach($resultado['equipo'] as $item)
-                        <div class="flex items-center gap-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)]">
-                            <svg class="w-4 h-4 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            <span class="text-sm text-[var(--color-on-surface)]">{{ $item }}</span>
-                        </div>
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.15em] opacity-60">Prioridades recomendadas</p>
+                <ol class="mt-2 space-y-2">
+                    @foreach($resultado['acciones'] as $action)
+                        <li class="flex gap-2 text-xs leading-5">
+                            <span class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[10px] font-bold text-[var(--color-primary)] dark:text-[var(--color-primary-dark)]">{{ $loop->iteration }}</span>
+                            <span>{{ $action }}</span>
+                        </li>
                     @endforeach
-                </div>
+                </ol>
             </div>
+
+            <details class="rounded-xl border border-[var(--color-outline)]/70 p-3 dark:border-[var(--color-outline-dark)]/70">
+                <summary class="cursor-pointer text-xs font-semibold">Salvaguardas obligatorias</summary>
+                <ul class="mt-3 space-y-2">
+                    @foreach($resultado['salvaguardas'] as $item)
+                        <li class="flex gap-2 text-xs leading-5">
+                            <flux:icon.shield-check class="mt-0.5 size-4 shrink-0 text-[var(--color-success)]" />
+                            <span>{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </details>
+
+            <div class="flex flex-wrap gap-1.5">
+                @foreach($resultado['referencias'] as $reference)
+                    <span class="rounded-full bg-[var(--color-surface-alt)] px-2.5 py-1 text-[10px] font-medium dark:bg-[var(--color-surface-dark-alt)]">{{ $reference }}</span>
+                @endforeach
+            </div>
+
+            <button type="button" wire:click="resetForm" class="text-xs font-semibold text-[var(--color-primary)] hover:underline dark:text-[var(--color-primary-dark)]">
+                Nueva evaluación
+            </button>
         </div>
     @else
-        <div class="text-center py-6 text-[var(--color-on-surface)] opacity-70 text-sm">
-            Selecciona tipo, agresividad y personas para ver la recomendación.
+        <div class="rounded-2xl border border-dashed border-[var(--color-outline)] px-4 py-6 text-center text-xs opacity-60 dark:border-[var(--color-outline-dark)]">
+            Completa los cuatro criterios principales para generar una orientación.
         </div>
     @endif
 </div>

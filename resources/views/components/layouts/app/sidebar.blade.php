@@ -1,7 +1,24 @@
+@php
+    $selectedTheme = auth()->user()?->selectedTheme;
+    $themeSlug = $selectedTheme?->slug ?? \App\Models\Theme::DEFAULT_DARK_SLUG;
+    $themeAppearance = $selectedTheme?->appearance ?? 'dark';
+    $lightThemeSlug = auth()->user()?->lightTheme?->slug ?? \App\Models\Theme::DEFAULT_LIGHT_SLUG;
+    $darkThemeSlug = auth()->user()?->darkTheme?->slug ?? \App\Models\Theme::DEFAULT_DARK_SLUG;
+@endphp
+
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    data-theme="{{ $themeSlug }}"
+    data-appearance="{{ $themeAppearance }}"
+    class="{{ $themeAppearance === 'dark' ? 'dark' : '' }}"
+>
     <head>
         @include('partials.head')
+        <script>
+            document.documentElement.dataset.theme = @js($themeSlug);
+            window.Flux.applyAppearance(@js($themeAppearance));
+        </script>
     </head>
     <body class="min-h-screen bg-surface dark:bg-surface-dark text-on-surface dark:text-on-surface-dark">
         <flux:sidebar sticky stashable class="border-e border-outline dark:border-outline-dark bg-surface dark:bg-surface-dark">
@@ -54,15 +71,25 @@
 
             <flux:spacer />
 
-            {{-- <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                {{ __('Repository') }}
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                {{ __('Documentation') }}
-                </flux:navlist.item>
-            </flux:navlist> --}}
+            <button
+                type="button"
+                data-appearance-toggle
+                data-toggle-url="{{ route('settings.appearance.toggle') }}"
+                data-light-theme="{{ $lightThemeSlug }}"
+                data-dark-theme="{{ $darkThemeSlug }}"
+                data-appearance="{{ $themeAppearance }}"
+                class="mb-2 flex size-10 items-center justify-center self-start rounded-lg border border-outline text-on-surface transition hover:bg-surface-alt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-outline-dark dark:text-on-surface-dark dark:hover:bg-surface-dark-alt dark:focus-visible:outline-primary-dark"
+                aria-label="{{ $themeAppearance === 'dark' ? __('Cambiar a modo claro') : __('Cambiar a modo oscuro') }}"
+                title="{{ $themeAppearance === 'dark' ? __('Cambiar a modo claro') : __('Cambiar a modo oscuro') }}"
+            >
+                <svg data-theme-icon="sun" class="{{ $themeAppearance === 'dark' ? '' : 'hidden' }} size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+                </svg>
+                <svg data-theme-icon="moon" class="{{ $themeAppearance === 'dark' ? 'hidden' : '' }} size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+                </svg>
+            </button>
 
             <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">

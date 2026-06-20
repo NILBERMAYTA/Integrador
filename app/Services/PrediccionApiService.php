@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -36,12 +37,19 @@ class PrediccionApiService
 
     protected function request(string $method, string $uri, array $query = []): array
     {
-        $response = Http::baseUrl($this->baseUrl())
-            ->timeout($this->timeout())
-            ->acceptJson()
-            ->send(strtoupper($method), $uri, [
-                'query' => $query,
-            ]);
+        try {
+            $response = Http::baseUrl($this->baseUrl())
+                ->timeout($this->timeout())
+                ->acceptJson()
+                ->send(strtoupper($method), $uri, [
+                    'query' => $query,
+                ]);
+        } catch (ConnectionException $exception) {
+            throw new RuntimeException(
+                'El servicio de predicción no está disponible. Inicia ml_service en el puerto 8002.',
+                previous: $exception
+            );
+        }
 
         $this->throwIfFailed($response);
 

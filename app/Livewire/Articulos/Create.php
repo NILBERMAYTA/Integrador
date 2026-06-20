@@ -10,9 +10,12 @@ use App\Models\Articulo;
 use App\Models\Categoria;
 use App\Models\ArticuloSerie;
 use App\Services\InventarioUnidadService;
+use Livewire\WithFileUploads;
 
 class Create extends Component
 {
+    use WithFileUploads;
+
     // Modal de selección
     public bool $showModal = true;
     public ?string $mode = null; // 'cantidad' | 'serie' | null
@@ -23,9 +26,11 @@ class Create extends Component
     public ?int $categoria_id = null;
     public string $nombre = '';
     public ?string $descripcion = null;
+    public $foto;
 
     // Paso 2 – modo "cantidad"
     public ?float $cantidad_inicial = null;
+    public ?float $stock_minimo = null;
 
     // Paso 2 – modo "serie"
     public string $codigo_serie = '';
@@ -47,7 +52,7 @@ class Create extends Component
         $this->mode = $mode;
         $this->showModal = false;
         $this->step = 1;
-        $this->reset(['nombre', 'categoria_id', 'descripcion', 'cantidad_inicial', 'codigo_serie', 'fecha_ingreso', 'obs_ingreso', 'articulo']);
+        $this->reset(['nombre', 'categoria_id', 'descripcion', 'foto', 'cantidad_inicial', 'stock_minimo', 'codigo_serie', 'fecha_ingreso', 'obs_ingreso', 'articulo']);
     }
 
     public function closeModal()
@@ -67,6 +72,7 @@ class Create extends Component
                     ->where(fn($q) => $q->where('categoria_id', $this->categoria_id ?? 0)),
             ],
             'descripcion'   => ['nullable', 'string', 'max:500'],
+            'foto'          => ['nullable', 'image', 'max:2048'],
         ];
     }
 
@@ -74,6 +80,7 @@ class Create extends Component
     {
         return [
             'cantidad_inicial' => ['required', 'numeric', 'gt:0'],
+            'stock_minimo'      => ['nullable', 'numeric', 'min:0'],
             'fecha_ingreso'    => ['nullable', 'date'],
             'obs_ingreso'      => ['nullable', 'string', 'max:500'],
         ];
@@ -102,6 +109,7 @@ class Create extends Component
             'nombre'        => $this->nombre,
             'unidad_medida' => null,
             'descripcion'   => $this->descripcion,
+            'foto_path'     => $this->foto ? $this->foto->store('articulos', 'public') : null,
             'tipo'          => $tipo,
             'seguimiento'   => $seguimiento,
         ]);
@@ -134,7 +142,7 @@ class Create extends Component
             return;
         }
 
-        DB::transaction(function () use ($unidadId) {
+        DB::transaction(function () use ($unidadId, $inventario) {
             $now = now();
             $fecha = $this->fecha_ingreso
                 ? \Carbon\Carbon::parse($this->fecha_ingreso)
@@ -163,6 +171,7 @@ class Create extends Component
             ]);
 
             $inventario->addInitialStock($unidadId, $this->articulo->id, (float) $this->cantidad_inicial);
+            $inventario->setMinimumStock($unidadId, $this->articulo->id, (float) ($this->stock_minimo ?? 0));
         });
 
     session()->flash('success', "Stock inicial creado: {$this->cantidad_inicial} unidades.");

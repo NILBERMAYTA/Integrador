@@ -62,11 +62,11 @@
         ],
         "dev:ml": [
             "Composer\\Config::disableProcessTimeout",
-            "powershell -NoProfile -ExecutionPolicy Bypass -Command \"cd ml_service; if (-not (Test-Path .venv)) { python -m venv .venv }; .\\.venv\\Scripts\\python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8002\""
+            "bash -c \"cd ml_service; if [ ! -d .venv ]; then python -m venv .venv; fi; source .venv/bin/activate && python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8002\""
         ],
         "dev:ml-deteccion": [
             "Composer\\Config::disableProcessTimeout",
-            "powershell -NoProfile -ExecutionPolicy Bypass -Command \"cd ml-deteccion; if (-not (Test-Path .venv)) { python -m venv .venv; .\\.venv\\Scripts\\python -m pip install -r requirements.txt }; .\\.venv\\Scripts\\python -m uvicorn yolo_service.main:app --reload --host 127.0.0.1 --port 8001\""
+            "bash -c \"cd ml-deteccion; if [ ! -d .venv ]; then python -m venv .venv; fi; source .venv/bin/activate && pip install -r requirements.txt && python -m uvicorn yolo_service.main:app --reload --host 127.0.0.1 --port 8001\""
         ],
         "dev:full": [
             "Composer\\Config::disableProcessTimeout",

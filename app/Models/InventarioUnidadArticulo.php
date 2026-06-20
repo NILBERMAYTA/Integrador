@@ -16,12 +16,14 @@ class InventarioUnidadArticulo extends BaseModel
         'cantidad_disponible',
         'cantidad_asignada',
         'cantidad_mantenimiento',
+        'stock_minimo',
     ];
 
     protected $casts = [
         'cantidad_disponible' => 'decimal:2',
         'cantidad_asignada' => 'decimal:2',
         'cantidad_mantenimiento' => 'decimal:2',
+        'stock_minimo' => 'decimal:2',
     ];
 
     public function unidad()

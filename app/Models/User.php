@@ -2,21 +2,47 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, LogsActivity, HasRoles;
+    use HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user): void {
+            if ($user->theme_id && $user->light_theme_id && $user->dark_theme_id) {
+                return;
+            }
+
+            $themes = Theme::query()
+                ->whereNull('user_id')
+                ->where('is_system', true)
+                ->whereIn('slug', [
+                    Theme::DEFAULT_LIGHT_SLUG,
+                    Theme::DEFAULT_DARK_SLUG,
+                ])
+                ->pluck('id', 'slug');
+
+            $defaultLightThemeId = $themes->get(Theme::DEFAULT_LIGHT_SLUG);
+            $defaultDarkThemeId = $themes->get(Theme::DEFAULT_DARK_SLUG);
+
+            $user->light_theme_id ??= $defaultLightThemeId;
+            $user->dark_theme_id ??= $defaultDarkThemeId;
+            $user->theme_id ??= $defaultDarkThemeId;
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -31,17 +57,23 @@ class User extends Authenticatable
         'fecha_ingreso',
         'foto',
         'unidad_id',
+        'theme_id',
+        'light_theme_id',
+        'dark_theme_id',
         'remember_token',
     ];
 
-    protected $hidden = ['password','remember_token'];
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'fecha_ingreso'     => 'date',
-        'can_login'         => 'boolean',
-        'role'              => 'string',
-        'unidad_id'         => 'integer',
+        'fecha_ingreso' => 'date',
+        'can_login' => 'boolean',
+        'role' => 'string',
+        'unidad_id' => 'integer',
+        'theme_id' => 'integer',
+        'light_theme_id' => 'integer',
+        'dark_theme_id' => 'integer',
     ];
 
     public function unidad(): BelongsTo
@@ -57,6 +89,31 @@ class User extends Authenticatable
     public function unidadActualAsignacion(): HasOne
     {
         return $this->hasOne(UserUnidadAsignacion::class, 'user_id')->latestOfMany('fecha_transferencia');
+    }
+
+    public function themes(): HasMany
+    {
+        return $this->hasMany(Theme::class);
+    }
+
+    public function activeTheme(): HasOne
+    {
+        return $this->hasOne(Theme::class)->where('is_active', true);
+    }
+
+    public function selectedTheme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'theme_id');
+    }
+
+    public function lightTheme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'light_theme_id');
+    }
+
+    public function darkTheme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'dark_theme_id');
     }
 
     public function getUnidadActualAttribute(): ?Unidad
@@ -89,9 +146,9 @@ class User extends Authenticatable
         $partes = array_filter([
             $this->name,
             $this->apellido_paterno,
-            $this->apellido_materno
+            $this->apellido_materno,
         ]);
-        
+
         return implode(' ', $partes);
     }
 
@@ -189,9 +246,21 @@ class User extends Authenticatable
         $letters = [];
         foreach ($parts as $p) {
             $letters[] = mb_strtoupper(mb_substr($p, 0, 1));
-            if (count($letters) === 2) break;
+            if (count($letters) === 2) {
+                break;
+            }
         }
+
         return implode('', $letters);
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (empty($this->foto) || ! Storage::disk('public')->exists($this->foto)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->foto);
     }
 
     /**
@@ -206,8 +275,7 @@ class User extends Authenticatable
                 'updated_at',
                 'remember_token',
             ])
-            ->setDescriptionForEvent(fn(string $event) =>
-                "Usuario fue {$event}"
+            ->setDescriptionForEvent(fn (string $event) => "Usuario fue {$event}"
             );
     }
 }

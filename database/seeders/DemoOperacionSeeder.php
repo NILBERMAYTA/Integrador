@@ -54,10 +54,59 @@ class DemoOperacionSeeder extends Seeder
                     'observaciones' => 'Carga inicial de inventario demo',
                 ]);
 
-                foreach ([
+                $stockInicial = [
                     'Municion 9 mm' => 180,
                     'Municion calibre 12' => 90,
-                ] as $nombre => $cantidad) {
+                    'Cartucho impulsor calibre 12' => 40,
+                    'Cartucho perdigon de goma calibre 12' => 80,
+                    'Granada lacrimogena simple accion CS' => 48,
+                    'Granada lacrimogena triple accion CS' => 36,
+                    'Granada fumigena HC' => 24,
+                    'Granada de aturdimiento' => 18,
+                    'Proyectil lacrimogeno 37/38 mm corto alcance' => 72,
+                    'Proyectil lacrimogeno 37/38 mm largo alcance' => 72,
+                    'Spray gas pimienta OC 500 ml' => 24,
+                    'Balon lanza gas CN/CS' => 8,
+                    'Filtro para mascara antigas' => 60,
+                    'Ferulas de inmovilizacion' => 12,
+                    'Vendas elasticas' => 40,
+                    'Paquetes de gasas' => 30,
+                    'Algodon hidrofilo' => 16,
+                    'Agua oxigenada' => 12,
+                    'Alcohol medicinal' => 12,
+                    'Guantes de exploracion' => 80,
+                    'Guantes quirurgicos' => 80,
+                    'Jeringa 5cc aguja 21' => 30,
+                    'Cloruro de sodio 1L' => 18,
+                ];
+
+                $stockMinimo = [
+                    'Municion 9 mm' => 60,
+                    'Municion calibre 12' => 30,
+                    'Cartucho impulsor calibre 12' => 12,
+                    'Cartucho perdigon de goma calibre 12' => 24,
+                    'Granada lacrimogena simple accion CS' => 12,
+                    'Granada lacrimogena triple accion CS' => 10,
+                    'Granada fumigena HC' => 8,
+                    'Granada de aturdimiento' => 6,
+                    'Proyectil lacrimogeno 37/38 mm corto alcance' => 24,
+                    'Proyectil lacrimogeno 37/38 mm largo alcance' => 24,
+                    'Spray gas pimienta OC 500 ml' => 8,
+                    'Balon lanza gas CN/CS' => 2,
+                    'Filtro para mascara antigas' => 20,
+                    'Ferulas de inmovilizacion' => 4,
+                    'Vendas elasticas' => 12,
+                    'Paquetes de gasas' => 10,
+                    'Algodon hidrofilo' => 4,
+                    'Agua oxigenada' => 4,
+                    'Alcohol medicinal' => 4,
+                    'Guantes de exploracion' => 20,
+                    'Guantes quirurgicos' => 20,
+                    'Jeringa 5cc aguja 21' => 10,
+                    'Cloruro de sodio 1L' => 6,
+                ];
+
+                foreach ($stockInicial as $nombre => $cantidad) {
                     if (! isset($articulos[$nombre])) {
                         continue;
                     }
@@ -70,6 +119,7 @@ class DemoOperacionSeeder extends Seeder
                     ]);
 
                     $inventario->addInitialStock($unidad->id, $articulos[$nombre]->id, $cantidad);
+                    $inventario->setMinimumStock($unidad->id, $articulos[$nombre]->id, $stockMinimo[$nombre] ?? 0);
                 }
 
                 $seriePrestamo = ArticuloSerie::query()

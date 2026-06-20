@@ -134,11 +134,11 @@ class Index extends Component
     {
         $baseRows = collect($this->buildOperationalRows(false));
         $resumenCondicion = [
-            'bueno' => $baseRows->where('row_type', 'serie')->where('condicion', 'bueno')->count(),
-            'con_defectos' => $baseRows->where('row_type', 'serie')->where('condicion', 'con_defectos')->count(),
-            'malo' => $baseRows->where('row_type', 'serie')->where('condicion', 'malo')->count(),
-            'inoperativo' => $baseRows->where('row_type', 'serie')->where('condicion', 'inoperativo')->count(),
-            'total' => $baseRows->where('row_type', 'serie')->count(),
+            'bueno' => $baseRows->where('row_type', 'reutilizable')->where('condicion', 'bueno')->count(),
+            'con_defectos' => $baseRows->where('row_type', 'reutilizable')->where('condicion', 'con_defectos')->count(),
+            'malo' => $baseRows->where('row_type', 'reutilizable')->where('condicion', 'malo')->count(),
+            'inoperativo' => $baseRows->where('row_type', 'reutilizable')->where('condicion', 'inoperativo')->count(),
+            'total' => $baseRows->count(),
         ];
 
         $rows = $this->estado !== ''
@@ -183,103 +183,118 @@ class Index extends Component
 
         $rows = [];
 
-        $inventarios = InventarioUnidadArticulo::query()
+        $articulos = Articulo::query()
             ->with([
-                'articulo.categoria:id,nombre',
-                'unidad:id,nombre,sigla',
+                'categoria:id,nombre',
+                'inventariosUnidad.unidad:id,nombre,sigla',
+                'series.unidad:id,nombre,sigla',
             ])
-            ->whereHas('articulo', fn ($query) => $query->whereNull('deleted_at'))
-            ->when($unidadId, fn ($query) => $query->where('unidad_id', $unidadId))
-            ->when($this->categoria !== '', fn ($query) => $query->whereHas('articulo', fn ($q) => $q->where('categoria_id', (int) $this->categoria)))
-            ->when($this->tipo !== '', fn ($query) => $query->whereHas('articulo', fn ($q) => $q->where('tipo', $this->tipo)))
+            ->when($this->categoria !== '', fn ($query) => $query->where('categoria_id', (int) $this->categoria))
+            ->when($this->tipo !== '', fn ($query) => $query->where('tipo', $this->tipo))
             ->get();
 
-        foreach ($inventarios as $inventario) {
-            $articulo = $inventario->articulo;
-            if (! $articulo) {
+        foreach ($articulos as $articulo) {
+            if ($articulo->isCantidad()) {
+                $inventarios = $articulo->inventariosUnidad
+                    ->when($unidadId, fn ($items) => $items->where('unidad_id', $unidadId))
+                    ->values();
+
+                if ($unidadId && $inventarios->isEmpty()) {
+                    continue;
+                }
+
+                if ($this->search !== '' && ! $this->matchesSearch($this->search, [
+                    $articulo->nombre,
+                    $articulo->descripcion,
+                    $articulo->categoria?->nombre,
+                    $inventarios->pluck('unidad.nombre')->implode(' '),
+                    $inventarios->pluck('unidad.sigla')->implode(' '),
+                ])) {
+                    continue;
+                }
+
+                $stockActual = (float) $inventarios->sum('cantidad_disponible');
+                $stockMinimo = (float) $inventarios->sum('stock_minimo');
+                $estado = $stockActual <= 0 ? 'agotado' : ($stockMinimo > 0 && $stockActual <= $stockMinimo ? 'bajo_stock' : 'disponible');
+
+                if ($applyEstado && $this->estado !== '' && $estado !== $this->estado) {
+                    continue;
+                }
+
+                $unidades = $inventarios
+                    ->map(fn ($inventario) => $inventario->unidad?->sigla ?? $inventario->unidad?->nombre)
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                $rows[] = [
+                    'row_type' => 'consumible',
+                    'id' => 'ART-'.$articulo->id,
+                    'articulo_id' => $articulo->id,
+                    'serie_id' => null,
+                    'codigo_serie' => null,
+                    'operativo_nombre' => $articulo->nombre,
+                    'nombre' => $articulo->nombre,
+                    'foto_url' => $articulo->foto_url,
+                    'categoria' => $articulo->categoria?->nombre ?? '-',
+                    'tipo' => $articulo->tipo,
+                    'estado' => $estado,
+                    'condicion' => $estado === 'agotado' ? 'sin_stock' : 'operativo',
+                    'unidad' => $unidades->isNotEmpty() ? $unidades->implode(', ') : '-',
+                    'unidad_id' => $unidadId,
+                    'cantidad_serie' => number_format($stockActual, 2).' unidades',
+                    'detalle_principal' => 'Stock actual: '.number_format($stockActual, 2),
+                    'detalle_secundario' => 'Stock minimo: '.number_format($stockMinimo, 2).' | Estado: '.str_replace('_', ' ', $estado),
+                    'ultimo_movimiento' => null,
+                ];
+
                 continue;
             }
 
-            if ($this->search !== '' && ! $this->matchesSearch(
-                $this->search,
-                [$articulo->nombre, $articulo->descripcion, $articulo->categoria?->nombre, $inventario->unidad?->nombre, $inventario->unidad?->sigla]
-            )) {
-                continue;
+            $series = $articulo->series
+                ->whereNull('deleted_at')
+                ->when($unidadId, fn ($items) => $items->where('unidad_id', $unidadId))
+                ->values();
+
+            foreach ($series as $serie) {
+                if ($applyEstado && $this->estado !== '' && $serie->estado !== $this->estado) {
+                    continue;
+                }
+
+                if ($this->search !== '' && ! $this->matchesSearch($this->search, [
+                    $articulo->nombre,
+                    $articulo->descripcion,
+                    $articulo->categoria?->nombre,
+                    $serie->codigo_serie,
+                    $serie->estado,
+                    $serie->condicion_actual,
+                    $serie->unidad?->nombre,
+                    $serie->unidad?->sigla,
+                ])) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'row_type' => 'reutilizable',
+                    'id' => 'SER-'.$serie->id,
+                    'articulo_id' => $articulo->id,
+                    'serie_id' => $serie->id,
+                    'codigo_serie' => $serie->codigo_serie,
+                    'operativo_nombre' => $articulo->nombre.' '.$serie->codigo_serie,
+                    'nombre' => $articulo->nombre,
+                    'foto_url' => $articulo->foto_url,
+                    'categoria' => $articulo->categoria?->nombre ?? '-',
+                    'tipo' => $articulo->tipo,
+                    'estado' => $serie->estado,
+                    'condicion' => $serie->condicion_actual,
+                    'unidad' => $serie->unidad?->sigla ?? $serie->unidad?->nombre ?? '-',
+                    'unidad_id' => $serie->unidad_id,
+                    'cantidad_serie' => $serie->codigo_serie,
+                    'detalle_principal' => 'Serie: '.$serie->codigo_serie,
+                    'detalle_secundario' => $serie->observaciones ?: 'Sin observaciones registradas',
+                    'ultimo_movimiento' => null,
+                ];
             }
-
-            $cantidadDisponible = (float) $inventario->cantidad_disponible;
-            $estado = $cantidadDisponible <= 0 ? 'agotado' : ($cantidadDisponible <= 5 ? 'bajo_stock' : 'disponible');
-
-            if ($applyEstado && $this->estado !== '' && $estado !== $this->estado) {
-                continue;
-            }
-
-            $rows[] = [
-                'row_type' => 'consumible',
-                'id' => 'INV-'.$inventario->id,
-                'articulo_id' => $articulo->id,
-                'operativo_nombre' => $articulo->nombre,
-                'nombre' => $articulo->nombre,
-                'categoria' => $articulo->categoria?->nombre ?? '-',
-                'tipo' => $articulo->tipo,
-                'estado' => $estado,
-                'condicion' => $estado === 'agotado' ? 'sin_stock' : 'operativo',
-                'unidad' => $inventario->unidad?->sigla ?? $inventario->unidad?->nombre ?? '-',
-                'unidad_id' => $inventario->unidad_id,
-                'cantidad_serie' => number_format($cantidadDisponible, 2),
-                'detalle_principal' => 'Disponible: '.number_format($cantidadDisponible, 2),
-                'detalle_secundario' => 'Asignado: '.number_format((float) $inventario->cantidad_asignada, 2).' | Mant.: '.number_format((float) $inventario->cantidad_mantenimiento, 2),
-                'ultimo_movimiento' => null,
-            ];
-        }
-
-        $series = ArticuloSerie::query()
-            ->with([
-                'articulo.categoria:id,nombre',
-                'unidad:id,nombre,sigla',
-            ])
-            ->whereHas('articulo', fn ($query) => $query->whereNull('deleted_at'))
-            ->whereNull('deleted_at')
-            ->when($unidadId, fn ($query) => $query->where('unidad_id', $unidadId))
-            ->when($this->categoria !== '', fn ($query) => $query->whereHas('articulo', fn ($q) => $q->where('categoria_id', (int) $this->categoria)))
-            ->when($this->tipo !== '', fn ($query) => $query->whereHas('articulo', fn ($q) => $q->where('tipo', $this->tipo)))
-            ->get();
-
-        foreach ($series as $serie) {
-            $articulo = $serie->articulo;
-            if (! $articulo) {
-                continue;
-            }
-
-            if ($this->search !== '' && ! $this->matchesSearch(
-                $this->search,
-                [$articulo->nombre, $articulo->descripcion, $articulo->categoria?->nombre, $serie->codigo_serie, $serie->unidad?->nombre, $serie->unidad?->sigla]
-            )) {
-                continue;
-            }
-
-            if ($applyEstado && $this->estado !== '' && $serie->estado !== $this->estado) {
-                continue;
-            }
-
-            $rows[] = [
-                'row_type' => 'serie',
-                'id' => 'SER-'.$serie->id,
-                'articulo_id' => $articulo->id,
-                'serie_id' => $serie->id,
-                'operativo_nombre' => $articulo->nombre.' '.$serie->codigo_serie,
-                'nombre' => $articulo->nombre,
-                'categoria' => $articulo->categoria?->nombre ?? '-',
-                'tipo' => $articulo->tipo,
-                'estado' => $serie->estado,
-                'condicion' => $serie->condicion_actual ?? 'bueno',
-                'unidad' => $serie->unidad?->sigla ?? $serie->unidad?->nombre ?? '-',
-                'unidad_id' => $serie->unidad_id,
-                'cantidad_serie' => $serie->codigo_serie,
-                'detalle_principal' => 'Serie: '.$serie->codigo_serie,
-                'detalle_secundario' => $serie->observaciones ?: null,
-                'ultimo_movimiento' => null,
-            ];
         }
 
         return $rows;

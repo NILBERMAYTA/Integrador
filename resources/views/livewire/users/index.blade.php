@@ -107,45 +107,69 @@
 
     @if($viewMode === 'cards')
         <div>
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 @forelse ($users as $user)
-                    <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] p-5 shadow-sm" x-data="{ modalIsOpen: false }">
-                        <div class="flex items-start gap-4">
-                            <div class="h-14 w-14 shrink-0 rounded-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center">
-                                @if (!empty($user->foto))
-                                    <img src="{{ asset('storage/'.$user->foto) }}" alt="Foto" class="h-full w-full object-cover" />
-                                @else
-                                    <span class="text-sm font-semibold">{{ $user->initials() }}</span>
-                                @endif
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-xs font-semibold uppercase tracking-wider opacity-60">{{ $user->numero_escalafon ?: 'Sin escalafon' }}</p>
-                                <h2 class="mt-1 truncate text-lg font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
+                    <div class="group flex h-full flex-col overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]" x-data="{ modalIsOpen: false }">
+                        <div class="relative aspect-[4/3] w-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)]">
+                            @if (!empty($user->foto_url))
+                                <img
+                                    src="{{ $user->foto_url }}"
+                                    alt="Foto de {{ $user->nombre_completo }}"
+                                    class="h-full w-full object-cover object-top transition duration-300 group-hover:scale-[1.025]"
+                                />
+                            @else
+                                <div class="flex h-full w-full items-center justify-center bg-[var(--color-primary)]/10">
+                                    <span class="text-6xl font-semibold text-[var(--color-primary)]">{{ $user->initials() }}</span>
+                                </div>
+                            @endif
+
+                            <div class="absolute inset-x-0 bottom-0 bg-black/65 px-4 py-3 text-white backdrop-blur-[2px]">
+                                <p class="text-xs font-semibold uppercase opacity-75">{{ $user->numero_escalafon ?: 'Sin escalafon' }}</p>
+                                <h2 class="mt-1 line-clamp-2 text-lg font-bold leading-tight">
                                     {{ trim($user->name.' '.$user->apellido_paterno.' '.$user->apellido_materno) }}
                                 </h2>
-                                <p class="mt-1 text-sm opacity-70">{{ $user->email ?: 'Sin correo de acceso' }}</p>
                             </div>
                         </div>
 
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <span class="inline-flex items-center rounded-full bg-[var(--color-primary)] text-[var(--color-on-primary)] px-2.5 py-1 text-xs font-medium">{{ $user->rango ?: 'Sin rango' }}</span>
-                            <span class="inline-flex items-center rounded-full bg-[var(--color-secondary)] text-[var(--color-on-secondary)] px-2.5 py-1 text-xs font-medium">{{ str_replace('_', ' ', $user->role) }}</span>
-                            <span class="inline-flex items-center rounded-full {{ $user->can_login ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-700' }} px-2.5 py-1 text-xs font-medium">
-                                {{ $user->can_login ? 'Con acceso' : 'Sin acceso' }}
-                            </span>
-                        </div>
+                        <div class="flex flex-1 flex-col p-4">
+                            <p class="truncate text-sm opacity-70">{{ $user->email ?: 'Sin correo de acceso' }}</p>
 
-                        <div class="mt-5 rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] p-3">
-                            <p class="text-xs uppercase tracking-wider opacity-60">Unidad asignada</p>
-                            <p class="mt-1 font-semibold">{{ $user->unidad?->sigla ?? $user->unidad?->nombre ?? '-' }}</p>
-                        </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <span class="badge badge-primary badge-sm">{{ $user->rango ?: 'Sin rango' }}</span>
+                                <span class="badge badge-secondary badge-sm">{{ str_replace('_', ' ', $user->role) }}</span>
+                                <span class="badge badge-sm {{ $user->can_login ? 'badge-success' : 'badge-ghost' }}">
+                                    {{ $user->can_login ? 'Con acceso' : 'Sin acceso' }}
+                                </span>
+                            </div>
 
-                        <div class="mt-5 flex flex-wrap items-center gap-2">
-                            <x-form.outline_button variant="edit" href="{{ route('users.update', $user) }}" wire:navigate>Editar</x-form.outline_button>
-                            @if(auth()->user()?->isAdministradorGeneral())
-                                <x-form.outline_button variant="neutral" href="{{ route('users.transfer', $user) }}" wire:navigate>Transferir</x-form.outline_button>
-                            @endif
-                            <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                            <div class="mt-4 border-t border-[var(--color-outline)] pt-3 dark:border-[var(--color-outline-dark)]">
+                                <p class="text-xs uppercase opacity-60">Unidad asignada</p>
+                                <p class="mt-1 truncate font-semibold">{{ $user->unidad?->sigla ?? $user->unidad?->nombre ?? '-' }}</p>
+                            </div>
+
+                            <div class="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                                <x-form.outline_button variant="edit" href="{{ route('users.update', $user) }}" wire:navigate>Editar</x-form.outline_button>
+                                @if(auth()->user()?->isAdministradorGeneral())
+                                    <x-form.outline_button variant="neutral" href="{{ route('users.transfer', $user) }}" wire:navigate>Transferir</x-form.outline_button>
+                                @endif
+                                <x-qr-modal
+                                    :payload="[
+                                        'app' => config('app.name'),
+                                        'type' => 'user',
+                                        'id' => $user->id,
+                                        'numero_escalafon' => $user->numero_escalafon,
+                                        'nombre' => trim($user->name.' '.$user->apellido_paterno.' '.$user->apellido_materno),
+                                        'rango' => $user->rango,
+                                        'unidad' => $user->unidad?->sigla ?? $user->unidad?->nombre,
+                                    ]"
+                                    title="QR de usuario"
+                                    :subtitle="trim($user->name.' '.$user->apellido_paterno.' '.$user->apellido_materno)"
+                                    :filename="'qr-usuario-'.$user->id"
+                                >
+                                    QR
+                                </x-qr-modal>
+                                <x-form.outline_button type="button" variant="delete" @click="modalIsOpen = true">Eliminar</x-form.outline_button>
+                            </div>
                         </div>
 
                         <x-form.confirm-modal
@@ -221,8 +245,8 @@
                         <tr class="hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="h-10 w-10 rounded-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center">
-                                    @if (!empty($user->foto))
-                                        <img src="{{ asset('storage/'.$user->foto) }}" alt="Foto" class="h-full w-full object-cover" />
+                                    @if (!empty($user->foto_url))
+                                        <img src="{{ $user->foto_url }}" alt="Foto de {{ $user->nombre_completo }}" class="h-full w-full object-cover" />
                                     @else
                                         <span class="text-xs text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                             {{ $user->initials() }}
@@ -274,6 +298,23 @@
                                             Transferir
                                         </x-form.outline_button>
                                     @endif
+
+                                    <x-qr-modal
+                                        :payload="[
+                                            'app' => config('app.name'),
+                                            'type' => 'user',
+                                            'id' => $user->id,
+                                            'numero_escalafon' => $user->numero_escalafon,
+                                            'nombre' => trim($user->name.' '.$user->apellido_paterno.' '.$user->apellido_materno),
+                                            'rango' => $user->rango,
+                                            'unidad' => $user->unidad?->sigla ?? $user->unidad?->nombre,
+                                        ]"
+                                        title="QR de usuario"
+                                        :subtitle="trim($user->name.' '.$user->apellido_paterno.' '.$user->apellido_materno)"
+                                        :filename="'qr-usuario-'.$user->id"
+                                    >
+                                        QR
+                                    </x-qr-modal>
                                     
                                     <x-form.outline_button
                                         type="button"
@@ -332,7 +373,4 @@
     </div>
     @endif
 </div>
-
-
-
 

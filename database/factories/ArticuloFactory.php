@@ -18,6 +18,7 @@ class ArticuloFactory extends Factory
             'nombre' => ucfirst(fake()->unique()->words(2, true)),
             'unidad_medida' => null,
             'descripcion' => null,
+            'foto_path' => null,
             'tipo' => $tipo,
             'seguimiento' => $tipo === 'reutilizable' ? 'serie' : 'cantidad',
         ];

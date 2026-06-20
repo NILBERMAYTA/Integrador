@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\ToggleAppearanceController;
 use App\Livewire\ActivityLogs\Index as ActivityLogsIndex;
 use App\Livewire\Articulos\Create as ArticulosCreate;
 use App\Livewire\Articulos\Delete as ArticulosDelete;
@@ -20,10 +21,10 @@ use App\Livewire\Mantenimientos\Delete as MantenimientosDelete;
 use App\Livewire\Mantenimientos\Index as MantenimientosIndex;
 use App\Livewire\Mantenimientos\Update as MantenimientosUpdate;
 use App\Livewire\Predicciones\Index as PrediccionesIndex;
-use App\Livewire\Reposicion\Index as ReposicionIndex;
 use App\Livewire\Prestamos\Create as PrestamosCreate;
 use App\Livewire\Prestamos\Devolucion as PrestamosDevolucion;
 use App\Livewire\Prestamos\Index as PrestamosIndex;
+use App\Livewire\Reposicion\Index as ReposicionIndex;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -84,6 +85,7 @@ Route::get('dashboard', function () {
                 }
             }
         }
+
         return 'concluido';
     };
 
@@ -117,6 +119,22 @@ Route::get('dashboard', function () {
             return [
                 'label' => $month->locale('es')->translatedFormat('M'),
                 'full_label' => $month->translatedFormat('F Y'),
+                'total' => $total,
+            ];
+        })
+        ->values();
+
+    $inicioSemana = now()->startOfWeek();
+    $prestamosSemana = collect(range(0, 6))
+        ->map(function (int $offset) use ($prestamos, $inicioSemana) {
+            $day = $inicioSemana->copy()->addDays($offset);
+            $total = $prestamos->filter(function ($op) use ($day) {
+                return optional($op->fecha)?->format('Y-m-d') === $day->format('Y-m-d');
+            })->count();
+
+            return [
+                'label' => mb_strtoupper($day->locale('es')->translatedFormat('D')),
+                'full_label' => $day->locale('es')->translatedFormat('l d \d\e F'),
                 'total' => $total,
             ];
         })
@@ -173,6 +191,7 @@ Route::get('dashboard', function () {
         'personalActivo' => $personalActivo,
         'prestamosRecientes' => $prestamosRecientes,
         'prestamosTendencia' => $prestamosTendencia,
+        'prestamosSemana' => $prestamosSemana,
         'categorias' => $categorias,
         'totalInventario' => $totalInventario,
         'condicionArmamento' => $condicionArmamento,
@@ -195,6 +214,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
+    Route::post('settings/appearance/toggle', ToggleAppearanceController::class)
+        ->name('settings.appearance.toggle');
 
     Route::get('prestamos', PrestamosIndex::class)
         ->middleware(['permission:prestamos.view'])

@@ -3,6 +3,7 @@
 namespace App\Livewire\Articulos;
 
 use App\Models\Articulo;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -77,6 +78,10 @@ class Delete extends Component
     {
         try {
             $articulo = Articulo::onlyTrashed()->findOrFail($articuloId);
+            if (! empty($articulo->foto_path)) {
+                Storage::disk('public')->delete($articulo->foto_path);
+            }
+
             $articulo->forceDelete();
 
             session()->flash('success', 'Artículo eliminado permanentemente.');

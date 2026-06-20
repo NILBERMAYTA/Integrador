@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@plugin "daisyui" {
+    themes: all;
+}
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -7,6 +10,48 @@
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+[data-theme] {
+    --color-surface: var(--color-base-100);
+    --color-surface-alt: var(--color-base-200);
+    --color-on-surface: var(--color-base-content);
+    --color-on-surface-strong: var(--color-base-content);
+    --color-on-primary: var(--color-primary-content);
+    --color-on-secondary: var(--color-secondary-content);
+    --color-outline: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    --color-outline-strong: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    --color-surface-dark: var(--color-base-100);
+    --color-surface-dark-alt: var(--color-base-200);
+    --color-on-surface-dark: var(--color-base-content);
+    --color-on-surface-dark-strong: var(--color-base-content);
+    --color-primary-dark: var(--color-primary);
+    --color-on-primary-dark: var(--color-primary-content);
+    --color-secondary-dark: var(--color-secondary);
+    --color-on-secondary-dark: var(--color-secondary-content);
+    --color-outline-dark: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    --color-outline-dark-strong: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    --color-danger: var(--color-error);
+    --color-on-danger: var(--color-error-content);
+    --color-on-success: var(--color-success-content);
+    --color-on-warning: var(--color-warning-content);
+    --color-on-info: var(--color-info-content);
+    --radius-radius: var(--radius-box);
+}
+
+html.dark[data-theme] {
+    /*
+     * Escala tipografica comun para Flux, Tailwind y los componentes propios.
+     * No se deriva de base-content porque temas como "dim" lo hacen demasiado
+     * tenue y el contraste cambia entre pantallas.
+     */
+    --color-on-surface: #e2e8f0;
+    --color-on-surface-strong: #f8fafc;
+    --color-on-surface-dark: #e2e8f0;
+    --color-on-surface-dark-strong: #f8fafc;
+    --flux-foreground: #e2e8f0;
+    --flux-card-foreground: #e2e8f0;
+    --flux-muted-foreground: #cbd5e1;
+}
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -99,10 +144,48 @@
     .dark ::file-selector-button {
         border-color: var(--color-slate-700, currentColor);
     }
+
+    html.dark[data-theme] [data-flux-heading] {
+        color: var(--color-on-surface-dark-strong);
+    }
+
+    html.dark[data-theme] [data-flux-subheading],
+    html.dark[data-theme] [data-flux-label] {
+        color: var(--color-on-surface-dark);
+    }
 }
 
 /* Personalización de componentes Flux */
 @layer components {
+    .dashboard-card {
+        @apply overflow-hidden rounded-[22px] border border-outline bg-surface shadow-sm transition-shadow hover:shadow-md dark:border-outline-dark dark:bg-surface-dark;
+    }
+
+    .dashboard-card-header {
+        @apply flex items-start justify-between gap-4 px-5 pb-3 pt-5 sm:px-6 sm:pt-6;
+    }
+
+    .dashboard-eyebrow {
+        @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface/55 dark:text-on-surface-dark/55;
+    }
+
+    .dashboard-title {
+        @apply mt-1 text-base font-semibold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong sm:text-lg;
+    }
+
+    .dashboard-empty {
+        @apply mx-5 mb-5 flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-outline text-center text-sm text-on-surface/55 dark:border-outline-dark dark:text-on-surface-dark/55;
+    }
+
+    .dashboard-shell .apexcharts-tooltip,
+    .dashboard-shell .apexcharts-xaxistooltip {
+        @apply !border-outline !bg-surface !text-on-surface !shadow-xl dark:!border-outline-dark dark:!bg-surface-dark dark:!text-on-surface-dark;
+    }
+
+    .dashboard-shell .apexcharts-tooltip-title {
+        @apply !border-outline !bg-surface-alt dark:!border-outline-dark dark:!bg-surface-dark-alt;
+    }
+
     /* Sobrescribir variables de Flux para modo claro */
     :root {
         /* Colores primarios de Flux */
@@ -263,21 +346,22 @@ select:focus[data-flux-control] {
     @apply bg-info text-on-info;
 }
 
-/* Fondos difuminados para autenticaciÃ³n */
+/* Pantallas de autenticacion */
 body.auth-bg {
     position: relative;
     overflow: hidden;
-    background: #0f1115;
+    background-color: #e8edf0;
+    color: var(--color-on-surface);
 }
 
 body.auth-bg::before {
     content: "";
     position: absolute;
     inset: -20%;
-    background-image: url("/login.jpg");
+    background-image: url("/login.jpeg");
     background-size: cover;
     background-position: center;
-    filter: blur(10px);
+    filter: blur(10px) saturate(0.9);
     transform: scale(1.1);
     animation: auth-float 20s ease-in-out infinite alternate;
 }
@@ -286,8 +370,24 @@ body.auth-bg::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 45%),
-        linear-gradient(120deg, rgba(15,17,21,0.55), rgba(15,17,21,0.35));
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.7), transparent 48%),
+        linear-gradient(120deg, rgba(241, 245, 249, 0.76), rgba(226, 232, 240, 0.52));
+}
+
+.dark body.auth-bg {
+    background-color: #0f172a;
+    color: var(--color-on-surface-dark);
+}
+
+.dark body.auth-bg::before {
+    filter: blur(10px) saturate(0.75) brightness(0.62);
+}
+
+.dark body.auth-bg::after {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(148, 163, 184, 0.12), transparent 45%),
+        linear-gradient(120deg, rgba(2, 6, 23, 0.8), rgba(15, 23, 42, 0.68));
 }
 
 .auth-bg-content {
@@ -296,12 +396,49 @@ body.auth-bg::after {
 }
 
 .auth-panel {
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: color-mix(in srgb, white 90%, transparent);
+    border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 18px;
     padding: 24px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(4px);
+    color: var(--color-on-surface);
+    box-shadow:
+        0 20px 50px rgba(15, 23, 42, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.dark .auth-panel {
+    background: color-mix(in srgb, #0f172a 88%, transparent);
+    border-color: rgba(148, 163, 184, 0.22);
+    color: var(--color-on-surface-dark);
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.auth-panel [data-flux-heading] {
+    color: var(--color-on-surface-strong);
+}
+
+.auth-panel [data-flux-subheading],
+.auth-panel [data-flux-label] {
+    color: var(--color-on-surface);
+}
+
+.dark .auth-panel [data-flux-heading] {
+    color: var(--color-on-surface-dark-strong);
+}
+
+.dark .auth-panel [data-flux-subheading],
+.dark .auth-panel [data-flux-label] {
+    color: var(--color-on-surface-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.auth-bg::before {
+        animation: none;
+    }
 }
 
 @keyframes auth-float {

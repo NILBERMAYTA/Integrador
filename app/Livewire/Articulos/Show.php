@@ -93,7 +93,7 @@ class Show extends Component
                 'disponibles' => $seriesResumen->where('estado', 'disponible')->count(),
                 'asignados' => $seriesResumen->where('estado', 'asignado')->count(),
                 'mantenimiento' => $seriesResumen->where('estado', 'en_mantenimiento')->count(),
-                'inoperativos' => $seriesResumen->whereIn('estado', ['inoperativo', 'dado_de_baja'])->count(),
+                'inoperativos' => $seriesResumen->whereIn('estado', ['inoperativo', 'dado_de_baja', 'perdido', 'robado'])->count(),
                 'condicion_predominante' => $seriesResumen
                     ->groupBy(fn ($serie) => $serie->condicion_actual ?: 'bueno')
                     ->sortByDesc(fn ($group) => $group->count())
@@ -116,6 +116,8 @@ class Show extends Component
                 'observado',
                 'inoperativo',
                 'dado_de_baja',
+                'perdido',
+                'robado',
             ];
 
             $condicionesDisponibles = $this->condicionesDisponibles();
@@ -150,12 +152,14 @@ class Show extends Component
             ->sum('od.cantidad');
 
         $totalDisponible = (float) $inventarios->sum('cantidad_disponible');
+        $stockMinimo = (float) $inventarios->sum('stock_minimo');
 
         $resumen = [
             'entrada' => $entrada,
             'salida' => $salida,
             'total' => $totalDisponible,
-            'estado' => $totalDisponible <= 0 ? 'agotado' : ($totalDisponible <= 5 ? 'bajo_stock' : 'disponible'),
+            'stock_minimo' => $stockMinimo,
+            'estado' => $totalDisponible <= 0 ? 'agotado' : ($stockMinimo > 0 && $totalDisponible <= $stockMinimo ? 'bajo_stock' : 'disponible'),
             'unidades' => $inventarios->pluck('unidad.sigla')->filter()->unique()->values(),
         ];
 
@@ -186,7 +190,7 @@ class Show extends Component
                 'mantenimiento' => $series->where('estado', 'en_mantenimiento')->count(),
                 'observados' => $series->where('estado', 'observado')->count(),
                 'inoperativos' => $series->where('estado', 'inoperativo')->count(),
-                'baja' => $series->where('estado', 'dado_de_baja')->count(),
+                'baja' => $series->whereIn('estado', ['dado_de_baja', 'perdido', 'robado'])->count(),
                 'cond_bueno' => $series->where('condicion_actual', 'bueno')->count(),
                 'cond_defectos' => $series->where('condicion_actual', 'con_defectos')->count(),
                 'cond_malo' => $series->where('condicion_actual', 'malo')->count(),

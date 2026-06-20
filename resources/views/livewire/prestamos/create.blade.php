@@ -15,10 +15,35 @@
     </div>
 
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] p-4">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-outline)] pb-4 dark:border-[var(--color-outline-dark)]">
+            <div>
+                <h2 class="font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Identificacion por QR</h2>
+                <p class="text-sm opacity-70">Usuario, serie o articulo consumible.</p>
+            </div>
+            <x-qr-scanner
+                method="procesarQr"
+                label="Escanear para prestamo"
+                title="QR de prestamo"
+                description="Escanea primero al usuario y luego las series o articulos."
+            />
+        </div>
+
+        @if($qrMensaje)
+            <div class="alert mb-4 border border-[var(--color-success)] bg-[var(--color-success)]/10 text-[var(--color-success)]">
+                <span>{{ $qrMensaje }}</span>
+            </div>
+        @endif
+
+        @if($qrError)
+            <div class="alert mb-4 border border-[var(--color-danger)] bg-[var(--color-danger)]/10 text-[var(--color-danger)]">
+                <span>{{ $qrError }}</span>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-                <label class="block text-sm font-medium text-[var(--color-on-surface)]">Evento / Operativo</label>
-                <select wire:model="evento_id" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]">
+                <label class="block text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Evento / Operativo</label>
+                <select wire:model="evento_id" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)] dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-on-surface-dark)]">
                     <option value="">-- Seleccione --</option>
                     @foreach($eventos as $evento)
                         <option value="{{ $evento->id }}">{{ $evento->nombre ?? 'ID '.$evento->id }}</option>
@@ -28,8 +53,8 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-[var(--color-on-surface)]">Policia que recibe</label>
-                <select wire:model="policia_id" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]">
+                <label class="block text-sm font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Policia que recibe</label>
+                <select wire:model="policia_id" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)] dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-on-surface-dark)]">
                     <option value="">-- Seleccione --</option>
                     @foreach($policias as $policia)
                         <option value="{{ $policia->id }}">{{ $policia->name }}</option>
@@ -40,13 +65,13 @@
 
             <div>
                 <label class="block text-sm font-medium text-[var(--color-on-surface)]">Fecha de Prestamo</label>
-                <input type="text" disabled value="{{ now()->format('Y-m-d H:i') }}" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-transparent text-[var(--color-on-surface)]" />
+                <input type="text" disabled value="{{ now()->format('Y-m-d H:i') }}" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-transparent text-[var(--color-on-surface)] dark:border-[var(--color-outline-dark)] dark:text-[var(--color-on-surface-dark)]" />
             </div>
         </div>
 
         <div class="mt-4">
             <label class="block text-sm font-medium text-[var(--color-on-surface)]">Observaciones (opcional)</label>
-            <textarea wire:model="observaciones" rows="2" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)]" placeholder="Ej. Prestamo turno noche, unidad UTOP"></textarea>
+            <textarea wire:model="observaciones" rows="2" class="mt-1 block w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] px-3 py-2 bg-[var(--color-surface)] text-[var(--color-on-surface)] dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-on-surface-dark)]" placeholder="Ej. Prestamo turno noche, unidad UTOP"></textarea>
         </div>
     </div>
 

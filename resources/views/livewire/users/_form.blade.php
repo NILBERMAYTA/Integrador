@@ -49,8 +49,8 @@
         <div class="h-24 w-24 overflow-hidden rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] flex items-center justify-center shrink-0">
           @if (!empty($foto))
             <img src="{{ $foto->temporaryUrl() }}" alt="Foto" class="h-full w-full object-cover" />
-          @elseif (!empty($foto_actual))
-            <img src="{{ asset('storage/'.$foto_actual) }}" alt="Foto" class="h-full w-full object-cover" />
+          @elseif (!empty($foto_actual) && \Illuminate\Support\Facades\Storage::disk('public')->exists($foto_actual))
+            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($foto_actual) }}" alt="Foto" class="h-full w-full object-cover" />
           @else
             <div class="text-center px-2">
               <div class="text-xs font-medium text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Sin foto</div>

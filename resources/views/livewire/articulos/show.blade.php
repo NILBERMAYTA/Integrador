@@ -27,22 +27,31 @@
     <div class="grid gap-4 lg:grid-cols-3">
         <div class="lg:col-span-2 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-5">
             <p class="text-xs uppercase tracking-wider opacity-60">Informacion general</p>
-            <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                <div>
-                    <p class="text-xs opacity-60">Categoria</p>
-                    <p class="font-medium">{{ $articulo->categoria?->nombre ?? '-' }}</p>
+            <div class="mt-3 flex flex-col gap-5 md:flex-row">
+                <div class="h-36 w-full shrink-0 overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] flex items-center justify-center md:w-44">
+                    @if($articulo->foto_url)
+                        <img src="{{ $articulo->foto_url }}" alt="Imagen de {{ $articulo->nombre }}" class="h-full w-full object-cover" />
+                    @else
+                        <span class="text-sm font-semibold opacity-60">Sin imagen</span>
+                    @endif
                 </div>
-                <div>
-                    <p class="text-xs opacity-60">Tipo</p>
-                    <p class="font-medium">{{ ucfirst($articulo->tipo) }}</p>
-                </div>
-                <div>
-                    <p class="text-xs opacity-60">Gestion</p>
-                    <p class="font-medium">{{ $articulo->isSerializado() ? 'Por serie' : 'Por cantidad' }}</p>
-                </div>
-                <div>
-                    <p class="text-xs opacity-60">Descripcion</p>
-                    <p class="font-medium">{{ $articulo->descripcion ?: '-' }}</p>
+                <div class="grid flex-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <p class="text-xs opacity-60">Categoria</p>
+                        <p class="font-medium">{{ $articulo->categoria?->nombre ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs opacity-60">Tipo</p>
+                        <p class="font-medium">{{ ucfirst($articulo->tipo) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs opacity-60">Gestion</p>
+                        <p class="font-medium">{{ $articulo->isSerializado() ? 'Por serie' : 'Por cantidad' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs opacity-60">Descripcion</p>
+                        <p class="font-medium">{{ $articulo->descripcion ?: '-' }}</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,6 +86,10 @@
                     <div>
                         <p class="text-xs opacity-60">Stock disponible</p>
                         <p class="text-2xl font-semibold">{{ number_format($resumen['total'], 2) }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs opacity-60">Stock minimo</p>
+                        <p class="font-medium">{{ number_format($resumen['stock_minimo'] ?? 0, 2) }}</p>
                     </div>
                     <div>
                         <p class="text-xs opacity-60">Estado</p>
@@ -274,6 +287,7 @@
                         <tr>
                             <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider">Unidad</th>
                             <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-center">Disponible</th>
+                            <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-center">Stock minimo</th>
                             <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-center">Asignado</th>
                             <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-center">Mantenimiento</th>
                         </tr>
@@ -283,12 +297,13 @@
                             <tr>
                                 <td class="px-5 py-4">{{ $inventario->unidad?->sigla ?? $inventario->unidad?->nombre ?? '-' }}</td>
                                 <td class="px-5 py-4 text-center">{{ number_format((float) $inventario->cantidad_disponible, 2) }}</td>
+                                <td class="px-5 py-4 text-center">{{ number_format((float) $inventario->stock_minimo, 2) }}</td>
                                 <td class="px-5 py-4 text-center">{{ number_format((float) $inventario->cantidad_asignada, 2) }}</td>
                                 <td class="px-5 py-4 text-center">{{ number_format((float) $inventario->cantidad_mantenimiento, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-10 text-center opacity-60">No hay existencias registradas para este articulo.</td>
+                                <td colspan="5" class="px-6 py-10 text-center opacity-60">No hay existencias registradas para este articulo.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -149,10 +149,10 @@ class AjusteStock extends Component
                         'updated_at'   => $now,
                     ]);
 
-                    // Soft-delete de la serie (marcar como retirada)
+                    // Marcar como baja sin borrar historial operativo.
                     DB::table('articulo_series')
                         ->where('id', $serie->id)
-                        ->update(['estado' => 'dado_de_baja', 'deleted_at' => $now, 'updated_at' => $now]);
+                        ->update(['estado' => 'dado_de_baja', 'updated_at' => $now]);
                 }
             }
         });

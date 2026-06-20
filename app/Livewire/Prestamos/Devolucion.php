@@ -14,8 +14,14 @@ use Livewire\Component;
 class Devolucion extends Component
 {
     public Operacion $operacion;
+
     public $items = [];
+
     public $devueltosCantidad = [];
+
+    public string $qrMensaje = '';
+
+    public string $qrError = '';
 
     public function mount(Operacion $operacion)
     {
@@ -58,14 +64,57 @@ class Devolucion extends Component
                 'seguimiento' => $detalle->articulo?->isSerializado() ? 'serie' : 'cantidad',
                 'cantidad_prestada' => $detalle->cantidad,
                 'cantidad_pendiente' => $pendienteCantidad,
-                'cantidad_devolver' => $pendienteCantidad,
+                'cantidad_devolver' => 0,
                 'series_pendientes' => $seriesAsignadas->map(fn ($s) => [
                     'id' => $s->serie->id,
                     'codigo' => $s->serie->codigo_serie,
                 ])->values()->all(),
-                'series_devolver' => $seriesAsignadas->map(fn ($s) => $s->serie->id)->values()->all(),
+                'series_devolver' => [],
             ];
         }
+    }
+
+    public function procesarQr(string $contenido): void
+    {
+        $this->qrMensaje = '';
+        $this->qrError = '';
+
+        $payload = json_decode(trim($contenido), true);
+        if (! is_array($payload) || ($payload['type'] ?? null) !== 'serie') {
+            $this->qrError = 'Escanea el QR individual de una serie.';
+
+            return;
+        }
+
+        $serieId = (int) ($payload['id'] ?? 0);
+        $serie = ArticuloSerie::find($serieId);
+
+        if (! $serie) {
+            $this->qrError = 'La serie escaneada no existe.';
+
+            return;
+        }
+
+        foreach ($this->items as $index => $item) {
+            $pendientes = collect($item['series_pendientes'] ?? []);
+            if (! $pendientes->contains('id', $serieId)) {
+                continue;
+            }
+
+            if (in_array($serieId, $this->items[$index]['series_devolver'], true)) {
+                $this->qrError = "La serie {$serie->codigo_serie} ya fue marcada para devolucion.";
+
+                return;
+            }
+
+            $this->items[$index]['series_devolver'][] = $serieId;
+            $this->items[$index]['series_devolver'] = array_values(array_unique($this->items[$index]['series_devolver']));
+            $this->qrMensaje = "Serie {$serie->codigo_serie} marcada para devolucion.";
+
+            return;
+        }
+
+        $this->qrError = 'La serie no esta pendiente en este prestamo.';
     }
 
     protected function rules()
@@ -82,22 +131,52 @@ class Devolucion extends Component
     {
         $this->validate();
 
-        foreach ($this->items as $item) {
+        $hayDevolucion = false;
+
+        foreach ($this->items as $index => $item) {
             if ($item['seguimiento'] === 'serie') {
-                $pendientesCount = count($item['series_pendientes']);
-                if (count($item['series_devolver']) !== $pendientesCount) {
-                    $this->addError('items.series_devolver', 'Debes devolver todas las series pendientes.');
+                $pendientes = collect($item['series_pendientes'])->pluck('id')->map(fn ($id) => (int) $id);
+                $seleccionadas = collect($item['series_devolver'])->map(fn ($id) => (int) $id)->unique();
+
+                if ($seleccionadas->diff($pendientes)->isNotEmpty()) {
+                    $this->addError("items.$index.series_devolver", 'Hay una serie que no pertenece a este prestamo.');
+
                     return;
                 }
+
+                if ($seleccionadas->isNotEmpty()) {
+                    $seriesValidas = ArticuloSerie::query()
+                        ->whereIn('id', $seleccionadas)
+                        ->where('unidad_id', $this->operacion->unidad_id)
+                        ->where('operacion_detalle_id_actual', $item['detalle_id'])
+                        ->count();
+
+                    if ($seriesValidas !== $seleccionadas->count()) {
+                        $this->addError("items.$index.series_devolver", 'Alguna serie ya no esta asignada a este prestamo.');
+
+                        return;
+                    }
+                }
+
+                $hayDevolucion = $hayDevolucion || $seleccionadas->isNotEmpty();
             } else {
                 if ($item['cantidad_devolver'] < 0 || $item['cantidad_devolver'] > $item['cantidad_pendiente']) {
-                    $this->addError('items.cantidad_devolver', 'Cantidad a devolver fuera de rango.');
+                    $this->addError("items.$index.cantidad_devolver", 'Cantidad a devolver fuera de rango.');
+
                     return;
                 }
+
+                $hayDevolucion = $hayDevolucion || (int) $item['cantidad_devolver'] > 0;
             }
         }
 
-        $operacionDevolucion = DB::transaction(function () {
+        if (! $hayDevolucion) {
+            $this->addError('items', 'Escanea o selecciona al menos una serie o cantidad para devolver.');
+
+            return;
+        }
+
+        $operacionDevolucion = DB::transaction(function () use ($inventario) {
             $op = Operacion::create([
                 'tipo' => 'devolucion',
                 'evento_id' => $this->operacion->evento_id,
@@ -157,6 +236,7 @@ class Devolucion extends Component
         });
 
         session()->flash('success', 'Devolucion registrada.');
+
         return redirect()->route('prestamos.index');
     }
 

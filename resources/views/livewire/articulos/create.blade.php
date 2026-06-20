@@ -97,6 +97,30 @@
             <textarea wire:model.defer="descripcion" placeholder="Ej: Marca Federal, lote 2025" rows="3" class="w-full px-3 py-2 rounded-[var(--radius-radius)] border"></textarea>
           </div>
 
+          <div class="space-y-2">
+            <label class="block text-sm font-medium">Imagen del articulo</label>
+            <label for="foto-articulo-cantidad" class="flex cursor-pointer items-center gap-4 rounded-[var(--radius-radius)] border-2 border-dashed border-[var(--color-outline)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-primary)]">
+              <div class="h-24 w-24 shrink-0 overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] flex items-center justify-center">
+                @if (!empty($foto))
+                  <img src="{{ $foto->temporaryUrl() }}" alt="Imagen del articulo" class="h-full w-full object-cover" />
+                @else
+                  <span class="px-2 text-center text-xs opacity-70">Sin imagen</span>
+                @endif
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium">Seleccionar imagen</p>
+                <p class="mt-1 text-xs opacity-70">JPG, PNG o WEBP. Maximo 2 MB.</p>
+                @if (!empty($foto))
+                  <p class="mt-2 truncate text-xs font-medium text-[var(--color-primary)]">{{ $foto->getClientOriginalName() }}</p>
+                @endif
+              </div>
+            </label>
+            <input id="foto-articulo-cantidad" type="file" accept="image/*" wire:model="foto" class="sr-only" />
+            @error('foto')
+              <p class="text-xs text-[var(--color-danger)]">{{ $message }}</p>
+            @enderror
+          </div>
+
           <div class="flex gap-3">
             <button type="submit" class="px-6 py-2.5 rounded-[var(--radius-radius)] bg-[var(--color-primary)] text-[var(--color-on-primary)] font-medium">Siguiente</button>
             <button type="button" wire:click="$set('mode', null)" class="px-6 py-2.5 rounded-[var(--radius-radius)] border font-medium">Atras</button>
@@ -112,6 +136,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <x-form.input label="Cantidad inicial" type="number" step="0.01" wire:model.defer="cantidad_inicial" placeholder="Ej: 100" required />
+            <x-form.input label="Stock minimo" type="number" step="0.01" wire:model.defer="stock_minimo" placeholder="Ej: 30" />
           </div>
 
           <x-form.input label="Fecha de ingreso" type="date" wire:model.defer="fecha_ingreso" />
@@ -172,6 +197,30 @@
           <div>
             <label class="block text-sm font-medium mb-2">Descripcion (opcional)</label>
             <textarea wire:model.defer="descripcion" placeholder="Ej: Marca Ballistic, color negro" rows="3" class="w-full px-3 py-2 rounded-[var(--radius-radius)] border"></textarea>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-medium">Imagen del articulo</label>
+            <label for="foto-articulo-serie" class="flex cursor-pointer items-center gap-4 rounded-[var(--radius-radius)] border-2 border-dashed border-[var(--color-outline)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-success)]">
+              <div class="h-24 w-24 shrink-0 overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface-alt)] flex items-center justify-center">
+                @if (!empty($foto))
+                  <img src="{{ $foto->temporaryUrl() }}" alt="Imagen del articulo" class="h-full w-full object-cover" />
+                @else
+                  <span class="px-2 text-center text-xs opacity-70">Sin imagen</span>
+                @endif
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium">Seleccionar imagen</p>
+                <p class="mt-1 text-xs opacity-70">JPG, PNG o WEBP. Maximo 2 MB.</p>
+                @if (!empty($foto))
+                  <p class="mt-2 truncate text-xs font-medium text-[var(--color-success)]">{{ $foto->getClientOriginalName() }}</p>
+                @endif
+              </div>
+            </label>
+            <input id="foto-articulo-serie" type="file" accept="image/*" wire:model="foto" class="sr-only" />
+            @error('foto')
+              <p class="text-xs text-[var(--color-danger)]">{{ $message }}</p>
+            @enderror
           </div>
 
           <div class="flex gap-3">

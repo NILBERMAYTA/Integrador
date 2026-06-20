@@ -23,10 +23,41 @@
         </div>
     @endif
 
-    <div class="bg-[var(--color-surface)] rounded-[var(--radius-radius)] border border-[var(--color-outline)] overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4 dark:border-lime-900 dark:bg-[#182015]">
+        <div>
+            <h2 class="font-semibold text-[var(--color-on-surface-strong)] dark:text-lime-300">Recepcion por QR</h2>
+            <p class="text-sm opacity-70">Cada serie escaneada se agrega a esta devolucion.</p>
+        </div>
+        <x-qr-scanner
+            method="procesarQr"
+            label="Escanear serie"
+            title="QR de devolucion"
+            description="Escanea una serie pendiente de este prestamo."
+        />
+    </div>
+
+    @if($qrMensaje)
+        <div class="alert border border-[var(--color-success)] bg-[var(--color-success)]/10 text-[var(--color-success)]">
+            <span>{{ $qrMensaje }}</span>
+        </div>
+    @endif
+
+    @if($qrError)
+        <div class="alert border border-[var(--color-danger)] bg-[var(--color-danger)]/10 text-[var(--color-danger)]">
+            <span>{{ $qrError }}</span>
+        </div>
+    @endif
+
+    @error('items')
+        <div class="alert border border-[var(--color-danger)] bg-[var(--color-danger)]/10 text-[var(--color-danger)]">
+            <span>{{ $message }}</span>
+        </div>
+    @enderror
+
+    <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
-                <thead class="bg-[var(--color-surface-alt)] border-b border-[var(--color-outline)]">
+                <thead class="bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)] border-b border-[var(--color-outline)] dark:border-[var(--color-outline-dark)]">
                     <tr>
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Articulo</th>
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] text-center">Prestado</th>
@@ -34,7 +65,7 @@
                         <th class="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)]">Devolver</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[var(--color-outline)] bg-[var(--color-surface)]">
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
                     @forelse($items as $idx => $item)
                         <tr class="hover:bg-[var(--color-surface-alt)] transition-colors">
                             <td class="px-6 py-3">
@@ -47,7 +78,7 @@
                             <td class="px-6 py-3 text-center">{{ $item['cantidad_pendiente'] }}</td>
                             <td class="px-6 py-3">
                                 @if($item['seguimiento'] === 'serie')
-                                    <p class="text-xs text-[var(--color-on-surface)] opacity-70 mb-2">Selecciona todas las series pendientes</p>
+                                    <p class="text-xs text-[var(--color-on-surface)] opacity-70 mb-2">Series seleccionadas para esta devolucion</p>
                                     <div class="flex flex-wrap gap-2">
                                         @foreach($item['series_pendientes'] as $serie)
                                             <label class="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--radius-radius)] border border-[var(--color-outline)]">
