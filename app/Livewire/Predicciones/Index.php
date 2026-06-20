@@ -101,6 +101,8 @@ class Index extends Component
             $this->error = $exception->getMessage();
             session()->flash('error', $this->error);
         }
+
+        $this->dispatch('predictions-updated');
     }
 
     protected function buildStats(): array

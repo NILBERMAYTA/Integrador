@@ -1,15 +1,21 @@
-<div class="space-y-6">
+<div class="prediction-shell space-y-6">
     @php
-        $totalPredicciones = max(1, count($predicciones));
         $alto = (int) ($stats['alto'] ?? 0);
         $medio = (int) ($stats['medio'] ?? 0);
         $bajo = (int) ($stats['bajo'] ?? 0);
         $inoperativoCount = collect($predicciones)->where('estado_predicho', 'inoperativo')->count();
         $operativoCount = max(0, count($predicciones) - $inoperativoCount);
 
-        $altoDeg = round(($alto / $totalPredicciones) * 360, 2);
-        $medioDeg = round(($medio / $totalPredicciones) * 360, 2);
-        $inoperativoDeg = round(($inoperativoCount / $totalPredicciones) * 360, 2);
+        $predictionChartData = [
+            'risk' => [
+                'labels' => ['Alto', 'Medio', 'Bajo'],
+                'series' => [$alto, $medio, $bajo],
+            ],
+            'status' => [
+                'labels' => ['Operativo', 'Inoperativo'],
+                'series' => [$operativoCount, $inoperativoCount],
+            ],
+        ];
     @endphp
 
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -60,21 +66,10 @@
     <div class="grid gap-6 xl:grid-cols-2">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div
-                    class="relative h-36 w-36 shrink-0 rounded-full"
-                    style="background: conic-gradient(#f43f5e 0deg {{ $altoDeg }}deg, #f59e0b {{ $altoDeg }}deg {{ $altoDeg + $medioDeg }}deg, #10b981 {{ $altoDeg + $medioDeg }}deg 360deg);"
-                >
-                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-center">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Riesgo</p>
-                            <p class="text-2xl font-bold">{{ count($predicciones) }}</p>
-                        </div>
-                    </div>
-                </div>
+                <div data-prediction-chart="risk" class="min-h-[220px] w-full shrink-0 sm:w-[250px]" wire:ignore></div>
 
                 <div class="flex-1">
-                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribucion de riesgo</h2>
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribución de riesgo</h2>
                     <div class="mt-4 space-y-3 text-sm">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
@@ -104,18 +99,7 @@
 
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div
-                    class="relative h-36 w-36 shrink-0 rounded-full"
-                    style="background: conic-gradient(#f43f5e 0deg {{ $inoperativoDeg }}deg, #10b981 {{ $inoperativoDeg }}deg 360deg);"
-                >
-                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-center">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Estado</p>
-                            <p class="text-2xl font-bold">{{ count($predicciones) }}</p>
-                        </div>
-                    </div>
-                </div>
+                <div data-prediction-chart="status" class="min-h-[220px] w-full shrink-0 sm:w-[250px]" wire:ignore></div>
 
                 <div class="flex-1">
                     <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Estado predicho</h2>
@@ -328,4 +312,6 @@
             @endif
         </div>
     </div>
+
+    <script type="application/json" data-prediction-chart-data>@json($predictionChartData)</script>
 </div>

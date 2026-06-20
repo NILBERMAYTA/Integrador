@@ -235,6 +235,7 @@ window.qrScanner = (readerId, onScan) => ({
 });
 
 let dashboardCharts = [];
+let predictionCharts = [];
 let apexChartsConstructor = null;
 let dashboardTrendChart = null;
 let dashboardTrendPeriod = 'monthly';
@@ -302,6 +303,20 @@ const parseDashboardData = () => {
     }
 };
 
+const parsePredictionChartData = () => {
+    const source = document.querySelector('[data-prediction-chart-data]');
+
+    if (! source) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(source.textContent);
+    } catch (error) {
+        return null;
+    }
+};
+
 const destroyDashboardCharts = () => {
     dashboardCharts.forEach((chart) => {
         try {
@@ -312,6 +327,17 @@ const destroyDashboardCharts = () => {
     });
     dashboardCharts = [];
     dashboardTrendChart = null;
+};
+
+const destroyPredictionCharts = () => {
+    predictionCharts.forEach((chart) => {
+        try {
+            chart.destroy();
+        } catch (error) {
+            // Livewire may already have replaced the chart container.
+        }
+    });
+    predictionCharts = [];
 };
 
 const renderDashboardChart = (selector, options) => {
@@ -617,8 +643,111 @@ const renderDashboardCharts = async () => {
     });
 };
 
+const renderPredictionCharts = async () => {
+    const data = parsePredictionChartData();
+
+    destroyPredictionCharts();
+
+    if (! data) {
+        return;
+    }
+
+    if (! apexChartsConstructor) {
+        const module = await import('apexcharts');
+        apexChartsConstructor = module.default;
+    }
+
+    if (! document.querySelector('[data-prediction-chart-data]')) {
+        return;
+    }
+
+    const theme = dashboardChartTheme();
+    const charts = [
+        {
+            selector: '[data-prediction-chart="risk"]',
+            labels: data.risk.labels,
+            series: data.risk.series,
+            colors: ['#f43f5e', '#f59e0b', '#10b981'],
+            totalLabel: 'Predicciones',
+            itemLabel: 'predicción',
+        },
+        {
+            selector: '[data-prediction-chart="status"]',
+            labels: data.status.labels,
+            series: data.status.series,
+            colors: ['#10b981', '#f43f5e'],
+            totalLabel: 'Series',
+            itemLabel: 'serie',
+        },
+    ];
+
+    charts.forEach((config) => {
+        const element = document.querySelector(config.selector);
+
+        if (! element) {
+            return;
+        }
+
+        element.innerHTML = '';
+        const base = baseDashboardChart('donut', 220);
+        const chart = new apexChartsConstructor(element, {
+            ...base,
+            series: config.series,
+            labels: config.labels,
+            colors: config.colors,
+            stroke: {
+                width: 4,
+                colors: [theme.mode === 'dark' ? '#0f172a' : '#ffffff'],
+            },
+            legend: { show: false },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '70%',
+                        labels: {
+                            show: true,
+                            name: {
+                                show: true,
+                                color: theme.foreground,
+                                offsetY: 18,
+                            },
+                            value: {
+                                show: true,
+                                color: theme.strong,
+                                fontSize: '26px',
+                                fontWeight: 700,
+                                offsetY: -15,
+                            },
+                            total: {
+                                show: true,
+                                label: config.totalLabel,
+                                color: theme.foreground,
+                                formatter: (context) => context.globals.seriesTotals
+                                    .reduce((sum, value) => sum + value, 0),
+                            },
+                        },
+                    },
+                },
+            },
+            tooltip: {
+                ...base.tooltip,
+                y: {
+                    formatter: (value) => `${value} ${config.itemLabel}${value === 1 ? '' : config.itemLabel === 'predicción' ? 'es' : 's'}`,
+                },
+            },
+        });
+
+        predictionCharts.push(chart);
+        chart.render();
+    });
+};
+
 const scheduleDashboardChartsUpdate = () => {
     window.requestAnimationFrame(() => renderDashboardCharts());
+};
+
+const schedulePredictionChartsUpdate = () => {
+    window.requestAnimationFrame(() => renderPredictionCharts());
 };
 
 const applyAppearance = (appearance) => {
@@ -631,14 +760,20 @@ const applyAppearance = (appearance) => {
     document.documentElement.dataset.appearance = appearance;
 };
 
-document.addEventListener('DOMContentLoaded', renderDashboardCharts);
+document.addEventListener('DOMContentLoaded', () => {
+    renderDashboardCharts();
+    renderPredictionCharts();
+});
 document.addEventListener('livewire:navigated', () => {
     const appearance = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
     document.documentElement.dataset.appearance = appearance;
     updateAppearanceToggles(appearance);
     renderDashboardCharts();
+    renderPredictionCharts();
 });
+
+window.addEventListener('predictions-updated', schedulePredictionChartsUpdate);
 
 document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-trend-period]');
@@ -666,6 +801,7 @@ window.addEventListener('theme-changed', (event) => {
     });
     updateAppearanceToggles(appearance);
     scheduleDashboardChartsUpdate();
+    schedulePredictionChartsUpdate();
 });
 
 const updateAppearanceToggles = (appearance) => {
