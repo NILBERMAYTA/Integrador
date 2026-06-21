@@ -35,6 +35,18 @@
     <x-form.toast_notification :message="session('success')" variant="success" />
     <x-form.toast_notification :message="session('error')" variant="danger" />
 
+    {{-- Contadores --}}
+    <x-ui.stats-grid :cols="5">
+        <x-ui.stat-card label="Total personal" :value="$stats['total']" icon="users" tone="primary" hint="Usuarios visibles en tu alcance" />
+        <x-ui.stat-card label="Policias" :value="$stats['policias']" icon="shield-check" tone="info"
+            :progress="$stats['total'] ? round($stats['policias'] / $stats['total'] * 100) : 0" />
+        <x-ui.stat-card label="Furrieles" :value="$stats['furrieles']" icon="clipboard-document-check" tone="success"
+            :progress="$stats['total'] ? round($stats['furrieles'] / $stats['total'] * 100) : 0" />
+        <x-ui.stat-card label="Administradores" :value="$stats['admins']" icon="key" tone="warning"
+            :progress="$stats['total'] ? round($stats['admins'] / $stats['total'] * 100) : 0" />
+        <x-ui.stat-card label="Sin unidad" :value="$stats['sin_unidad']" icon="exclamation-triangle" :tone="$stats['sin_unidad'] > 0 ? 'danger' : 'neutral'" hint="Personal sin unidad asignada" />
+    </x-ui.stats-grid>
+
     @php
         $rangoOptions = collect($rangos ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los rangos'])->values();
         $roleOptions = collect($roles ?? [])->map(fn($r) => ['value' => $r, 'label' => $r])->prepend(['value' => '', 'label' => 'Todos los roles'])->values();

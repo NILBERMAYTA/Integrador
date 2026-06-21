@@ -44,28 +44,43 @@
         </div>
     @endif
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 kiro-stagger">
-        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
-            <p class="text-xs uppercase tracking-wider opacity-60">Bueno</p>
-            <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ $resumenCondicion['bueno'] }}</p>
-        </div>
-        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
-            <p class="text-xs uppercase tracking-wider opacity-60">Con defectos</p>
-            <p class="mt-2 text-2xl font-semibold text-amber-600">{{ $resumenCondicion['con_defectos'] }}</p>
-        </div>
-        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
-            <p class="text-xs uppercase tracking-wider opacity-60">Malo</p>
-            <p class="mt-2 text-2xl font-semibold text-orange-600">{{ $resumenCondicion['malo'] }}</p>
-        </div>
-        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
-            <p class="text-xs uppercase tracking-wider opacity-60">Inoperativo</p>
-            <p class="mt-2 text-2xl font-semibold text-rose-600">{{ $resumenCondicion['inoperativo'] }}</p>
-        </div>
-        <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
-            <p class="text-xs uppercase tracking-wider opacity-60">Total registros</p>
-            <p class="mt-2 text-2xl font-semibold text-zinc-700">{{ $resumenCondicion['total'] }}</p>
-        </div>
-    </div>
+    <x-ui.stats-grid :cols="5">
+        <x-ui.stat-card
+            label="Total registros"
+            :value="$resumenCondicion['total']"
+            icon="cube"
+            tone="primary"
+            hint="Material visible en el inventario"
+        />
+        <x-ui.stat-card
+            label="Bueno"
+            :value="$resumenCondicion['bueno']"
+            icon="check-circle"
+            tone="success"
+            :progress="$resumenCondicion['total'] ? round($resumenCondicion['bueno'] / $resumenCondicion['total'] * 100) : 0"
+        />
+        <x-ui.stat-card
+            label="Con defectos"
+            :value="$resumenCondicion['con_defectos']"
+            icon="exclamation-triangle"
+            :tone="$resumenCondicion['con_defectos'] > 0 ? 'warning' : 'neutral'"
+            :progress="$resumenCondicion['total'] ? round($resumenCondicion['con_defectos'] / $resumenCondicion['total'] * 100) : 0"
+        />
+        <x-ui.stat-card
+            label="Malo"
+            :value="$resumenCondicion['malo']"
+            icon="wrench-screwdriver"
+            :tone="$resumenCondicion['malo'] > 0 ? 'warning' : 'neutral'"
+            :progress="$resumenCondicion['total'] ? round($resumenCondicion['malo'] / $resumenCondicion['total'] * 100) : 0"
+        />
+        <x-ui.stat-card
+            label="Inoperativo"
+            :value="$resumenCondicion['inoperativo']"
+            icon="x-circle"
+            :tone="$resumenCondicion['inoperativo'] > 0 ? 'danger' : 'neutral'"
+            :progress="$resumenCondicion['total'] ? round($resumenCondicion['inoperativo'] / $resumenCondicion['total'] * 100) : 0"
+        />
+    </x-ui.stats-grid>
 
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
         <div class="flex flex-wrap items-end gap-3">

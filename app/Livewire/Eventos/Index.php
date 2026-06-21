@@ -31,9 +31,31 @@ class Index extends Component
     public function render()
     {
         $eventos = Evento::query()
+            ->withCount('operaciones')
             ->latest('id')
             ->paginate(10);
 
-        return view('livewire.eventos.index', compact('eventos'));
+        $now = now();
+        $stats = [
+            'total' => Evento::count(),
+            'planificados' => Evento::where('estado', 'planificado')->count(),
+            'activos' => Evento::where('estado', 'activo')->count(),
+            'cerrados' => Evento::where('estado', 'cerrado')->count(),
+        ];
+
+        $severidad = [
+            'bajo' => Evento::where('nivel', 'bajo')->count(),
+            'medio' => Evento::where('nivel', 'medio')->count(),
+            'alto' => Evento::where('nivel', 'alto')->count(),
+        ];
+
+        $eventosChartData = [
+            'severidad' => [
+                'labels' => ['Bajo', 'Medio', 'Alto'],
+                'series' => [$severidad['bajo'], $severidad['medio'], $severidad['alto']],
+            ],
+        ];
+
+        return view('livewire.eventos.index', compact('eventos', 'stats', 'severidad', 'eventosChartData'));
     }
 }

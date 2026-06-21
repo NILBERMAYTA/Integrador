@@ -3,6 +3,7 @@
 namespace App\Livewire\Eventos;
 
 use App\Models\Evento;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Update extends Component
@@ -13,6 +14,8 @@ class Update extends Component
     public string $descripcion = '';
     public ?string $fecha_inicio = null;
     public ?string $fecha_fin = null;
+    public string $nivel = 'medio';
+    public string $estado = 'planificado';
 
     public function mount(Evento $evento): void
     {
@@ -21,6 +24,8 @@ class Update extends Component
         $this->descripcion = (string) ($evento->descripcion ?? '');
         $this->fecha_inicio = $evento->fecha_inicio ? $evento->fecha_inicio->format('Y-m-d') : null;
         $this->fecha_fin = $evento->fecha_fin ? $evento->fecha_fin->format('Y-m-d') : null;
+        $this->nivel = $evento->nivel ?: 'medio';
+        $this->estado = $evento->estado ?: 'planificado';
     }
 
     protected function rules(): array
@@ -30,6 +35,8 @@ class Update extends Component
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'fecha_inicio' => ['nullable', 'date'],
             'fecha_fin' => ['nullable', 'date', 'after_or_equal:fecha_inicio'],
+            'nivel' => ['required', Rule::in(Evento::NIVELES)],
+            'estado' => ['required', Rule::in(Evento::ESTADOS)],
         ];
     }
 
@@ -51,6 +58,8 @@ class Update extends Component
             'descripcion' => $this->descripcion ?: null,
             'fecha_inicio' => $this->fecha_inicio ?: null,
             'fecha_fin' => $this->fecha_fin ?: null,
+            'nivel' => $this->nivel,
+            'estado' => $this->estado,
         ]);
 
         session()->flash('success', 'Evento actualizado con éxito.');

@@ -127,7 +127,16 @@ class Index extends Component
             ->orderBy('nombre')
             ->get(['id', 'nombre', 'sigla']);
 
-        return view('livewire.users.index', compact('users', 'rangos', 'roles', 'unidades'));
+        $scope = User::query()->visibleTo(auth()->user());
+        $stats = [
+            'total' => (clone $scope)->count(),
+            'policias' => (clone $scope)->where('role', 'policia')->count(),
+            'furrieles' => (clone $scope)->where('role', 'furriel')->count(),
+            'admins' => (clone $scope)->whereIn('role', ['administrador_general', 'administrador_unidad'])->count(),
+            'sin_unidad' => (clone $scope)->whereNull('unidad_id')->count(),
+        ];
+
+        return view('livewire.users.index', compact('users', 'rangos', 'roles', 'unidades', 'stats'));
     }
 
     private function baseQuery()

@@ -249,13 +249,16 @@ html[data-appearance="dark"][data-theme] {
     .prediction-shell .apexcharts-tooltip,
     .prediction-shell .apexcharts-xaxistooltip,
     .reposicion-shell .apexcharts-tooltip,
-    .reposicion-shell .apexcharts-xaxistooltip {
+    .reposicion-shell .apexcharts-xaxistooltip,
+    .eventos-shell .apexcharts-tooltip,
+    .eventos-shell .apexcharts-xaxistooltip {
         @apply !border-outline !bg-surface !text-on-surface !shadow-xl dark:!border-outline-dark dark:!bg-surface-dark dark:!text-on-surface-dark;
     }
 
     .dashboard-shell .apexcharts-tooltip-title,
     .prediction-shell .apexcharts-tooltip-title,
-    .reposicion-shell .apexcharts-tooltip-title {
+    .reposicion-shell .apexcharts-tooltip-title,
+    .eventos-shell .apexcharts-tooltip-title {
         @apply !border-outline !bg-surface-alt dark:!border-outline-dark dark:!bg-surface-dark-alt;
     }
 

@@ -20,6 +20,14 @@
     <x-form.toast_notification :message="session('success')" variant="success" />
     <x-form.toast_notification :message="session('error')" variant="danger" />
 
+    {{-- Contadores --}}
+    <x-ui.stats-grid :cols="4">
+        <x-ui.stat-card label="Unidades" :value="$stats['unidades']" icon="building-office-2" tone="primary" />
+        <x-ui.stat-card label="Personal activo" :value="$stats['personal']" icon="users" tone="info" hint="Total en todas las unidades" />
+        <x-ui.stat-card label="Series activas" :value="$stats['series']" icon="cube" tone="success" hint="Armamento serializado" />
+        <x-ui.stat-card label="Sin personal" :value="$stats['sin_personal']" icon="exclamation-triangle" :tone="$stats['sin_personal'] > 0 ? 'warning' : 'neutral'" hint="Unidades sin efectivos" />
+    </x-ui.stats-grid>
+
     <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
         <x-form.search
             name="search"

@@ -11,7 +11,7 @@ class ArticuloSerie extends BaseModel
 
     protected $table = 'articulo_series';
 
-    protected $fillable = ['articulo_id','unidad_id','codigo_serie','observaciones','estado','condicion_actual','operacion_detalle_id_actual'];
+    protected $fillable = ['articulo_id','unidad_id','codigo_serie','observaciones','foto_path','estado','condicion_actual','operacion_detalle_id_actual'];
 
     protected $casts = [
         'estado' => 'string',
@@ -56,5 +56,14 @@ class ArticuloSerie extends BaseModel
     public function scopeForUnidad($query, ?int $unidadId)
     {
         return $query->when($unidadId, fn ($builder) => $builder->where('unidad_id', $unidadId));
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (empty($this->foto_path) || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($this->foto_path)) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->foto_path);
     }
 }

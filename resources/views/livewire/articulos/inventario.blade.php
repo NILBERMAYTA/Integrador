@@ -122,9 +122,12 @@
                             $salida = $item['salida'];
                             $total = $item['total'];
                             $ultimo = $item['ultimo_movimiento'];
-                            $isLow = $total < 5 && $total > 0;
-                            $isZero = $total == 0;
+                            $min = (float) ($art->stock_minimo ?? 0);
                             $isNegative = $total < 0;
+                            $isZero = $total == 0;
+                            $isLow = $min > 0 && $total > 0 && $total <= $min;
+                            $estadoStock = ($isNegative || $isZero) ? 'Agotado' : ($isLow ? 'Bajo' : 'OK');
+                            $estadoBadge = ($isNegative || $isZero) ? 'badge-error' : ($isLow ? 'badge-warning' : 'badge-success');
                         @endphp
                         <tr class="border-b border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] hover:bg-[var(--color-surface-alt)]/30 dark:hover:bg-[var(--color-surface-dark-alt)]/10 transition-colors">
                             <td class="px-4 py-3 font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
@@ -151,9 +154,13 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <span class="inline-flex px-3 py-1 rounded-full text-sm font-bold {{ $isNegative ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' : ($isZero ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : ($isLow ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : 'bg-[var(--color-success)]/10 text-[var(--color-success)]')) }}">
-                                    {{ number_format($total, $art->isCantidad() ? 2 : 0) }}
-                                </span>
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="inline-flex px-3 py-1 rounded-full text-sm font-bold {{ $isNegative ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' : ($isZero ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : ($isLow ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' : 'bg-[var(--color-success)]/10 text-[var(--color-success)]')) }}">
+                                        {{ number_format($total, $art->isCantidad() ? 2 : 0) }}
+                                        @if($art->unidad_medida) <span class="opacity-60 font-normal">{{ $art->unidad_medida }}</span> @endif
+                                    </span>
+                                    <span class="badge badge-xs {{ $estadoBadge }} badge-soft" @if($min > 0) title="Minimo: {{ number_format($min, $art->isCantidad() ? 2 : 0) }}" @endif>{{ $estadoStock }}</span>
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-left text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] text-xs opacity-75">
                                 {{ $ultimo ?? '—' }}

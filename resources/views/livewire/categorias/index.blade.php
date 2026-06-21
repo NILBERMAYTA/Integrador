@@ -39,6 +39,15 @@
         </div>
     @endif
 
+    {{-- Contadores --}}
+    <x-ui.stats-grid :cols="4">
+        <x-ui.stat-card label="Total categorias" :value="$stats['total']" icon="rectangle-stack" tone="primary" />
+        <x-ui.stat-card label="Con articulos" :value="$stats['con_articulos']" icon="check-circle" tone="success"
+            :progress="$stats['total'] ? round($stats['con_articulos'] / $stats['total'] * 100) : 0" />
+        <x-ui.stat-card label="Sin articulos" :value="$stats['sin_articulos']" icon="inbox" :tone="$stats['sin_articulos'] > 0 ? 'warning' : 'neutral'" hint="Categorias vacias" />
+        <x-ui.stat-card label="Articulos totales" :value="$stats['total_articulos']" icon="cube" tone="info" hint="Tipos registrados en el sistema" />
+    </x-ui.stats-grid>
+
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
         <p class="text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
             Catalogo de categorias disponibles para clasificar articulos del sistema.

@@ -28,6 +28,34 @@
 			/>
 		</div>
 
+		<div>
+			<label class="block text-sm font-medium mb-1">Nivel de severidad</label>
+			<select
+				name="nivel"
+				wire:model.defer="nivel"
+				class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-3 py-2 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent"
+			>
+				<option value="bajo">Bajo</option>
+				<option value="medio">Medio</option>
+				<option value="alto">Alto</option>
+			</select>
+			@error('nivel') <p class="mt-1 text-xs text-[var(--color-danger)]">{{ $message }}</p> @enderror
+		</div>
+
+		<div>
+			<label class="block text-sm font-medium mb-1">Estado</label>
+			<select
+				name="estado"
+				wire:model.defer="estado"
+				class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] px-3 py-2 bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] focus:ring-2 focus:ring-[var(--color-primary)] dark:focus:ring-[var(--color-primary-dark)] focus:border-transparent"
+			>
+				<option value="planificado">Planificado</option>
+				<option value="activo">Activo</option>
+				<option value="cerrado">Cerrado</option>
+			</select>
+			@error('estado') <p class="mt-1 text-xs text-[var(--color-danger)]">{{ $message }}</p> @enderror
+		</div>
+
 		{{-- Descripción --}}
 		<div class="md:col-span-2">
 			<label class="block text-sm font-medium mb-1">Descripción</label>

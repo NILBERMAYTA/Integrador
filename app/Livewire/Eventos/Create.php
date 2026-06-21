@@ -3,6 +3,7 @@
 namespace App\Livewire\Eventos;
 
 use App\Models\Evento;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Create extends Component
@@ -11,6 +12,8 @@ class Create extends Component
     public string $descripcion = '';
     public ?string $fecha_inicio = null;
     public ?string $fecha_fin = null;
+    public string $nivel = 'medio';
+    public string $estado = 'planificado';
 
     protected function rules(): array
     {
@@ -19,6 +22,8 @@ class Create extends Component
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'fecha_inicio' => ['nullable', 'date'],
             'fecha_fin' => ['nullable', 'date', 'after_or_equal:fecha_inicio'],
+            'nivel' => ['required', Rule::in(Evento::NIVELES)],
+            'estado' => ['required', Rule::in(Evento::ESTADOS)],
         ];
     }
 
@@ -40,6 +45,8 @@ class Create extends Component
             'descripcion' => $this->descripcion ?: null,
             'fecha_inicio' => $this->fecha_inicio ?: null,
             'fecha_fin' => $this->fecha_fin ?: null,
+            'nivel' => $this->nivel,
+            'estado' => $this->estado,
         ]);
 
         session()->flash('success', 'Evento registrado exitosamente.');

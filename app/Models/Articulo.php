@@ -14,6 +14,7 @@ class Articulo extends BaseModel
         'categoria_id',
         'nombre',
         'unidad_medida',
+        'stock_minimo',
         'descripcion',
         'foto_path',
         'tipo',
@@ -23,6 +24,7 @@ class Articulo extends BaseModel
     protected $casts = [
         'tipo' => 'string',
         'seguimiento' => 'string',
+        'stock_minimo' => 'float',
     ];
 
     public function categoria()

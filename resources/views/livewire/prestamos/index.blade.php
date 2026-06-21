@@ -28,6 +28,15 @@
         </div>
     @endif
 
+    {{-- Contadores --}}
+    <x-ui.stats-grid :cols="3">
+        <x-ui.stat-card label="Total asignaciones" :value="$stats['total']" icon="arrows-right-left" tone="primary" hint="En el alcance actual" />
+        <x-ui.stat-card label="Pendientes" :value="$stats['pendientes']" icon="clock" :tone="$stats['pendientes'] > 0 ? 'warning' : 'neutral'"
+            :progress="$stats['pct_pendientes']" hint="Con armamento sin devolver" />
+        <x-ui.stat-card label="Concluidas" :value="$stats['concluidos']" icon="check-circle" tone="success"
+            :progress="$stats['total'] ? round($stats['concluidos'] / $stats['total'] * 100) : 0" hint="Totalmente devueltas" />
+    </x-ui.stats-grid>
+
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
         <div class="flex flex-wrap items-center gap-3">
             <div class="flex-1 min-w-[260px]">

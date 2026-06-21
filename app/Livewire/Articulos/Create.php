@@ -28,6 +28,7 @@ class Create extends Component
     // Paso 1 – definición (ambos modos)
     public ?int $categoria_id = null;
     public string $nombre = '';
+    public ?string $unidad_medida = null;
     public ?string $descripcion = null;
     public $foto;
 
@@ -79,7 +80,7 @@ class Create extends Component
         $this->showModal = false;
         $this->step = 1;
         $this->reset([
-            'nombre', 'categoria_id', 'descripcion', 'foto',
+            'nombre', 'categoria_id', 'descripcion', 'foto', 'unidad_medida',
             'cantidad_inicial', 'stock_minimo',
             'series_input', 'condicion_inicial',
             'serie_prefijo', 'serie_inicio', 'serie_cantidad', 'serie_relleno',
@@ -104,6 +105,7 @@ class Create extends Component
                     ->where(fn($q) => $q->where('categoria_id', $this->categoria_id ?? 0)),
             ],
             'descripcion'   => ['nullable', 'string', 'max:500'],
+            'unidad_medida' => ['nullable', 'string', 'max:20'],
             'foto'          => ['nullable', 'image', 'max:2048'],
         ];
     }
@@ -163,7 +165,8 @@ class Create extends Component
         $this->articulo = Articulo::create([
             'categoria_id'  => $this->categoria_id,
             'nombre'        => $this->nombre,
-            'unidad_medida' => null,
+            'unidad_medida' => $this->unidad_medida ?: null,
+            'stock_minimo'  => $this->mode === 'cantidad' ? (float) ($this->stock_minimo ?? 0) : 0,
             'descripcion'   => $this->descripcion,
             'foto_path'     => $this->foto ? $this->foto->store('articulos', 'public') : null,
             'tipo'          => $tipo,
@@ -259,6 +262,9 @@ class Create extends Component
 
             $inventario->addInitialStock($unidadId, $this->articulo->id, (float) $this->cantidad_inicial);
             $inventario->setMinimumStock($unidadId, $this->articulo->id, (float) ($this->stock_minimo ?? 0));
+
+            // Mantener tambien el minimo de referencia a nivel de articulo.
+            $this->articulo->forceFill(['stock_minimo' => (float) ($this->stock_minimo ?? 0)])->save();
         });
 
         session()->flash('success', "Stock inicial creado: {$this->cantidad_inicial} unidades.");

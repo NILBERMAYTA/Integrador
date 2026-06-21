@@ -11,11 +11,13 @@ class Incidencia extends BaseModel
 
     protected $fillable = [
         'tipo_id','articulo_id','serie_id','policia_id',
-        'descripcion','fecha','creado_por',
+        'descripcion','latitud','longitud','fecha','creado_por',
     ];
 
     protected $casts = [
         'fecha' => 'datetime',
+        'latitud' => 'float',
+        'longitud' => 'float',
     ];
 
     public function tipo()

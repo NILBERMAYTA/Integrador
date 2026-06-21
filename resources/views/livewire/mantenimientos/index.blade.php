@@ -25,6 +25,24 @@
     <x-form.toast_notification :message="session('success')" variant="success" />
     <x-form.toast_notification :message="session('error')" variant="danger" />
 
+    {{-- Contadores --}}
+    <x-ui.stats-grid :cols="5">
+        <x-ui.stat-card label="Total" :value="$stats['total']" icon="wrench-screwdriver" tone="primary" />
+        <x-ui.stat-card label="Abiertos" :value="$stats['abiertos']" icon="clock" :tone="$stats['abiertos'] > 0 ? 'warning' : 'neutral'" hint="Sin fecha de cierre" />
+        <x-ui.stat-card label="Cerrados" :value="$stats['cerrados']" icon="check-circle" tone="success">
+            <div class="mt-4 flex items-center gap-3">
+                <div class="radial-progress text-emerald-500" style="--value:{{ $stats['pct_cerrados'] }}; --size:2.75rem; --thickness:4px;" role="progressbar" aria-valuenow="{{ $stats['pct_cerrados'] }}">
+                    <span class="text-[10px] font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $stats['pct_cerrados'] }}%</span>
+                </div>
+                <span class="text-xs text-[var(--color-on-surface)]/65 dark:text-[var(--color-on-surface-dark)]/65">tasa de cierre</span>
+            </div>
+        </x-ui.stat-card>
+        <x-ui.stat-card label="Preventivos" :value="$stats['preventivos']" icon="shield-check" tone="info"
+            :progress="$stats['total'] ? round($stats['preventivos'] / $stats['total'] * 100) : 0" />
+        <x-ui.stat-card label="Correctivos" :value="$stats['correctivos']" icon="exclamation-triangle" tone="danger"
+            :progress="$stats['total'] ? round($stats['correctivos'] / $stats['total'] * 100) : 0" />
+    </x-ui.stats-grid>
+
     @php
         $tipoOptions = collect($tipos ?? [])->map(fn($t) => ['value' => $t, 'label' => ucfirst($t)]);
     @endphp

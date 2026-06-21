@@ -48,6 +48,20 @@ class Index extends Component
             ->latest('id')
             ->paginate(10);
 
-        return view('livewire.unidades.index', compact('unidades'));
+        $totales = Unidad::query()
+            ->withCount([
+                'usuarios as personal_activo_count' => fn ($q) => $q->whereNull('deleted_at'),
+                'series as series_activas_count' => fn ($q) => $q->whereNull('deleted_at'),
+            ])
+            ->get();
+
+        $stats = [
+            'unidades' => $totales->count(),
+            'personal' => (int) $totales->sum('personal_activo_count'),
+            'series' => (int) $totales->sum('series_activas_count'),
+            'sin_personal' => $totales->where('personal_activo_count', 0)->count(),
+        ];
+
+        return view('livewire.unidades.index', compact('unidades', 'stats'));
     }
 }

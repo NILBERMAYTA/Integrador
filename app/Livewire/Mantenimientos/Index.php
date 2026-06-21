@@ -102,6 +102,17 @@ class Index extends Component
 
         $tipos = ['preventivo', 'correctivo'];
 
-        return view('livewire.mantenimientos.index', compact('mantenimientos', 'tipos'));
+        $total = Mantenimiento::count();
+        $cerrados = Mantenimiento::whereNotNull('fecha_fin')->count();
+        $stats = [
+            'total' => $total,
+            'abiertos' => Mantenimiento::whereNull('fecha_fin')->count(),
+            'cerrados' => $cerrados,
+            'preventivos' => Mantenimiento::where('tipo', 'preventivo')->count(),
+            'correctivos' => Mantenimiento::where('tipo', 'correctivo')->count(),
+            'pct_cerrados' => $total > 0 ? (int) round($cerrados / $total * 100) : 0,
+        ];
+
+        return view('livewire.mantenimientos.index', compact('mantenimientos', 'tipos', 'stats'));
     }
 }

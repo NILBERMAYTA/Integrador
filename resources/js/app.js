@@ -238,6 +238,7 @@ window.qrScanner = (readerId, onScan) => ({
 let dashboardCharts = [];
 let predictionCharts = [];
 let reposicionCharts = [];
+let eventosCharts = [];
 let apexChartsConstructor = null;
 let dashboardTrendChart = null;
 let dashboardTrendPeriod = 'weekly';
@@ -321,6 +322,20 @@ const parsePredictionChartData = () => {
 
 const parseReposicionChartData = () => {
     const source = document.querySelector('[data-reposicion-chart-data]');
+
+    if (! source) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(source.textContent);
+    } catch (error) {
+        return null;
+    }
+};
+
+const parseEventosChartData = () => {
+    const source = document.querySelector('[data-eventos-chart-data]');
 
     if (! source) {
         return null;
@@ -821,21 +836,28 @@ const renderReposicionCharts = async () => {
         }
 
         element.innerHTML = '';
-        const base = baseDashboardChart('donut', 220);
+        const base = baseDashboardChart('donut', 230);
         const chart = new apexChartsConstructor(element, {
             ...base,
             series: config.series,
             labels: config.labels,
             colors: config.colors,
             stroke: {
-                width: 4,
+                width: 2,
                 colors: [theme.mode === 'dark' ? '#0f172a' : '#ffffff'],
+            },
+            dataLabels: {
+                enabled: true,
+                style: { fontSize: '11px', fontWeight: 700, colors: ['#ffffff'] },
+                dropShadow: { enabled: true, blur: 2, opacity: 0.45 },
+                formatter: (val) => (val >= 8 ? `${Math.round(val)}%` : ''),
             },
             legend: { show: false },
             plotOptions: {
                 pie: {
+                    expandOnClick: true,
                     donut: {
-                        size: '70%',
+                        size: '68%',
                         labels: {
                             show: true,
                             name: {
@@ -846,9 +868,9 @@ const renderReposicionCharts = async () => {
                             value: {
                                 show: true,
                                 color: theme.strong,
-                                fontSize: '26px',
+                                fontSize: '28px',
                                 fontWeight: 700,
-                                offsetY: -15,
+                                offsetY: -14,
                             },
                             total: {
                                 show: true,
@@ -861,6 +883,9 @@ const renderReposicionCharts = async () => {
                     },
                 },
             },
+            states: {
+                hover: { filter: { type: 'lighten', value: 0.06 } },
+            },
             tooltip: {
                 ...base.tooltip,
                 y: {
@@ -868,7 +893,6 @@ const renderReposicionCharts = async () => {
                 },
             },
         });
-
         reposicionCharts.push(chart);
         chart.render();
     });
@@ -876,6 +900,73 @@ const renderReposicionCharts = async () => {
 
 const scheduleReposicionChartsUpdate = () => {
     window.requestAnimationFrame(() => renderReposicionCharts());
+};
+
+const renderEventosCharts = async () => {
+    const data = parseEventosChartData();
+
+    eventosCharts.forEach((chart) => {
+        try { chart.destroy(); } catch (error) { /* noop */ }
+    });
+    eventosCharts = [];
+
+    if (! data) {
+        return;
+    }
+
+    if (! apexChartsConstructor) {
+        const module = await import('apexcharts');
+        apexChartsConstructor = module.default;
+    }
+
+    const element = document.querySelector('[data-eventos-chart="severidad"]');
+    if (! element) {
+        return;
+    }
+
+    const theme = dashboardChartTheme();
+    const base = baseDashboardChart('donut', 220);
+    element.innerHTML = '';
+    const chart = new apexChartsConstructor(element, {
+        ...base,
+        series: data.severidad.series,
+        labels: data.severidad.labels,
+        colors: ['#10b981', '#f59e0b', '#f43f5e'],
+        stroke: {
+            width: 4,
+            colors: [theme.mode === 'dark' ? '#0f172a' : '#ffffff'],
+        },
+        legend: { show: false },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '70%',
+                    labels: {
+                        show: true,
+                        name: { show: true, color: theme.foreground, offsetY: 18 },
+                        value: { show: true, color: theme.strong, fontSize: '26px', fontWeight: 700, offsetY: -15 },
+                        total: {
+                            show: true,
+                            label: 'Conflictos',
+                            color: theme.foreground,
+                            formatter: (context) => context.globals.seriesTotals.reduce((sum, value) => sum + value, 0),
+                        },
+                    },
+                },
+            },
+        },
+        tooltip: {
+            ...base.tooltip,
+            y: { formatter: (value) => `${value} conflicto${value === 1 ? '' : 's'}` },
+        },
+    });
+
+    eventosCharts.push(chart);
+    chart.render();
+};
+
+const scheduleEventosChartsUpdate = () => {
+    window.requestAnimationFrame(() => renderEventosCharts());
 };
 
 const applyAppearance = (appearance) => {
@@ -898,6 +989,7 @@ const bootAllCharts = () => {
     renderDashboardCharts();
     renderPredictionCharts();
     renderReposicionCharts();
+    renderEventosCharts();
 };
 
 if (document.readyState === 'loading') {
@@ -916,6 +1008,7 @@ document.addEventListener('livewire:navigated', () => {
     renderDashboardCharts();
     renderPredictionCharts();
     renderReposicionCharts();
+    renderEventosCharts();
 });
 
 window.addEventListener('predictions-updated', schedulePredictionChartsUpdate);
@@ -949,6 +1042,7 @@ window.addEventListener('theme-changed', (event) => {
     scheduleDashboardChartsUpdate();
     schedulePredictionChartsUpdate();
     scheduleReposicionChartsUpdate();
+    scheduleEventosChartsUpdate();
 });
 
 const updateAppearanceToggles = (appearance) => {

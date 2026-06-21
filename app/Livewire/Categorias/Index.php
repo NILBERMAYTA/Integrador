@@ -3,6 +3,7 @@
 namespace App\Livewire\Categorias;
 
 use App\Models\Categoria;
+use App\Models\Articulo;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -32,9 +33,20 @@ class Index extends Component
     {
         // Por defecto Eloquent excluye los soft-deleted si el modelo usa SoftDeletes
         $categorias = Categoria::query()
+            ->withCount('articulos')
             ->latest('id')
             ->paginate(10);
 
-        return view('livewire.categorias.index', compact('categorias'));
+
+        $totalCategorias = Categoria::query()->count();
+        $conArticulos = Categoria::has('articulos')->count();
+        $stats = [
+            'total' => $totalCategorias,
+            'con_articulos' => $conArticulos,
+            'sin_articulos' => max(0, $totalCategorias - $conArticulos),
+            'total_articulos' => Articulo::query()->count(),
+        ];
+
+        return view('livewire.categorias.index', compact('categorias', 'stats'));
     }
 }

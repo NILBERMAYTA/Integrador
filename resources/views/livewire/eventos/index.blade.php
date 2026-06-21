@@ -39,6 +39,39 @@
         </div>
     @endif
 
+    {{-- Contadores --}}
+    <x-ui.stats-grid :cols="4">
+        <x-ui.stat-card label="Total conflictos" :value="$stats['total']" icon="flag" tone="primary" />
+        <x-ui.stat-card label="Planificados" :value="$stats['planificados']" icon="calendar" tone="info" hint="Aun no inician" />
+        <x-ui.stat-card label="Activos" :value="$stats['activos']" icon="bolt" :tone="$stats['activos'] > 0 ? 'warning' : 'neutral'" hint="En curso ahora" />
+        <x-ui.stat-card label="Cerrados" :value="$stats['cerrados']" icon="check-circle" tone="success" hint="Finalizados" />
+    </x-ui.stats-grid>
+
+    {{-- Donut de severidad --}}
+    <div class="eventos-shell rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+            <div data-eventos-chart="severidad" class="min-h-[220px] w-full shrink-0 sm:w-[230px]" wire:ignore></div>
+            <div class="flex-1">
+                <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribucion por severidad</h2>
+                <p class="mt-1 text-sm text-[var(--color-on-surface)] opacity-70 dark:text-[var(--color-on-surface-dark)]">Cantidad de conflictos segun su nivel de severidad.</p>
+                <div class="mt-4 space-y-3 text-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-emerald-500"></span><span>Bajo</span></div>
+                        <span class="font-semibold">{{ $severidad['bajo'] }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-amber-500"></span><span>Medio</span></div>
+                        <span class="font-semibold">{{ $severidad['medio'] }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-rose-500"></span><span>Alto</span></div>
+                        <span class="font-semibold">{{ $severidad['alto'] }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] rounded-[var(--radius-radius)] shadow-sm border border-[var(--color-outline)] dark:border-[var(--color-outline-dark)] p-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p class="text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)] opacity-70">
@@ -138,6 +171,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $evento->nombre }}</span>
+                                <div class="mt-1 flex flex-wrap gap-1.5">
+                                    @php
+                                        $nivelClass = match($evento->nivel) { 'alto' => 'badge-error', 'medio' => 'badge-warning', default => 'badge-success' };
+                                        $estadoClass = match($evento->estado) { 'activo' => 'badge-warning', 'cerrado' => 'badge-neutral', default => 'badge-info' };
+                                    @endphp
+                                    <span class="badge badge-sm {{ $nivelClass }} badge-soft">{{ ucfirst($evento->nivel) }}</span>
+                                    <span class="badge badge-sm {{ $estadoClass }} badge-soft">{{ ucfirst($evento->estado) }}</span>
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                 {{ $evento->fecha_inicio ? $evento->fecha_inicio->format('Y-m-d') : '-' }}
@@ -190,4 +231,6 @@
         @endif
     </div>
     @endif
+
+    <script type="application/json" data-eventos-chart-data>@json($eventosChartData)</script>
 </div>

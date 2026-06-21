@@ -71,7 +71,16 @@ class Index extends Component
         $eventos = Evento::orderBy('id', 'desc')->get();
         $unidades = Unidad::orderBy('nombre')->get(['id', 'nombre', 'sigla']);
 
-        return view('livewire.prestamos.index', compact('operaciones', 'eventos', 'unidades'));
+        $totalPrestamos = $collection->count();
+        $pendientes = $collection->filter(fn ($op) => $this->estadoPrestamo($op) === 'pendiente')->count();
+        $stats = [
+            'total' => $totalPrestamos,
+            'pendientes' => $pendientes,
+            'concluidos' => max(0, $totalPrestamos - $pendientes),
+            'pct_pendientes' => $totalPrestamos > 0 ? (int) round($pendientes / $totalPrestamos * 100) : 0,
+        ];
+
+        return view('livewire.prestamos.index', compact('operaciones', 'eventos', 'unidades', 'stats'));
     }
 
     public function updatingSearch() { $this->resetPage(); }
