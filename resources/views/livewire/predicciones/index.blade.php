@@ -197,7 +197,7 @@
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Recomendacion</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)]">
+                    <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] kiro-stagger">
                         @forelse ($predicciones as $prediccion)
                             @php
                                 $riesgo = $prediccion['nivel_riesgo'] ?? 'bajo';

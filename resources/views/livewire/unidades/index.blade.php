@@ -41,7 +41,7 @@
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[var(--color-outline)]">
+                <tbody class="divide-y divide-[var(--color-outline)] kiro-stagger">
                     @forelse ($unidades as $unidad)
                         <tr class="hover:bg-[var(--color-surface-alt)] transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap font-medium">{{ $unidad->sigla ?? '—' }}</td>

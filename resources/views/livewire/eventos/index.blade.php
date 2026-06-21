@@ -57,7 +57,7 @@
 
     @if($viewMode === 'cards')
         <div>
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 kiro-stagger">
                 @forelse ($eventos as $evento)
                     @php
                         $estadoEvento = $evento->fecha_fin && $evento->fecha_fin->isPast() ? 'Cerrado' : 'Activo';
@@ -130,7 +130,7 @@
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] kiro-stagger">
                     @forelse ($eventos as $evento)
                         <tr class="hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">

@@ -11,7 +11,12 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-[data-theme] {
+/*
+ * Estas variables pertenecen al tema general de la aplicación.
+ * Las vistas previas de Apariencia también usan data-theme, por lo que el
+ * selector debe limitarse al html para que no alteren el texto de sus padres.
+ */
+html[data-theme] {
     --color-surface: var(--color-base-100);
     --color-surface-alt: var(--color-base-200);
     --color-on-surface: var(--color-base-content);
@@ -38,19 +43,33 @@
     --radius-radius: var(--radius-box);
 }
 
-html.dark[data-theme] {
+html[data-appearance="light"][data-theme] {
+    /*
+     * Mantener texto oscuro en la interfaz clara aunque el tema de DaisyUI
+     * cambie base-content durante la carga o use una paleta de alto contraste.
+     */
+    --color-on-surface: #000000;
+    --color-on-surface-strong: #000000;
+    --color-on-surface-dark: #000000;
+    --color-on-surface-dark-strong: #000000;
+    --flux-foreground: #000000;
+    --flux-card-foreground: #000000;
+    --flux-muted-foreground: #000000;
+}
+
+html[data-appearance="dark"][data-theme] {
     /*
      * Escala tipografica comun para Flux, Tailwind y los componentes propios.
      * No se deriva de base-content porque temas como "dim" lo hacen demasiado
      * tenue y el contraste cambia entre pantallas.
      */
-    --color-on-surface: #e2e8f0;
-    --color-on-surface-strong: #f8fafc;
-    --color-on-surface-dark: #e2e8f0;
-    --color-on-surface-dark-strong: #f8fafc;
-    --flux-foreground: #e2e8f0;
-    --flux-card-foreground: #e2e8f0;
-    --flux-muted-foreground: #cbd5e1;
+    --color-on-surface: #ffffff;
+    --color-on-surface-strong: #ffffff;
+    --color-on-surface-dark: #ffffff;
+    --color-on-surface-dark-strong: #ffffff;
+    --flux-foreground: #ffffff;
+    --flux-card-foreground: #ffffff;
+    --flux-muted-foreground: #ffffff;
 }
 
 @theme {
@@ -119,6 +138,10 @@ html.dark[data-theme] {
 }
 
 @layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+
     /* Aplicar colores de fondo globales */
     body {
         @apply bg-surface dark:bg-surface-dark text-on-surface dark:text-on-surface-dark;
@@ -145,13 +168,57 @@ html.dark[data-theme] {
         border-color: var(--color-slate-700, currentColor);
     }
 
-    html.dark[data-theme] [data-flux-heading] {
+    html[data-appearance="dark"][data-theme] [data-flux-heading] {
         color: var(--color-on-surface-dark-strong);
     }
 
-    html.dark[data-theme] [data-flux-subheading],
-    html.dark[data-theme] [data-flux-label] {
+    html[data-appearance="light"][data-theme] [data-flux-heading] {
+        color: var(--color-on-surface-strong);
+    }
+
+    html[data-appearance="dark"][data-theme] [data-flux-subheading],
+    html[data-appearance="dark"][data-theme] [data-flux-label] {
         color: var(--color-on-surface-dark);
+    }
+
+    html[data-appearance="light"][data-theme] [data-flux-subheading],
+    html[data-appearance="light"][data-theme] [data-flux-label] {
+        color: var(--color-on-surface);
+    }
+
+    /*
+     * Flux incluye colores zinc propios en la navegación. Se sobrescriben
+     * aquí para que todo el texto estructural siga la apariencia global.
+     */
+    html[data-appearance="light"] [data-flux-sidebar] [data-flux-navlist-item],
+    html[data-appearance="light"] [data-flux-sidebar-profile],
+    html[data-appearance="light"] [data-flux-navlist-group] > button,
+    html[data-appearance="light"] [data-flux-navlist-group] > div {
+        color: #000000 !important;
+    }
+
+    html[data-appearance="dark"] [data-flux-sidebar] [data-flux-navlist-item],
+    html[data-appearance="dark"] [data-flux-sidebar-profile],
+    html[data-appearance="dark"] [data-flux-navlist-group] > button,
+    html[data-appearance="dark"] [data-flux-navlist-group] > div {
+        color: #ffffff !important;
+    }
+
+    /* Elemento activo: evitar el rectángulo blanco que aplica Flux. */
+    html[data-appearance="dark"] [data-flux-sidebar] [data-flux-navlist-item][data-current] {
+        background-color: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(255, 255, 255, 0.16) !important;
+        color: #ffffff !important;
+    }
+
+    html[data-appearance="dark"] [data-flux-sidebar] [data-flux-navlist-item]:hover {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+    }
+
+    html[data-appearance="dark"] [data-flux-sidebar-profile] > span,
+    html[data-appearance="dark"] [data-flux-sidebar-profile] svg {
+        color: #ffffff !important;
     }
 }
 
@@ -180,12 +247,15 @@ html.dark[data-theme] {
     .dashboard-shell .apexcharts-tooltip,
     .dashboard-shell .apexcharts-xaxistooltip,
     .prediction-shell .apexcharts-tooltip,
-    .prediction-shell .apexcharts-xaxistooltip {
+    .prediction-shell .apexcharts-xaxistooltip,
+    .reposicion-shell .apexcharts-tooltip,
+    .reposicion-shell .apexcharts-xaxistooltip {
         @apply !border-outline !bg-surface !text-on-surface !shadow-xl dark:!border-outline-dark dark:!bg-surface-dark dark:!text-on-surface-dark;
     }
 
     .dashboard-shell .apexcharts-tooltip-title,
-    .prediction-shell .apexcharts-tooltip-title {
+    .prediction-shell .apexcharts-tooltip-title,
+    .reposicion-shell .apexcharts-tooltip-title {
         @apply !border-outline !bg-surface-alt dark:!border-outline-dark dark:!bg-surface-dark-alt;
     }
 
@@ -447,4 +517,180 @@ body.auth-bg::after {
 @keyframes auth-float {
     0% { transform: scale(1.08) translate3d(-1%, 0, 0); }
     100% { transform: scale(1.12) translate3d(1%, 1%, 0); }
+}
+
+@keyframes chatbot-message-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes chatbot-typing-in {
+    from {
+        opacity: 0;
+        transform: translateX(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.chatbot-message-enter {
+    animation: chatbot-message-in 240ms ease-out both;
+}
+
+.chatbot-typing-enter {
+    animation: chatbot-typing-in 180ms ease-out both;
+}
+
+@keyframes user-form-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes user-form-section-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-form-enter {
+    animation: user-form-enter 320ms ease-out both;
+}
+
+.user-form-section {
+    animation: user-form-section-enter 280ms ease-out backwards;
+}
+
+.user-form-section:nth-child(2) { animation-delay: 40ms; }
+.user-form-section:nth-child(3) { animation-delay: 80ms; }
+.user-form-section:nth-child(4) { animation-delay: 120ms; }
+.user-form-section:nth-child(5) { animation-delay: 160ms; }
+.user-form-section:nth-child(6) { animation-delay: 200ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .chatbot-message-enter,
+    .chatbot-typing-enter,
+    .user-form-enter,
+    .user-form-section {
+        animation: none;
+    }
+}
+
+/* =========================================================
+ * Sistema de animaciones reutilizable (todo el sistema)
+ * Importante: se usa animation-fill-mode: backwards para que
+ * los elementos NO conserven un transform al terminar la
+ * animacion. Un transform persistente crea un stacking context
+ * que rompe el z-index de dropdowns, calendarios y modales.
+ * ========================================================= */
+
+@keyframes kiro-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes kiro-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes kiro-scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes kiro-slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Entrada de pagina: se aplica a nivel de layout para que TODAS
+ * las pantallas tengan una animacion de entrada consistente. */
+.kiro-page-enter {
+    animation: kiro-fade-up 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Utilidades sueltas para elementos puntuales. */
+.kiro-fade {
+    animation: kiro-fade-in 320ms ease-out backwards;
+}
+
+.kiro-fade-up {
+    animation: kiro-fade-up 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.kiro-scale-in {
+    animation: kiro-scale-in 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.kiro-slide-right {
+    animation: kiro-slide-right 320ms ease-out backwards;
+}
+
+/* Entrada escalonada de los hijos directos de un contenedor.
+ * Ideal para grids de cards, filas de tabla y secciones de
+ * formularios. Cubre hasta 24 elementos con retardo creciente. */
+.kiro-stagger > * {
+    animation: kiro-fade-up 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.kiro-stagger > *:nth-child(1) { animation-delay: 30ms; }
+.kiro-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.kiro-stagger > *:nth-child(3) { animation-delay: 90ms; }
+.kiro-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.kiro-stagger > *:nth-child(5) { animation-delay: 150ms; }
+.kiro-stagger > *:nth-child(6) { animation-delay: 180ms; }
+.kiro-stagger > *:nth-child(7) { animation-delay: 210ms; }
+.kiro-stagger > *:nth-child(8) { animation-delay: 240ms; }
+.kiro-stagger > *:nth-child(9) { animation-delay: 270ms; }
+.kiro-stagger > *:nth-child(10) { animation-delay: 300ms; }
+.kiro-stagger > *:nth-child(11) { animation-delay: 330ms; }
+.kiro-stagger > *:nth-child(12) { animation-delay: 360ms; }
+.kiro-stagger > *:nth-child(n+13) { animation-delay: 390ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .kiro-page-enter,
+    .kiro-fade,
+    .kiro-fade-up,
+    .kiro-scale-in,
+    .kiro-slide-right,
+    .kiro-stagger > * {
+        animation: none;
+    }
 }

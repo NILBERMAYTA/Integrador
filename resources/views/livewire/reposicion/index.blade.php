@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="reposicion-shell space-y-6">
     @php
         $totalRecomendaciones = max(1, count($recomendaciones));
         $urgenciaConteo = collect($recomendaciones)->countBy('urgencia');
@@ -16,6 +16,17 @@
         $luego = $planificada + $estable;
         $ahoraDeg = round(($ahora / $totalRecomendaciones) * 360, 2);
         $prontoDeg = round(($pronto / $totalRecomendaciones) * 360, 2);
+
+        $reposicionChartData = [
+            'urgencia' => [
+                'labels' => ['Inmediata', 'Proxima', 'Planificada', 'Estable'],
+                'series' => [$inmediata, $proxima, $planificada, $estable],
+            ],
+            'ventana' => [
+                'labels' => ['Ahora', 'Pronto', 'Luego'],
+                'series' => [$ahora, $pronto, $luego],
+            ],
+        ];
     @endphp
 
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -55,18 +66,7 @@
     <div class="grid gap-6 xl:grid-cols-2">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div
-                    class="relative h-36 w-36 shrink-0 rounded-full"
-                    style="background: conic-gradient(#f43f5e 0deg {{ $inmediataDeg }}deg, #f59e0b {{ $inmediataDeg }}deg {{ $inmediataDeg + $proximaDeg }}deg, #38bdf8 {{ $inmediataDeg + $proximaDeg }}deg {{ $inmediataDeg + $proximaDeg + $planificadaDeg }}deg, #10b981 {{ $inmediataDeg + $proximaDeg + $planificadaDeg }}deg 360deg);"
-                >
-                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-center">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Urgencia</p>
-                            <p class="text-2xl font-bold">{{ count($recomendaciones) }}</p>
-                        </div>
-                    </div>
-                </div>
+                <div data-reposicion-chart="urgencia" class="min-h-[220px] w-full shrink-0 sm:w-[230px]" wire:ignore></div>
 
                 <div class="flex-1">
                     <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribucion de urgencia</h2>
@@ -94,18 +94,7 @@
 
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div
-                    class="relative h-36 w-36 shrink-0 rounded-full"
-                    style="background: conic-gradient(#f43f5e 0deg {{ $ahoraDeg }}deg, #f59e0b {{ $ahoraDeg }}deg {{ $ahoraDeg + $prontoDeg }}deg, #10b981 {{ $ahoraDeg + $prontoDeg }}deg 360deg);"
-                >
-                    <div class="absolute inset-5 rounded-full bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-center">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.18em] opacity-60">Ventana</p>
-                            <p class="text-2xl font-bold">{{ count($recomendaciones) }}</p>
-                        </div>
-                    </div>
-                </div>
+                <div data-reposicion-chart="ventana" class="min-h-[220px] w-full shrink-0 sm:w-[230px]" wire:ignore></div>
 
                 <div class="flex-1">
                     <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Cuando conviene pedir</h2>
@@ -187,7 +176,7 @@
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Resumen</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)]">
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] kiro-stagger">
                     @forelse ($recomendaciones as $item)
                         @php
                             $urgenciaClasses = match ($item['urgencia']) {
@@ -264,4 +253,6 @@
             </table>
         </div>
     </div>
+
+    <script type="application/json" data-reposicion-chart-data>@json($reposicionChartData)</script>
 </div>

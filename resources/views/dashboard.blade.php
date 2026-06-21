@@ -81,7 +81,7 @@
             </div>
         </section>
 
-        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 kiro-stagger">
             @php
                 $kpis = [
                     [
@@ -154,19 +154,19 @@
                 <header class="dashboard-card-header">
                     <div>
                         <p class="dashboard-eyebrow">Actividad de préstamos</p>
-                        <h2 class="dashboard-title" data-trend-title>Evolución de los últimos 6 meses</h2>
+                        <h2 class="dashboard-title" data-trend-title>Actividad de la semana actual</h2>
                     </div>
                     <div class="flex flex-col items-end gap-3">
                         <div class="inline-flex rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface-alt)] p-1 dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark-alt)]" role="group" aria-label="Periodo del gráfico">
-                            <button type="button" data-trend-period="monthly" aria-pressed="true" class="rounded-lg bg-[var(--color-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-surface-strong)] shadow-sm transition dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-on-surface-dark-strong)]">
+                            <button type="button" data-trend-period="monthly" aria-pressed="false" class="rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--color-on-surface)]/65 transition hover:text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark)]/65 dark:hover:text-[var(--color-on-surface-dark-strong)]">
                                 6 meses
                             </button>
-                            <button type="button" data-trend-period="weekly" aria-pressed="false" class="rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--color-on-surface)]/65 transition hover:text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark)]/65 dark:hover:text-[var(--color-on-surface-dark-strong)]">
+                            <button type="button" data-trend-period="weekly" aria-pressed="true" class="rounded-lg bg-[var(--color-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-surface-strong)] shadow-sm transition dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-on-surface-dark-strong)]">
                                 Semana
                             </button>
                         </div>
                         <div class="text-right">
-                            <p data-trend-total class="text-2xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ collect($prestamosTendencia)->sum('total') }}</p>
+                            <p data-trend-total class="text-2xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ collect($prestamosSemana)->sum('total') }}</p>
                             <p class="text-xs text-[var(--color-on-surface)]/60 dark:text-[var(--color-on-surface-dark)]/60">operaciones registradas</p>
                         </div>
                     </div>
@@ -227,7 +227,7 @@
                     <a href="{{ route('prestamos.index') }}" wire:navigate class="text-xs font-semibold text-[var(--color-primary)] hover:underline dark:text-[var(--color-primary-dark)]">Ver todos</a>
                 </header>
 
-                <div class="space-y-1 px-3 pb-4">
+                <div class="space-y-1 px-3 pb-4 kiro-stagger">
                     @forelse($prestamosRecientes->take(5) as $row)
                         <a href="{{ route('prestamos.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
                             <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10 text-xs font-bold text-[var(--color-primary)] dark:bg-[var(--color-primary-dark)]/10 dark:text-[var(--color-primary-dark)]">
@@ -255,8 +255,8 @@
             </article>
         </section>
 
-        <section class="grid gap-5 xl:grid-cols-12">
-            <article class="dashboard-card xl:col-span-4">
+        <section class="grid items-start gap-5 xl:grid-cols-12">
+            <article class="dashboard-card xl:col-span-3">
                 <header class="dashboard-card-header">
                     <div>
                         <p class="dashboard-eyebrow">Disponibilidad</p>
@@ -274,7 +274,7 @@
                     </div>
                     <span class="flex size-8 items-center justify-center rounded-full bg-amber-500/10 text-sm font-bold text-amber-600 dark:text-amber-400">{{ $alertasCriticas + $alertasPreventivas }}</span>
                 </header>
-                <div class="space-y-3 px-5 pb-5">
+                <div class="space-y-3 px-5 pb-5 kiro-stagger">
                     @php
                         $alerts = [
                             ['value' => $devolucionesPendientes, 'label' => 'Devoluciones pendientes', 'detail' => 'Operaciones que requieren cierre', 'class' => 'bg-amber-500/10 text-amber-600 dark:text-amber-400'],
@@ -297,7 +297,7 @@
                 </div>
             </article>
 
-            <article class="dashboard-card xl:col-span-4">
+            <article class="dashboard-card xl:col-span-5">
                 <header class="dashboard-card-header">
                     <div>
                         <p class="dashboard-eyebrow">Apoyo a decisiones</p>

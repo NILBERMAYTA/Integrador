@@ -107,7 +107,7 @@
 
     @if($viewMode === 'cards')
         <div>
-            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 kiro-stagger">
                 @forelse ($users as $user)
                     <div class="group flex h-full flex-col overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]" x-data="{ modalIsOpen: false }">
                         <div class="relative aspect-[4/3] w-full overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)]">
@@ -240,7 +240,7 @@
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] kiro-stagger">
                     @forelse ($users as $user)
                         <tr class="hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)] transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">

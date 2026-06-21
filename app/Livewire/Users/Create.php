@@ -43,7 +43,7 @@ class Create extends Component
             'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
             'rango' => ['nullable', 'string', 'max:255'],
             'numero_escalafon' => ['nullable', 'string', 'max:255'],
-            'fecha_ingreso' => ['nullable', 'date'],
+            'fecha_ingreso' => ['nullable', 'date', 'before_or_equal:today'],
             'role' => ['required', Rule::in($this->allowedRoles())],
             'unidad_id' => [
                 'required',

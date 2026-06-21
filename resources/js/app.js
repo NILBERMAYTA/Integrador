@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { Html5Qrcode } from 'html5-qrcode';
+import 'cally';
 
 const safeFilename = (name) => String(name || 'codigo-qr')
     .normalize('NFD')
@@ -236,17 +237,18 @@ window.qrScanner = (readerId, onScan) => ({
 
 let dashboardCharts = [];
 let predictionCharts = [];
+let reposicionCharts = [];
 let apexChartsConstructor = null;
 let dashboardTrendChart = null;
-let dashboardTrendPeriod = 'monthly';
+let dashboardTrendPeriod = 'weekly';
 
 const dashboardChartTheme = () => {
-    const isDark = document.documentElement.classList.contains('dark');
+    const isDark = document.documentElement.dataset.appearance === 'dark';
 
     return {
         mode: isDark ? 'dark' : 'light',
-        foreground: isDark ? '#cbd5e1' : '#64748b',
-        strong: isDark ? '#f8fafc' : '#0f172a',
+        foreground: isDark ? '#ffffff' : '#000000',
+        strong: isDark ? '#ffffff' : '#000000',
         grid: isDark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(100, 116, 139, 0.14)',
         tooltip: isDark ? 'dark' : 'light',
     };
@@ -317,6 +319,20 @@ const parsePredictionChartData = () => {
     }
 };
 
+const parseReposicionChartData = () => {
+    const source = document.querySelector('[data-reposicion-chart-data]');
+
+    if (! source) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(source.textContent);
+    } catch (error) {
+        return null;
+    }
+};
+
 const destroyDashboardCharts = () => {
     dashboardCharts.forEach((chart) => {
         try {
@@ -338,6 +354,17 @@ const destroyPredictionCharts = () => {
         }
     });
     predictionCharts = [];
+};
+
+const destroyReposicionCharts = () => {
+    reposicionCharts.forEach((chart) => {
+        try {
+            chart.destroy();
+        } catch (error) {
+            // Livewire may already have replaced the chart container.
+        }
+    });
+    reposicionCharts = [];
 };
 
 const renderDashboardChart = (selector, options) => {
@@ -429,7 +456,7 @@ const renderDashboardCharts = async () => {
     }
 
     const theme = dashboardChartTheme();
-    const selectedTrend = data.trend[dashboardTrendPeriod] || data.trend.monthly;
+    const selectedTrend = data.trend[dashboardTrendPeriod] || data.trend.weekly || data.trend.monthly;
     const trendBase = baseDashboardChart('area', 315);
     dashboardTrendChart = renderDashboardChart('[data-dashboard-chart="trend"]', {
         ...trendBase,
@@ -750,30 +777,149 @@ const schedulePredictionChartsUpdate = () => {
     window.requestAnimationFrame(() => renderPredictionCharts());
 };
 
-const applyAppearance = (appearance) => {
-    if (window.Flux?.applyAppearance) {
-        window.Flux.applyAppearance(appearance);
-    } else {
-        document.documentElement.classList.toggle('dark', appearance === 'dark');
+const renderReposicionCharts = async () => {
+    const data = parseReposicionChartData();
+
+    destroyReposicionCharts();
+
+    if (! data) {
+        return;
     }
 
-    document.documentElement.dataset.appearance = appearance;
+    if (! apexChartsConstructor) {
+        const module = await import('apexcharts');
+        apexChartsConstructor = module.default;
+    }
+
+    if (! document.querySelector('[data-reposicion-chart-data]')) {
+        return;
+    }
+
+    const theme = dashboardChartTheme();
+    const charts = [
+        {
+            selector: '[data-reposicion-chart="urgencia"]',
+            labels: data.urgencia.labels,
+            series: data.urgencia.series,
+            colors: ['#f43f5e', '#f59e0b', '#38bdf8', '#10b981'],
+            totalLabel: 'Urgencia',
+        },
+        {
+            selector: '[data-reposicion-chart="ventana"]',
+            labels: data.ventana.labels,
+            series: data.ventana.series,
+            colors: ['#f43f5e', '#f59e0b', '#10b981'],
+            totalLabel: 'Ventana',
+        },
+    ];
+
+    charts.forEach((config) => {
+        const element = document.querySelector(config.selector);
+
+        if (! element) {
+            return;
+        }
+
+        element.innerHTML = '';
+        const base = baseDashboardChart('donut', 220);
+        const chart = new apexChartsConstructor(element, {
+            ...base,
+            series: config.series,
+            labels: config.labels,
+            colors: config.colors,
+            stroke: {
+                width: 4,
+                colors: [theme.mode === 'dark' ? '#0f172a' : '#ffffff'],
+            },
+            legend: { show: false },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '70%',
+                        labels: {
+                            show: true,
+                            name: {
+                                show: true,
+                                color: theme.foreground,
+                                offsetY: 18,
+                            },
+                            value: {
+                                show: true,
+                                color: theme.strong,
+                                fontSize: '26px',
+                                fontWeight: 700,
+                                offsetY: -15,
+                            },
+                            total: {
+                                show: true,
+                                label: config.totalLabel,
+                                color: theme.foreground,
+                                formatter: (context) => context.globals.seriesTotals
+                                    .reduce((sum, value) => sum + value, 0),
+                            },
+                        },
+                    },
+                },
+            },
+            tooltip: {
+                ...base.tooltip,
+                y: {
+                    formatter: (value) => `${value} articulo${value === 1 ? '' : 's'}`,
+                },
+            },
+        });
+
+        reposicionCharts.push(chart);
+        chart.render();
+    });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const scheduleReposicionChartsUpdate = () => {
+    window.requestAnimationFrame(() => renderReposicionCharts());
+};
+
+const applyAppearance = (appearance) => {
+    const normalizedAppearance = appearance === 'dark' ? 'dark' : 'light';
+
+    if (window.Flux?.applyAppearance) {
+        window.Flux.applyAppearance(normalizedAppearance);
+    }
+
+    /*
+     * Mantener sincronizados el tema de DaisyUI, las variantes dark de
+     * Tailwind y nuestras variables globales, incluso después de navegar con
+     * Livewire o de que Flux restaure una preferencia anterior.
+     */
+    document.documentElement.classList.toggle('dark', normalizedAppearance === 'dark');
+    document.documentElement.dataset.appearance = normalizedAppearance;
+};
+
+const bootAllCharts = () => {
     renderDashboardCharts();
     renderPredictionCharts();
-});
-document.addEventListener('livewire:navigated', () => {
-    const appearance = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    renderReposicionCharts();
+};
 
-    document.documentElement.dataset.appearance = appearance;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootAllCharts);
+} else {
+    // El modulo ES puede ejecutarse despues de DOMContentLoaded (scripts
+    // diferidos o una recarga del modulo por HMR de Vite). En ese caso el
+    // listener nunca se dispararia, asi que renderizamos de inmediato.
+    bootAllCharts();
+}
+document.addEventListener('livewire:navigated', () => {
+    const appearance = document.documentElement.dataset.appearance === 'dark' ? 'dark' : 'light';
+
+    applyAppearance(appearance);
     updateAppearanceToggles(appearance);
     renderDashboardCharts();
     renderPredictionCharts();
+    renderReposicionCharts();
 });
 
 window.addEventListener('predictions-updated', schedulePredictionChartsUpdate);
+window.addEventListener('reposicion-updated', scheduleReposicionChartsUpdate);
 
 document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-trend-period]');
@@ -802,6 +948,7 @@ window.addEventListener('theme-changed', (event) => {
     updateAppearanceToggles(appearance);
     scheduleDashboardChartsUpdate();
     schedulePredictionChartsUpdate();
+    scheduleReposicionChartsUpdate();
 });
 
 const updateAppearanceToggles = (appearance) => {

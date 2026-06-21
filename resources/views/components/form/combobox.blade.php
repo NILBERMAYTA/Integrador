@@ -84,7 +84,7 @@
             }
         },
     }"
-    class="w-full max-w-xs flex flex-col gap-1"
+    class="w-full max-w-xs flex flex-col gap-1 relative"
     x-on:keydown="highlightFirstMatchingOption($event.key)"
     x-on:keydown.esc.window="isOpen = false; openedWithKeyboard = false"
 >
@@ -97,7 +97,7 @@
         </label>
     @endif
 
-    <div class="relative">
+    <div>
         <button
             type="button"
             role="combobox"
@@ -133,7 +133,7 @@
             x-show="isOpen || openedWithKeyboard"
             x-ref="optionsList"
             id="{{ $listboxId }}"
-            class="absolute z-10 left-0 top-11 flex max-h-44 w-full flex-col overflow-hidden overflow-y-auto border-outline bg-surface-alt py-1.5 dark:border-outline-dark dark:bg-surface-dark-alt rounded-radius border"
+            class="absolute z-[9999] left-0 top-[100%] mt-1 flex max-h-44 w-full flex-col overflow-hidden overflow-y-auto border-outline bg-surface-alt py-1.5 dark:border-outline-dark dark:bg-surface-dark-alt rounded-radius border shadow-xl"
             role="listbox"
             aria-label="{{ $label ?? $name }}"
             x-on:click.outside="isOpen = false; openedWithKeyboard = false"
@@ -144,9 +144,9 @@
         >
             <template x-for="(item, index) in options" x-bind:key="item.value">
                 <li
-                    class="combobox-option inline-flex justify-between gap-6 bg-surface-alt px-4 py-2 text-sm text-on-surface hover:bg-surface-dark-alt/5 hover:text-on-surface-strong focus-visible:bg-surface-dark-alt/5 focus-visible:text-on-surface-strong focus-visible:outline-hidden dark:bg-surface-dark-alt dark:text-on-surface-dark dark:hover:bg-surface-alt/5 dark:hover:text-on-surface-dark-strong dark:focus-visible:bg-surface-alt/10 dark:focus-visible:text-on-surface-dark-strong"
+                    class="combobox-option inline-flex justify-between gap-6 bg-surface-alt px-4 py-2 text-sm text-on-surface hover:bg-surface-dark-alt/5 hover:text-on-surface-strong focus-visible:bg-surface-dark-alt/5 focus-visible:text-on-surface-strong focus-visible:outline-hidden dark:bg-surface-dark-alt dark:text-on-surface-dark dark:hover:bg-surface-alt/5 dark:hover:text-on-surface-dark-strong dark:focus-visible:bg-surface-alt/10 dark:focus-visible:text-on-surface-dark-strong cursor-pointer"
                     role="option"
-                    x-on:click="setSelectedOption(item)"
+                    x-on:click.stop="setSelectedOption(item)"
                     x-on:keydown.enter="setSelectedOption(item)"
                     x-bind:id="'option-' + index"
                     tabindex="0"

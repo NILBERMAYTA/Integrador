@@ -1,13 +1,24 @@
-<div class="w-full max-w-4xl mx-auto p-6">
-  <form wire:submit.prevent="guardaruser" class="space-y-6 p-6 bg-surface dark:bg-surface-dark rounded-[var(--radius-radius)] shadow-md border border-outline dark:border-outline-dark">
+<div class="mx-auto w-full max-w-4xl p-4 sm:p-6">
+  <form wire:submit.prevent="guardaruser" class="card card-border user-form-enter bg-base-100 shadow-xl">
+    <div class="card-body gap-6 p-5 sm:p-7">
     @csrf
-    <h2 class="text-2xl font-bold mb-6">Registro de Nuevo Usuario</h2>
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-55">Gestión de personal</p>
+      <h2 class="card-title mt-1 text-2xl">Registro de nuevo usuario</h2>
+    </div>
 
     @include('livewire.users._form', ['modo' => 'create'])
 
-    <div class="flex gap-3 pt-4 border-t border-outline dark:border-outline-dark">
-      <x-form.button type="submit">Registrar Usuario</x-form.button>
-      <x-form.button type="button" variant="alternate" onclick="window.history.back()">Cancelar</x-form.button>
+    <div class="card-actions user-form-section justify-end gap-3 border-t border-base-300 pt-5">
+      <button type="button" class="btn btn-ghost" onclick="window.history.back()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
+        <span wire:loading.remove wire:target="guardaruser">Registrar usuario</span>
+        <span wire:loading.flex wire:target="guardaruser" class="items-center gap-2">
+          <span class="loading loading-spinner loading-sm"></span>
+          Registrando
+        </span>
+      </button>
+    </div>
     </div>
   </form>
 </div>

@@ -53,6 +53,8 @@ class Index extends Component
         $service = app(ReposicionArmamentoService::class);
         $this->resumen = $service->resumenGeneral();
         $this->recomendaciones = $service->recomendaciones()->all();
+
+        $this->dispatch('reposicion-updated');
     }
 
     protected function buildDistribucion(): array

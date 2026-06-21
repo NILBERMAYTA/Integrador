@@ -88,7 +88,7 @@
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] kiro-stagger">
                     @forelse($operaciones as $operacion)
                         @php
                             $devueltosCantidad = [];

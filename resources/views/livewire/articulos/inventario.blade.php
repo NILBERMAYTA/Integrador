@@ -18,7 +18,7 @@
                 </svg>
                 Exportar PDF
             </button>
-            <a href="{{ route('articulos.create') }}" wire:navigate
+            <a href="{{ route('articulos.index') }}" wire:navigate
                 class="inline-flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-radius)] bg-[var(--color-primary)] text-[var(--color-on-primary)] px-4 py-2 text-sm font-medium hover:opacity-90 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -114,7 +114,7 @@
                         <th class="px-4 py-3 text-left font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Último movimiento</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="kiro-stagger">
                     @forelse($articulos as $item)
                         @php
                             $art = $item['articulo'];

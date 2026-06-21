@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ showCreate: false }">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
@@ -17,7 +17,7 @@
                 Exportar PDF
             </x-form.header_button>
 
-            <x-form.header_button variant="primary" href="{{ route('articulos.create') }}" wire:navigate>
+            <x-form.header_button variant="primary" type="button" @click="showCreate = true">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -44,7 +44,7 @@
         </div>
     @endif
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 kiro-stagger">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-4">
             <p class="text-xs uppercase tracking-wider opacity-60">Bueno</p>
             <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ $resumenCondicion['bueno'] }}</p>
@@ -149,7 +149,7 @@
 
     @if($viewMode === 'cards')
         <div>
-            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 kiro-stagger">
                 @forelse ($articulos as $row)
                     @php
                         $estadoClasses = match($row['estado']) {
@@ -304,7 +304,7 @@
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)]">
+                <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] bg-[var(--color-surface)] dark:bg-[var(--color-surface-dark)] kiro-stagger">
                     @forelse ($articulos as $row)
                         @php
                             $estadoClasses = match($row['estado']) {
@@ -495,4 +495,75 @@
             </div>
         </div>
     @endif
+
+    {{-- Modal: seleccion del tipo de registro (la lista queda de fondo) --}}
+    <div
+        x-cloak
+        x-show="showCreate"
+        class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+        role="dialog" aria-modal="true" aria-labelledby="crear-articulo-titulo"
+        x-on:keydown.escape.window="showCreate = false"
+    >
+        <div
+            x-show="showCreate"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+            class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            x-on:click="showCreate = false"
+        ></div>
+
+        <div
+            x-show="showCreate"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-2xl dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]"
+        >
+            <div class="flex items-center justify-between border-b border-[var(--color-outline)] bg-[var(--color-surface-alt)]/60 px-6 py-4 dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark-alt)]/20">
+                <h2 id="crear-articulo-titulo" class="text-xl font-semibold">¿Como deseas registrar el articulo?</h2>
+                <button type="button" @click="showCreate = false" class="rounded-full p-1 transition-colors hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.4" class="h-5 w-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 px-6 py-8 md:grid-cols-2">
+                <a href="{{ route('articulos.create', ['mode' => 'cantidad']) }}" wire:navigate class="group h-full rounded-[var(--radius-radius)] border-2 border-[var(--color-outline)] p-6 text-left transition-all hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--color-primary)]/10 group-hover:bg-[var(--color-primary)]/20">
+                            <svg class="h-6 w-6 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m0 0h6m-6 0h6"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold transition-colors group-hover:text-[var(--color-primary)]">Consumible</h3>
+                            <p class="mt-2 text-sm opacity-75">Ideal para municiones, granadas o articulos consumibles. El sistema gestiona cantidades agregadas.</p>
+                            <p class="mt-3 text-xs font-medium text-[var(--color-primary)]">tipo: consumible | gestion automatica por cantidad</p>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="{{ route('articulos.create', ['mode' => 'serie']) }}" wire:navigate class="group h-full rounded-[var(--radius-radius)] border-2 border-[var(--color-outline)] p-6 text-left transition-all hover:border-[var(--color-success)] hover:bg-[var(--color-success)]/5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--color-success)]/10 group-hover:bg-[var(--color-success)]/20">
+                            <svg class="h-6 w-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold transition-colors group-hover:text-[var(--color-success)]">Reutilizable</h3>
+                            <p class="mt-2 text-sm opacity-75">Perfecto para cascos, escudos, chalecos o armas. Cada unidad se controla por serie.</p>
+                            <p class="mt-3 text-xs font-medium text-[var(--color-success)]">tipo: reutilizable | gestion automatica por serie</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>

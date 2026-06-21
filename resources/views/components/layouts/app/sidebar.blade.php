@@ -18,6 +18,8 @@
         <script>
             document.documentElement.dataset.theme = @js($themeSlug);
             window.Flux.applyAppearance(@js($themeAppearance));
+            document.documentElement.classList.toggle('dark', @js($themeAppearance) === 'dark');
+            document.documentElement.dataset.appearance = @js($themeAppearance);
         </script>
     </head>
     <body class="min-h-screen bg-surface dark:bg-surface-dark text-on-surface dark:text-on-surface-dark">
@@ -188,6 +190,8 @@
         </flux:header>
 
         {{ $slot }}
+
+        @livewire('chatbot')
 
         @fluxScripts
     </body>

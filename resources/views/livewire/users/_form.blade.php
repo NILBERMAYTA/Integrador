@@ -1,13 +1,13 @@
 @php($modo = $modo ?? 'create')
 
 <div class="space-y-6">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="user-form-section grid grid-cols-1 gap-4 md:grid-cols-3">
     <x-input name="name" label="Nombre" placeholder="Ingrese el nombre" required wire:model.defer="name" />
     <x-input name="apellido_paterno" label="Apellido Paterno" placeholder="Apellido paterno" wire:model.defer="apellido_paterno" />
     <x-input name="apellido_materno" label="Apellido Materno" placeholder="Apellido materno" wire:model.defer="apellido_materno" />
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="user-form-section grid grid-cols-1 gap-4 md:grid-cols-2">
     <x-input name="email" type="email" label="Correo Electronico" placeholder="correo@ejemplo.com" autocomplete="email" wire:model.defer="email" />
     @if($modo === 'create')
       <x-form.password name="password" label="Contrasena" placeholder="********" autocomplete="new-password" wire:model.defer="password" />
@@ -16,14 +16,21 @@
     @endif
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="user-form-section grid grid-cols-1 gap-4 md:grid-cols-3">
     <x-input name="rango" label="Rango" placeholder="Ej: Cabo, Sargento" wire:model.defer="rango" />
     <x-input name="numero_escalafon" label="Numero de Escalafon" placeholder="Numero de escalafon" wire:model.defer="numero_escalafon" />
-    <x-form.datepiker name="fecha_ingreso" label="Fecha de Ingreso" placeholder="Seleccione fecha" format="YYYY-MM-DD" wire:model.defer="fecha_ingreso" />
+    <x-form.datepiker
+        name="fecha_ingreso"
+        label="Fecha de Ingreso"
+        placeholder="Seleccione fecha"
+        :value="$fecha_ingreso"
+        :max-date="now()->format('Y-m-d')"
+        wire:model.defer="fecha_ingreso"
+    />
   </div>
 
-  @if($modo === 'create')
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="user-form-section grid grid-cols-1 gap-4 md:grid-cols-2">
+    @if($modo === 'create')
       <x-form.combobox
         name="unidad_id"
         label="Unidad actual"
@@ -32,14 +39,23 @@
         required
         wire:model.defer="unidad_id"
       />
-    </div>
-  @elseif(!empty($unidad_id))
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    @elseif(!empty($unidad_id))
       <x-input name="unidad_actual" label="Unidad actual" :value="optional(collect($unidades ?? [])->firstWhere('id', $unidad_id))->nombre" disabled />
-    </div>
-  @endif
+    @else
+      <div></div>
+    @endif
 
-  <div class="space-y-3">
+    <x-form.combobox
+      name="role"
+      label="Rol"
+      placeholder="Seleccione rol"
+      :options="$rolesDisponibles ?? []"
+      required
+      wire:model.defer="role"
+    />
+  </div>
+
+  <div class="user-form-section space-y-3 w-full">
     <div>
       <label class="block text-sm font-medium mb-1">Foto</label>
       <label
@@ -85,16 +101,5 @@
         <p class="mt-1 text-xs text-[var(--color-danger)]">{{ $message }}</p>
       @enderror
     </div>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-    <x-form.combobox
-      name="role"
-      label="Rol"
-      placeholder="Seleccione rol"
-      :options="$rolesDisponibles ?? []"
-      required
-      wire:model.defer="role"
-    />
   </div>
 </div>
