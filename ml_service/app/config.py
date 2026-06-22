@@ -21,6 +21,9 @@ class Settings:
         self.model_version = os.getenv("MODEL_VERSION", "v1")
         self.lookback_days = int(os.getenv("PREDICTION_LOOKBACK_DAYS", "90"))
         self.maintenance_lookback_days = int(os.getenv("PREDICTION_MAINTENANCE_LOOKBACK_DAYS", "180"))
+        # Tope para "dias desde ..." cuando no hay registro previo. Evita el
+        # centinela 9999 que distorsionaba los arboles y el SHAP.
+        self.dias_cap = int(os.getenv("PREDICTION_DIAS_CAP", "1825"))
         self.db_host = os.getenv("DB_HOST", "127.0.0.1")
         self.db_port = os.getenv("DB_PORT", "5432")
         self.db_name = os.getenv("DB_NAME", os.getenv("DB_DATABASE", "armutop"))

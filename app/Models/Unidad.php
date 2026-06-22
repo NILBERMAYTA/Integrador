@@ -14,6 +14,7 @@ class Unidad extends BaseModel
     protected $fillable = [
         'nombre',
         'sigla',
+        'codigo_externo',
         'descripcion',
     ];
 
@@ -25,6 +26,11 @@ class Unidad extends BaseModel
     public function usuarios()
     {
         return $this->hasMany(User::class, 'unidad_id');
+    }
+
+    public function destinos()
+    {
+        return $this->hasMany(Destino::class);
     }
 
     public function operaciones()

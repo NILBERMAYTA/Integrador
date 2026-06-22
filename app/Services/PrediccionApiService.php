@@ -21,6 +21,19 @@ class PrediccionApiService
         ]);
     }
 
+    public function resumenPrediccionesArmamento(
+        ?int $unidadId = null,
+        int $page = 1,
+        int $perPage = 10,
+    ): array
+    {
+        return $this->request('get', '/predictions/armamento/summary', array_filter([
+            'unidad_id' => $unidadId,
+            'page' => max(1, $page),
+            'per_page' => max(1, min($perPage, 50)),
+        ], fn ($value) => $value !== null));
+    }
+
     public function listarPrediccionesConflicto(int $limit = 100): array
     {
         $payload = $this->request('get', '/predictions/conflicto', [
@@ -33,6 +46,21 @@ class PrediccionApiService
     public function entrenarArmamento(): array
     {
         return $this->request('post', '/train/armamento');
+    }
+
+    public function explicabilidadGlobalArmamento(
+        ?int $unidadId = null,
+        int $sampleSize = 500,
+    ): array {
+        return $this->request('get', '/explainability/armamento/global', array_filter([
+            'unidad_id' => $unidadId,
+            'sample_size' => max(50, min($sampleSize, 1000)),
+        ], fn ($value) => $value !== null));
+    }
+
+    public function explicarSerieArmamento(int $serieId): array
+    {
+        return $this->request('get', "/explainability/armamento/{$serieId}");
     }
 
     protected function request(string $method, string $uri, array $query = []): array

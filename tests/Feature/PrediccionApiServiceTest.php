@@ -70,6 +70,74 @@ class PrediccionApiServiceTest extends TestCase
         $this->assertSame(3, $result[0]['unidad_id']);
     }
 
+    public function test_obtiene_resumen_general_filtrado_por_unidad(): void
+    {
+        config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');
+        config()->set('services.prediccion_api.timeout', 30);
+
+        Http::fake([
+            'http://127.0.0.1:8002/predictions/armamento/summary*' => Http::response([
+                'unidad_id' => 82,
+                'total' => 1200,
+                'riesgo' => ['alto' => 10, 'medio' => 90, 'bajo' => 1100],
+                'estado' => ['operativo' => 1160, 'inoperativo' => 40],
+                'page' => 2,
+                'per_page' => 10,
+                'last_page' => 120,
+                'items' => [],
+            ], 200),
+        ]);
+
+        $result = app(PrediccionApiService::class)
+            ->resumenPrediccionesArmamento(82, 2, 10);
+
+        $this->assertSame(1200, $result['total']);
+        $this->assertSame(40, $result['estado']['inoperativo']);
+
+        Http::assertSent(fn ($request) => $request->url()
+            === 'http://127.0.0.1:8002/predictions/armamento/summary?unidad_id=82&page=2&per_page=10');
+    }
+
+    public function test_obtiene_explicabilidad_global_shap(): void
+    {
+        config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');
+
+        Http::fake([
+            'http://127.0.0.1:8002/explainability/armamento/global*' => Http::response([
+                'unidad_id' => 82,
+                'total_records' => 326,
+                'sample_size' => 200,
+                'importance' => [],
+            ], 200),
+        ]);
+
+        $result = app(PrediccionApiService::class)
+            ->explicabilidadGlobalArmamento(82, 200);
+
+        $this->assertSame(326, $result['total_records']);
+
+        Http::assertSent(fn ($request) => $request->url()
+            === 'http://127.0.0.1:8002/explainability/armamento/global?unidad_id=82&sample_size=200');
+    }
+
+    public function test_obtiene_explicacion_individual_shap(): void
+    {
+        config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');
+
+        Http::fake([
+            'http://127.0.0.1:8002/explainability/armamento/41556' => Http::response([
+                'serie_id' => 41556,
+                'codigo_serie' => 'TEST-33-A052-00018',
+                'contributions' => [],
+            ], 200),
+        ]);
+
+        $result = app(PrediccionApiService::class)
+            ->explicarSerieArmamento(41556);
+
+        $this->assertSame(41556, $result['serie_id']);
+    }
+
     public function test_lanza_error_claro_cuando_falla_la_api(): void
     {
         config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');

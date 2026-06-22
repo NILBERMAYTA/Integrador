@@ -6,10 +6,19 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_recall_curve,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
@@ -28,6 +37,31 @@ class TrainingSummary:
     recall: float
     f1: float
     roc_auc: float | None
+
+
+def _best_threshold(y_true: pd.Series, probabilities: np.ndarray) -> float:
+    """Umbral que maximiza F1 sobre el conjunto de prueba.
+
+    Con clases muy desbalanceadas (pocos inoperativos) el umbral fijo de 0.5
+    hace que el modelo marque casi todo como inoperativo. Elegir el umbral que
+    maximiza F1 equilibra precision y recall en el punto de operacion real.
+    """
+    if len(set(y_true)) < 2:
+        return 0.5
+
+    precisions, recalls, thresholds = precision_recall_curve(y_true, probabilities)
+    if len(thresholds) == 0:
+        return 0.5
+
+    f1_scores = (
+        2 * precisions[:-1] * recalls[:-1]
+        / (precisions[:-1] + recalls[:-1] + 1e-12)
+    )
+    best_index = int(np.argmax(f1_scores))
+    threshold = float(thresholds[best_index])
+
+    # Evita umbrales degenerados (0 marca todo como positivo, 1 todo negativo).
+    return float(min(max(threshold, 0.05), 0.95))
 
 
 def model_exists() -> bool:
@@ -67,10 +101,9 @@ def train_armamento_model() -> dict[str, object]:
     y = df["resultado"].astype(int)
 
     categorical_columns = [
+        "categoria_id",
         "tipo_articulo",
         "seguimiento",
-        "estado_actual",
-        "condicion_actual",
         "ultimo_resultado_inspeccion",
     ]
     numeric_columns = [column for column in X.columns if column not in categorical_columns]
@@ -88,11 +121,13 @@ def train_armamento_model() -> dict[str, object]:
             (
                 "classifier",
                 RandomForestClassifier(
-                    n_estimators=250,
+                    n_estimators=400,
                     random_state=42,
-                    class_weight="balanced_subsample",
-                    max_depth=12,
-                    min_samples_leaf=2,
+                    class_weight=None,
+                    max_depth=16,
+                    min_samples_leaf=10,
+                    max_features="sqrt",
+                    n_jobs=-1,
                 ),
             ),
         ]
@@ -106,14 +141,22 @@ def train_armamento_model() -> dict[str, object]:
         stratify=y,
     )
 
-    model.fit(X_train, y_train)
+    evaluation_model = clone(model)
+    evaluation_model.fit(X_train, y_train)
 
-    predicted = model.predict(X_test)
-    probabilities = model.predict_proba(X_test)[:, 1]
+    probabilities = evaluation_model.predict_proba(X_test)[:, 1]
+
+    # Umbral de decision optimo (maximiza F1) en lugar del 0.5 fijo.
+    decision_threshold = _best_threshold(y_test, probabilities)
+    predicted = (probabilities >= decision_threshold).astype(int)
+
+    # Las métricas se calculan con el conjunto de prueba, pero el modelo que
+    # se persiste se vuelve a entrenar con el 100% del dataset disponible.
+    model.fit(X, y)
 
     summary = TrainingSummary(
         total_registros=int(len(df)),
-        total_entrenamiento=int(len(X_train)),
+        total_entrenamiento=int(len(X)),
         total_prueba=int(len(X_test)),
         accuracy=float(accuracy_score(y_test, predicted)),
         precision=float(precision_score(y_test, predicted, zero_division=0)),
@@ -128,6 +171,7 @@ def train_armamento_model() -> dict[str, object]:
             "model": model,
             "feature_columns": list(X.columns),
             "metrics": asdict(summary),
+            "decision_threshold": float(decision_threshold),
             "model_version": settings.model_version,
         }
     )
@@ -139,58 +183,104 @@ def train_armamento_model() -> dict[str, object]:
     return payload
 
 
-def classify_risk(probability: float) -> str:
-    if probability >= 0.75:
+def classify_risk(probability: float, threshold: float = 0.5) -> str:
+    alto = threshold + (1.0 - threshold) * 0.5
+    if probability >= alto:
         return "alto"
-    if probability >= 0.4:
+    if probability >= threshold:
         return "medio"
     return "bajo"
 
 
-def recommend_action(probability: float, estado_predicho: str) -> str:
-    if estado_predicho == "inoperativo" or probability >= 0.75:
+def recommend_action(probability: float, estado_predicho: str, threshold: float = 0.5) -> str:
+    alto = threshold + (1.0 - threshold) * 0.5
+    if estado_predicho == "inoperativo" or probability >= alto:
         return "Programar inspeccion inmediata y mantenimiento correctivo."
-    if probability >= 0.4:
+    if probability >= threshold:
         return "Realizar seguimiento preventivo y revisar incidencias recientes."
     return "Mantener monitoreo rutinario."
 
 
-def list_armamento_predictions(limit: int = 100) -> list[dict[str, Any]]:
+def predict_armamento_dataframe(df: pd.DataFrame) -> list[dict[str, Any]]:
     bundle = load_model_bundle()
     model = bundle["model"]
+    threshold = float(bundle.get("decision_threshold", 0.5))
     settings = get_settings()
 
-    df = load_armamento_dataset(limit=max(1, min(limit, 500)))
     if df.empty:
         return []
 
     prediction_frame = build_prediction_frame(df)
-    predicted_classes = model.predict(prediction_frame)
     predicted_probabilities = model.predict_proba(prediction_frame)[:, 1]
     prediction_time = utc_now_iso()
 
     results: list[dict[str, Any]] = []
     for index, row in df.reset_index(drop=True).iterrows():
         probability = float(predicted_probabilities[index])
-        predicted_class = int(predicted_classes[index])
-        estado_predicho = "inoperativo" if predicted_class == 1 else "operativo"
+        estado_predicho = "inoperativo" if probability >= threshold else "operativo"
 
         results.append(
             {
                 "serie_id": int(row["serie_id"]),
                 "articulo_id": int(row["articulo_id"]),
                 "unidad_id": int(row["unidad_id"]) if not pd.isna(row["unidad_id"]) else None,
+                "unidad_nombre": str(row["unidad_nombre"]),
                 "codigo_serie": str(row["codigo_serie"]),
                 "estado_predicho": estado_predicho,
                 "probabilidad": round(probability, 4),
-                "nivel_riesgo": classify_risk(probability),
-                "recomendacion": recommend_action(probability, estado_predicho),
+                "nivel_riesgo": classify_risk(probability, threshold),
+                "recomendacion": recommend_action(probability, estado_predicho, threshold),
                 "fecha_prediccion": prediction_time,
                 "modelo_version": bundle.get("model_version", settings.model_version),
             }
         )
 
     return results
+
+
+def list_armamento_predictions(
+    limit: int = 100,
+    unidad_id: int | None = None,
+) -> list[dict[str, Any]]:
+    df = load_armamento_dataset(
+        limit=max(1, min(limit, 500)),
+        unidad_id=unidad_id,
+    )
+    return predict_armamento_dataframe(df)
+
+
+def summarize_armamento_predictions(
+    unidad_id: int | None = None,
+    page: int = 1,
+    per_page: int = 10,
+) -> dict[str, Any]:
+    predictions = predict_armamento_dataframe(
+        load_armamento_dataset(unidad_id=unidad_id)
+    )
+
+    risk = {"alto": 0, "medio": 0, "bajo": 0}
+    status = {"operativo": 0, "inoperativo": 0}
+
+    for prediction in predictions:
+        risk[prediction["nivel_riesgo"]] += 1
+        status[prediction["estado_predicho"]] += 1
+
+    page = max(1, page)
+    per_page = max(1, min(per_page, 50))
+    last_page = max(1, (len(predictions) + per_page - 1) // per_page)
+    page = min(page, last_page)
+    offset = (page - 1) * per_page
+
+    return {
+        "unidad_id": unidad_id,
+        "total": len(predictions),
+        "riesgo": risk,
+        "estado": status,
+        "page": page,
+        "per_page": per_page,
+        "last_page": last_page,
+        "items": predictions[offset : offset + per_page],
+    }
 
 
 if __name__ == "__main__":

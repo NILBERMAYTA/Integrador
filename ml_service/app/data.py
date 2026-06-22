@@ -9,7 +9,11 @@ from sqlalchemy import text
 from app.config import get_engine, get_settings
 
 
-def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
+def load_armamento_dataset(
+    limit: int | None = None,
+    unidad_id: int | None = None,
+    serie_id: int | None = None,
+) -> pd.DataFrame:
     settings = get_settings()
     engine = get_engine()
 
@@ -69,7 +73,9 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
         SELECT
             s.id AS serie_id,
             s.articulo_id,
+            a.categoria_id,
             s.unidad_id,
+            COALESCE(u.sigla || ' - ' || u.nombre, u.nombre, 'Sin unidad') AS unidad_nombre,
             s.codigo_serie,
             a.tipo::text AS tipo_articulo,
             a.seguimiento::text AS seguimiento,
@@ -81,23 +87,30 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
             COALESCE(inc.incidencias_90d, 0) AS incidencias_90d,
             COALESCE(m.mantenimientos_total, 0) AS mantenimientos_total,
             COALESCE(m.mantenimientos_180d, 0) AS mantenimientos_180d,
-            COALESCE(EXTRACT(DAY FROM NOW() - m.ultimo_mantenimiento_at), 9999) AS dias_desde_ultimo_mantenimiento,
-            COALESCE(EXTRACT(DAY FROM NOW() - op.ultima_operacion_at), 9999) AS dias_desde_ultima_operacion,
-            COALESCE(EXTRACT(DAY FROM NOW() - inc.ultima_incidencia_at), 9999) AS dias_desde_ultima_incidencia,
+            CASE WHEN m.ultimo_mantenimiento_at IS NULL THEN 1 ELSE 0 END AS sin_mantenimiento,
+            CASE WHEN op.ultima_operacion_at IS NULL THEN 1 ELSE 0 END AS sin_operacion,
+            CASE WHEN inc.ultima_incidencia_at IS NULL THEN 1 ELSE 0 END AS sin_incidencia,
+            CASE WHEN ins.ultima_inspeccion_at IS NULL THEN 1 ELSE 0 END AS sin_inspeccion,
+            LEAST(COALESCE(EXTRACT(DAY FROM NOW() - m.ultimo_mantenimiento_at), :dias_cap), :dias_cap) AS dias_desde_ultimo_mantenimiento,
+            LEAST(COALESCE(EXTRACT(DAY FROM NOW() - op.ultima_operacion_at), :dias_cap), :dias_cap) AS dias_desde_ultima_operacion,
+            LEAST(COALESCE(EXTRACT(DAY FROM NOW() - inc.ultima_incidencia_at), :dias_cap), :dias_cap) AS dias_desde_ultima_incidencia,
             COALESCE(ins.ultimo_resultado_inspeccion, 'sin_inspeccion') AS ultimo_resultado_inspeccion,
-            COALESCE(EXTRACT(DAY FROM NOW() - ins.ultima_inspeccion_at), 9999) AS dias_desde_ultima_inspeccion,
+            LEAST(COALESCE(EXTRACT(DAY FROM NOW() - ins.ultima_inspeccion_at), :dias_cap), :dias_cap) AS dias_desde_ultima_inspeccion,
             CASE
                 WHEN s.condicion_actual::text = 'inoperativo' OR s.estado::text = 'inoperativo' THEN 1
                 ELSE 0
             END AS resultado
         FROM articulo_series s
         INNER JOIN articulos a ON a.id = s.articulo_id
+        LEFT JOIN unidades u ON u.id = s.unidad_id
         LEFT JOIN operaciones_agregadas op ON op.serie_id = s.id
         LEFT JOIN incidencias_agregadas inc ON inc.serie_id = s.id
         LEFT JOIN mantenimientos_agregados m ON m.serie_id = s.id
         LEFT JOIN inspecciones_agregadas ins ON ins.serie_id = s.id
         WHERE s.deleted_at IS NULL
           AND a.deleted_at IS NULL
+          AND (:unidad_id IS NULL OR s.unidad_id = :unidad_id)
+          AND (:serie_id IS NULL OR s.id = :serie_id)
         ORDER BY s.id DESC
         """
     )
@@ -109,6 +122,9 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
             params={
                 "lookback_days": settings.lookback_days,
                 "maintenance_lookback_days": settings.maintenance_lookback_days,
+                "dias_cap": settings.dias_cap,
+                "unidad_id": unidad_id,
+                "serie_id": serie_id,
             },
         )
 
@@ -117,6 +133,7 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
 
     numeric_columns = [
         "articulo_id",
+        "categoria_id",
         "unidad_id",
         "operaciones_total",
         "operaciones_90d",
@@ -124,6 +141,10 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
         "incidencias_90d",
         "mantenimientos_total",
         "mantenimientos_180d",
+        "sin_mantenimiento",
+        "sin_operacion",
+        "sin_incidencia",
+        "sin_inspeccion",
         "dias_desde_ultimo_mantenimiento",
         "dias_desde_ultima_operacion",
         "dias_desde_ultima_incidencia",
@@ -140,18 +161,19 @@ def load_armamento_dataset(limit: int | None = None) -> pd.DataFrame:
 
 def build_prediction_frame(df: pd.DataFrame) -> pd.DataFrame:
     columns = [
-        "articulo_id",
-        "unidad_id",
+        "categoria_id",
         "tipo_articulo",
         "seguimiento",
-        "estado_actual",
-        "condicion_actual",
         "operaciones_total",
         "operaciones_90d",
         "incidencias_total",
         "incidencias_90d",
         "mantenimientos_total",
         "mantenimientos_180d",
+        "sin_mantenimiento",
+        "sin_operacion",
+        "sin_incidencia",
+        "sin_inspeccion",
         "dias_desde_ultimo_mantenimiento",
         "dias_desde_ultima_operacion",
         "dias_desde_ultima_incidencia",

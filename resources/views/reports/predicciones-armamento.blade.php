@@ -68,7 +68,7 @@
         <tr>
             <td><strong>Generado:</strong> {{ $generatedAt->format('d/m/Y H:i') }}</td>
             <td><strong>Usuario:</strong> {{ $generatedByName }}</td>
-            <td><strong>Limite analizado:</strong> {{ $limit }}</td>
+            <td><strong>Unidad:</strong> {{ $unidadNombre ?? 'Todas las unidades' }}</td>
         </tr>
     </table>
 
@@ -78,7 +78,7 @@
                 <div class="card">
                     <div class="label">Series analizadas</div>
                     <div class="value">{{ $stats['total'] ?? 0 }}</div>
-                    <div class="hint">Registros recuperados desde la API de prediccion.</div>
+                    <div class="hint">Total completo del alcance seleccionado.</div>
                 </div>
             </td>
             <td>

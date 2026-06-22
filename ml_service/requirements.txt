@@ -6,3 +6,5 @@ psycopg2-binary==2.9.10
 SQLAlchemy==2.0.43
 joblib==1.5.2
 python-dotenv==1.1.1
+shap==0.52.0
+matplotlib==3.11.0

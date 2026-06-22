@@ -21,3 +21,25 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# === Migracion y limpieza de datos (Python) — no versionar datos sensibles ===
+# Herramienta de migracion / limpieza de datos en Python
+/data_migration/
+
+# Archivos fuente de migracion (Excel) y locks de ofimatica
+/MIGRACION*.xls
+/MIGRACION*.xlsx
+*.xls
+*.xlsx
+.~lock.*#
+
+# Datasets exportados y modelos del servicio ML (derivados de datos reales)
+/ml_service/data/
+/ml_service/models/
+*.pkl
+
+# Entornos y caches de Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/

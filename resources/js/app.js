@@ -237,6 +237,7 @@ window.qrScanner = (readerId, onScan) => ({
 
 let dashboardCharts = [];
 let predictionCharts = [];
+let shapCharts = [];
 let reposicionCharts = [];
 let eventosCharts = [];
 let apexChartsConstructor = null;
@@ -320,6 +321,20 @@ const parsePredictionChartData = () => {
     }
 };
 
+const parseShapChartData = () => {
+    const source = document.querySelector('[data-shap-chart-data]');
+
+    if (! source) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(source.textContent);
+    } catch (error) {
+        return null;
+    }
+};
+
 const parseReposicionChartData = () => {
     const source = document.querySelector('[data-reposicion-chart-data]');
 
@@ -369,6 +384,17 @@ const destroyPredictionCharts = () => {
         }
     });
     predictionCharts = [];
+};
+
+const destroyShapCharts = () => {
+    shapCharts.forEach((chart) => {
+        try {
+            chart.destroy();
+        } catch (error) {
+            // Livewire may already have replaced the SHAP container.
+        }
+    });
+    shapCharts = [];
 };
 
 const destroyReposicionCharts = () => {
@@ -712,6 +738,7 @@ const renderPredictionCharts = async () => {
             colors: ['#f43f5e', '#f59e0b', '#10b981'],
             totalLabel: 'Predicciones',
             itemLabel: 'predicción',
+            type: 'bar',
         },
         {
             selector: '[data-prediction-chart="status"]',
@@ -731,6 +758,69 @@ const renderPredictionCharts = async () => {
         }
 
         element.innerHTML = '';
+
+        if (config.type === 'bar') {
+            const chart = new apexChartsConstructor(element, {
+                ...baseDashboardChart('bar', 220),
+                series: [{
+                    name: 'Predicciones',
+                    data: config.series.map((value) => Number(value) || 0),
+                }],
+                colors: config.colors,
+                plotOptions: {
+                    bar: {
+                        distributed: true,
+                        borderRadius: 6,
+                        columnWidth: '56%',
+                        dataLabels: {
+                            position: 'top',
+                        },
+                    },
+                },
+                dataLabels: {
+                    enabled: true,
+                    offsetY: -20,
+                    style: {
+                        colors: [theme.strong],
+                        fontSize: '12px',
+                        fontWeight: 700,
+                    },
+                    formatter: (_value, options) => Number(
+                        config.series[options.dataPointIndex] || 0
+                    ).toLocaleString(),
+                },
+                xaxis: {
+                    categories: config.labels,
+                    labels: {
+                        style: {
+                            colors: config.labels.map(() => theme.foreground),
+                        },
+                    },
+                },
+                yaxis: {
+                    min: 0,
+                    forceNiceScale: true,
+                    labels: {
+                        style: { colors: [theme.foreground] },
+                        formatter: (value) => Math.round(value).toLocaleString(),
+                    },
+                },
+                legend: { show: false },
+                tooltip: {
+                    theme: theme.mode,
+                    y: {
+                        formatter: (_value, options) => `${Number(
+                            config.series[options.dataPointIndex] || 0
+                        ).toLocaleString()} predicciones`,
+                    },
+                },
+            });
+
+            chart.render();
+            predictionCharts.push(chart);
+            return;
+        }
+
         const base = baseDashboardChart('donut', 220);
         const chart = new apexChartsConstructor(element, {
             ...base,
@@ -790,6 +880,119 @@ const scheduleDashboardChartsUpdate = () => {
 
 const schedulePredictionChartsUpdate = () => {
     window.requestAnimationFrame(() => renderPredictionCharts());
+};
+
+const renderShapCharts = async () => {
+    const data = parseShapChartData();
+
+    destroyShapCharts();
+
+    if (! data) {
+        return;
+    }
+
+    if (! apexChartsConstructor) {
+        const module = await import('apexcharts');
+        apexChartsConstructor = module.default;
+    }
+
+    const theme = dashboardChartTheme();
+    const importanceElement = document.querySelector('[data-shap-chart="importance"]');
+    const directionElement = document.querySelector('[data-shap-chart="direction"]');
+
+    if (importanceElement) {
+        const importanceChart = new apexChartsConstructor(importanceElement, {
+            ...baseDashboardChart('bar', 360),
+            series: [{
+                name: 'Importancia SHAP',
+                data: data.importance.series,
+            }],
+            colors: ['#8b5cf6'],
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 5,
+                    barHeight: '62%',
+                },
+            },
+            xaxis: {
+                categories: data.importance.labels,
+                labels: {
+                    style: { colors: theme.foreground },
+                    formatter: (value) => Number(value).toFixed(3),
+                },
+            },
+            yaxis: {
+                labels: {
+                    style: { colors: data.importance.labels.map(() => theme.foreground) },
+                    maxWidth: 210,
+                },
+            },
+            dataLabels: { enabled: false },
+            tooltip: {
+                theme: theme.mode,
+                y: {
+                    formatter: (value) => Number(value).toFixed(5),
+                },
+            },
+        });
+        importanceChart.render();
+        shapCharts.push(importanceChart);
+    }
+
+    if (directionElement) {
+        const directionChart = new apexChartsConstructor(directionElement, {
+            ...baseDashboardChart('bar', 360),
+            series: [
+                {
+                    name: 'Reduce riesgo',
+                    data: data.direction.negative,
+                },
+                {
+                    name: 'Aumenta riesgo',
+                    data: data.direction.positive,
+                },
+            ],
+            colors: ['#3b82f6', '#f43f5e'],
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 4,
+                    barHeight: '68%',
+                },
+            },
+            xaxis: {
+                categories: data.direction.labels,
+                labels: {
+                    style: { colors: theme.foreground },
+                    formatter: (value) => Number(value).toFixed(3),
+                },
+            },
+            yaxis: {
+                labels: {
+                    style: { colors: data.direction.labels.map(() => theme.foreground) },
+                    maxWidth: 210,
+                },
+            },
+            legend: {
+                show: true,
+                position: 'top',
+            },
+            dataLabels: { enabled: false },
+            tooltip: {
+                theme: theme.mode,
+                y: {
+                    formatter: (value) => Number(value).toFixed(5),
+                },
+            },
+        });
+        directionChart.render();
+        shapCharts.push(directionChart);
+    }
+};
+
+const scheduleShapChartsUpdate = () => {
+    window.requestAnimationFrame(() => renderShapCharts());
 };
 
 const renderReposicionCharts = async () => {
@@ -988,6 +1191,7 @@ const applyAppearance = (appearance) => {
 const bootAllCharts = () => {
     renderDashboardCharts();
     renderPredictionCharts();
+    renderShapCharts();
     renderReposicionCharts();
     renderEventosCharts();
 };
@@ -1007,11 +1211,13 @@ document.addEventListener('livewire:navigated', () => {
     updateAppearanceToggles(appearance);
     renderDashboardCharts();
     renderPredictionCharts();
+    renderShapCharts();
     renderReposicionCharts();
     renderEventosCharts();
 });
 
 window.addEventListener('predictions-updated', schedulePredictionChartsUpdate);
+window.addEventListener('shap-updated', scheduleShapChartsUpdate);
 window.addEventListener('reposicion-updated', scheduleReposicionChartsUpdate);
 
 document.addEventListener('click', (event) => {
@@ -1041,6 +1247,7 @@ window.addEventListener('theme-changed', (event) => {
     updateAppearanceToggles(appearance);
     scheduleDashboardChartsUpdate();
     schedulePredictionChartsUpdate();
+    scheduleShapChartsUpdate();
     scheduleReposicionChartsUpdate();
     scheduleEventosChartsUpdate();
 });

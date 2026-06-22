@@ -46,17 +46,34 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'cedula',
         'apellido_paterno',
         'apellido_materno',
+        'nivel',
         'email',
         'password',
         'role',
         'can_login',
         'rango',
+        'rango_codigo',
+        'grado_codigo',
+        'cargo',
         'numero_escalafon',
+        'celular',
+        'sigep',
+        'salida_haberes_codigo',
         'fecha_ingreso',
+        'fecha_nacimiento',
+        'post_grado_codigo_1',
+        'categoria_codigo',
+        'post_grado_codigo_2',
+        'marca',
+        'expedido',
+        'sexo',
+        'promocion',
         'foto',
         'unidad_id',
+        'destino_id',
         'theme_id',
         'light_theme_id',
         'dark_theme_id',
@@ -68,9 +85,11 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'fecha_ingreso' => 'date',
+        'fecha_nacimiento' => 'date',
         'can_login' => 'boolean',
         'role' => 'string',
         'unidad_id' => 'integer',
+        'destino_id' => 'integer',
         'theme_id' => 'integer',
         'light_theme_id' => 'integer',
         'dark_theme_id' => 'integer',
@@ -79,6 +98,11 @@ class User extends Authenticatable
     public function unidad(): BelongsTo
     {
         return $this->belongsTo(Unidad::class, 'unidad_id');
+    }
+
+    public function destino(): BelongsTo
+    {
+        return $this->belongsTo(Destino::class);
     }
 
     public function asignacionesUnidad(): HasMany

@@ -1,10 +1,10 @@
-<div class="prediction-shell space-y-6">
+<div class="prediction-shell space-y-6" wire:init="cargarExplicabilidadGlobal">
     @php
         $alto = (int) ($stats['alto'] ?? 0);
         $medio = (int) ($stats['medio'] ?? 0);
         $bajo = (int) ($stats['bajo'] ?? 0);
-        $inoperativoCount = collect($predicciones)->where('estado_predicho', 'inoperativo')->count();
-        $operativoCount = max(0, count($predicciones) - $inoperativoCount);
+        $inoperativoCount = (int) ($stats['inoperativo'] ?? 0);
+        $operativoCount = (int) ($stats['operativo'] ?? 0);
 
         $predictionChartData = [
             'risk' => [
@@ -23,6 +23,9 @@
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                 Predicciones de armamento
             </h1>
+            <p class="text-sm opacity-70">
+                Resumen general de todas las series del alcance seleccionado.
+            </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -139,7 +142,7 @@
             <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Series analizadas</p>
             <p class="mt-3 text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $stats['total'] }}</p>
             <p class="mt-2 text-sm text-[var(--color-on-surface)] opacity-75 dark:text-[var(--color-on-surface-dark)]">
-                Limite activo: {{ $limit }}
+                {{ $unidadSeleccionada }}
             </p>
         </div>
 
@@ -160,41 +163,149 @@
         </div>
     </div>
 
+    <section class="space-y-5">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-2xl font-bold">Explicabilidad del modelo con SHAP</h2>
+                <p class="mt-1 text-sm opacity-70">
+                    Qué variables influyen, en qué dirección y cómo se construye cada predicción.
+                </p>
+            </div>
+            @if($shapGlobal)
+                <div class="text-sm opacity-70">
+                    Muestra SHAP: {{ $shapGlobal['sample_size'] ?? 0 }} de {{ $shapGlobal['total_records'] ?? 0 }} series
+                </div>
+            @endif
+        </div>
+
+        <div wire:loading wire:target="cargarExplicabilidadGlobal,updatedUnidad" class="w-full">
+            <div class="grid gap-5 xl:grid-cols-2">
+                <div class="skeleton h-80 w-full"></div>
+                <div class="skeleton h-80 w-full"></div>
+            </div>
+        </div>
+
+        @if($shapGlobal)
+            @php
+                $shapFeatures = collect($shapGlobal['importance'] ?? [])->take(10)->values();
+                $shapChartData = [
+                    'importance' => [
+                        'labels' => $shapFeatures->pluck('label')->all(),
+                        'series' => $shapFeatures->pluck('importance')->map(fn($value) => (float) $value)->all(),
+                    ],
+                    'direction' => [
+                        'labels' => $shapFeatures->pluck('label')->all(),
+                        'positive' => $shapFeatures->pluck('positive_impact')->map(fn($value) => (float) $value)->all(),
+                        'negative' => $shapFeatures->pluck('negative_impact')->map(fn($value) => (float) $value)->all(),
+                    ],
+                ];
+            @endphp
+
+            <div class="grid gap-5 xl:grid-cols-2">
+                <div class="card card-border bg-base-100">
+                    <div class="card-body">
+                        <h3 class="card-title">Importancia global de variables</h3>
+                        <p class="text-sm opacity-70">
+                            Promedio del impacto absoluto de cada variable sobre la probabilidad de inoperatividad.
+                        </p>
+                        <div data-shap-chart="importance" class="mt-3 min-h-[360px]" wire:ignore></div>
+                    </div>
+                </div>
+
+                <div class="card card-border bg-base-100">
+                    <div class="card-body">
+                        <h3 class="card-title">Impacto positivo y negativo</h3>
+                        <p class="text-sm opacity-70">
+                            Rojo aumenta el riesgo predicho; azul reduce la probabilidad de inoperatividad.
+                        </p>
+                        <div data-shap-chart="direction" class="mt-3 min-h-[360px]" wire:ignore></div>
+                    </div>
+                </div>
+
+                <div class="card card-border bg-base-100">
+                    <div class="card-body">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="card-title">SHAP beeswarm</h3>
+                            <span class="badge badge-info badge-soft">Resumen profesional</span>
+                        </div>
+                        <p class="text-sm opacity-70">
+                            Cada punto representa una serie. La posición indica cuánto empuja la variable hacia mayor o menor riesgo.
+                        </p>
+                        @if($shapGlobal['beeswarm_url'] ?? null)
+                            <img
+                                src="{{ $shapGlobal['beeswarm_url'] }}"
+                                alt="Gráfico SHAP beeswarm"
+                                class="mt-3 w-full rounded-box bg-white object-contain"
+                            />
+                        @endif
+                    </div>
+                </div>
+
+                <div class="card card-border bg-base-100">
+                    <div class="card-body">
+                        <h3 class="card-title">Dependencia de la variable dominante</h3>
+                        <p class="text-sm opacity-70">
+                            Relación entre el valor observado y su impacto SHAP. Variable destacada:
+                            <strong>{{ $shapGlobal['top_feature'] ?? '—' }}</strong>.
+                        </p>
+                        @if($shapGlobal['dependence_url'] ?? null)
+                            <img
+                                src="{{ $shapGlobal['dependence_url'] }}"
+                                alt="Gráfico SHAP de dependencia"
+                                class="mt-3 w-full rounded-box bg-white object-contain"
+                            />
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <script type="application/json" data-shap-chart-data>@json($shapChartData)</script>
+        @elseif($shapError)
+            <div class="alert alert-warning">
+                <span>No se pudo cargar SHAP: {{ $shapError }}</span>
+            </div>
+        @endif
+    </section>
+
     <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
             <div class="flex flex-col gap-4 border-b border-[var(--color-outline)] px-6 py-5 dark:border-[var(--color-outline-dark)] lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Predicciones recientes</h2>
                     <p class="mt-1 text-sm text-[var(--color-on-surface)] opacity-70 dark:text-[var(--color-on-surface-dark)]">
+                        Se muestran 10 series por página; las gráficas y tarjetas usan el total completo.
                     </p>
                 </div>
 
-                <div class="w-full max-w-[180px]">
+                <div class="w-full max-w-sm">
                     <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">
-                        Registros
+                        Unidad
                     </label>
                     <select
-                        wire:model.live="limit"
-                        class="w-full rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-on-surface)] dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)] dark:text-[var(--color-on-surface-dark)]"
+                        wire:model.live="unidad"
+                        class="select w-full"
                     >
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
+                        @if(auth()->user()->isAdministradorGeneral())
+                            <option value="">Todas las unidades</option>
+                        @endif
+                        @foreach($unidades as $unidadItem)
+                            <option value="{{ $unidadItem->id }}">
+                                {{ trim(($unidadItem->sigla ? $unidadItem->sigla.' - ' : '').$unidadItem->nombre) }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
+                <table class="table table-sm">
                     <thead class="bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)]">
                         <tr>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Serie</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Unidad</th>
-                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Estado</th>
+                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Predicción</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Probabilidad</th>
-                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Riesgo</th>
-                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Recomendacion</th>
+                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Explicación</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[var(--color-outline)] dark:divide-[var(--color-outline-dark)] kiro-stagger">
@@ -217,28 +328,34 @@
                                     </p>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
-                                    {{ $prediccion['unidad_id'] ?? '--' }}
+                                    {{ $prediccion['unidad_nombre'] ?? ($nombresUnidades[$prediccion['unidad_id'] ?? 0] ?? 'Sin unidad') }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ ($prediccion['estado_predicho'] ?? '') === 'inoperativo' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                    <div class="flex flex-wrap gap-2">
+                                    <span class="badge badge-sm {{ ($prediccion['estado_predicho'] ?? '') === 'inoperativo' ? 'badge-error' : 'badge-success' }}">
                                         {{ ucfirst($prediccion['estado_predicho'] ?? '--') }}
                                     </span>
+                                    <span class="badge badge-sm badge-soft {{ $riesgo === 'alto' ? 'badge-error' : ($riesgo === 'medio' ? 'badge-warning' : 'badge-success') }}">
+                                        {{ ucfirst($riesgo) }}
+                                    </span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                                     {{ isset($prediccion['probabilidad']) ? number_format((float) $prediccion['probabilidad'] * 100, 2) . '%' : '--' }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $riesgoClasses }}">
-                                        {{ ucfirst($riesgo) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
-                                    {{ $prediccion['recomendacion'] ?? '--' }}
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline"
+                                        wire:click="explicarSerie({{ $prediccion['serie_id'] }})"
+                                    >
+                                        Explicar
+                                    </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center">
+                                <td colspan="5" class="px-6 py-12 text-center">
                                     <p class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                                         No hay predicciones disponibles.
                                     </p>
@@ -251,6 +368,32 @@
                     </tbody>
                 </table>
             </div>
+
+            @if($ultimaPagina > 1)
+                <div class="flex flex-col gap-3 border-t border-[var(--color-outline)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-[var(--color-outline-dark)]">
+                    <p class="text-sm opacity-70">
+                        Página {{ $pagina }} de {{ $ultimaPagina }}
+                    </p>
+                    <div class="join">
+                        <button
+                            type="button"
+                            class="btn btn-sm join-item"
+                            wire:click="paginaAnterior"
+                            @disabled($pagina <= 1)
+                        >
+                            Anterior
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm join-item"
+                            wire:click="paginaSiguiente"
+                            @disabled($pagina >= $ultimaPagina)
+                        >
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="space-y-6">
@@ -312,6 +455,82 @@
             @endif
         </div>
     </div>
+
+    @if($shapIndividual)
+        @php
+            $individualContributions = collect($shapIndividual['contributions'] ?? [])->take(10);
+        @endphp
+        <section class="card card-border bg-base-100">
+            <div class="card-body">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="card-title">Explicación individual</h2>
+                            <span class="badge badge-primary badge-soft">{{ $shapIndividual['codigo_serie'] }}</span>
+                            <span class="badge {{ ($shapIndividual['risk_level'] ?? '') === 'alto' ? 'badge-error' : (($shapIndividual['risk_level'] ?? '') === 'medio' ? 'badge-warning' : 'badge-success') }}">
+                                Riesgo {{ $shapIndividual['risk_level'] ?? '—' }}
+                            </span>
+                        </div>
+                        <p class="mt-2 text-sm opacity-70">
+                            {{ $shapIndividual['unidad_nombre'] ?? 'Sin unidad' }} ·
+                            Probabilidad de inoperatividad:
+                            <strong>{{ number_format(((float) ($shapIndividual['probability'] ?? 0)) * 100, 2) }}%</strong>
+                        </p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-ghost" wire:click="cerrarExplicacionIndividual">
+                        Cerrar
+                    </button>
+                </div>
+
+                <div class="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
+                    <div>
+                        @if($shapIndividual['waterfall_url'] ?? null)
+                            <img
+                                src="{{ $shapIndividual['waterfall_url'] }}"
+                                alt="Gráfico SHAP waterfall"
+                                class="w-full rounded-box bg-white object-contain"
+                            />
+                        @endif
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold">Principales contribuciones</h3>
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Variable</th>
+                                        <th>Valor</th>
+                                        <th>Impacto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($individualContributions as $contribution)
+                                        <tr>
+                                            <td>{{ $contribution['label'] }}</td>
+                                            <td class="max-w-32 truncate" title="{{ $contribution['feature_value'] }}">
+                                                {{ $contribution['feature_value'] }}
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-sm badge-soft {{ $contribution['direction'] === 'aumenta' ? 'badge-error' : 'badge-info' }}">
+                                                    {{ $contribution['direction'] === 'aumenta' ? '+' : '−' }}
+                                                    {{ number_format(abs((float) $contribution['shap_value']), 4) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 rounded-box bg-base-200 p-4 text-sm">
+                    <strong>Recomendación:</strong> {{ $shapIndividual['recommendation'] ?? '—' }}
+                </div>
+            </div>
+        </section>
+    @endif
 
     <script type="application/json" data-prediction-chart-data>@json($predictionChartData)</script>
 </div>
