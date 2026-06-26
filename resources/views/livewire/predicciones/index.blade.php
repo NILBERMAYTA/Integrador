@@ -60,7 +60,7 @@
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6V7m3 10v-4m3 8H6a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 01-2 2z" />
                     </svg>
-                    Reentrenar modelo
+                    Calibrar lógica difusa
                 </x-form.header_button>
             @endcan
         </div>
@@ -114,7 +114,7 @@
             <div class="mt-3 flex items-center gap-3">
                 <span class="inline-flex h-3 w-3 rounded-full {{ $modelReady ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                 <p class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-                    {{ $modelReady ? 'Modelo disponible' : 'Modelo no entrenado' }}
+                    {{ $modelReady ? 'Motor difuso listo' : 'Motor sin calibrar' }}
                 </p>
             </div>
         </div>
@@ -146,22 +146,22 @@
 
     <div role="alert" class="alert alert-warning alert-soft">
         <span>
-            Ambas condiciones son salidas del modelo. La predicción futura dispone actualmente de 348 transiciones históricas;
-            las series sin historial son extrapolaciones y deben confirmarse mediante inspecciones.
+            Ambas condiciones son salidas de reglas difusas calibradas con el historial disponible;
+            las series sin historial quedan indeterminadas y deben confirmarse mediante inspecciones.
         </span>
     </div>
 
     <section class="space-y-5">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h2 class="text-2xl font-bold">Explicabilidad del modelo con SHAP</h2>
+                <h2 class="text-2xl font-bold">Explicabilidad de lógica difusa</h2>
                 <p class="mt-1 text-sm opacity-70">
-                    Qué variables influyen, en qué dirección y cómo se construye cada predicción.
+                    Qué señales activan las reglas, en qué dirección y cómo se construye cada predicción.
                 </p>
             </div>
             @if($shapGlobal)
                 <div class="text-sm opacity-70">
-                    Muestra SHAP: {{ $shapGlobal['sample_size'] ?? 0 }} de {{ $shapGlobal['total_records'] ?? 0 }} series
+                    Muestra difusa: {{ $shapGlobal['sample_size'] ?? 0 }} de {{ $shapGlobal['total_records'] ?? 0 }} series
                 </div>
             @endif
         </div>
@@ -194,7 +194,7 @@
                     <div class="card-body">
                         <h3 class="card-title">Importancia global de variables</h3>
                         <p class="text-sm opacity-70">
-                            Impacto medio sobre la clase {{ str_replace('_', ' ', $shapGlobal['explained_class'] ?? 'inoperativo') }} del modelo actual.
+                            Aporte medio sobre {{ str_replace('_', ' ', $shapGlobal['explained_class'] ?? 'riesgo operativo') }}.
                         </p>
                         <div data-shap-chart="importance" class="mt-3 min-h-[360px]" wire:ignore></div>
                     </div>
@@ -204,7 +204,7 @@
                     <div class="card-body">
                         <h3 class="card-title">Impacto positivo y negativo</h3>
                         <p class="text-sm opacity-70">
-                            Rojo aumenta y azul reduce la probabilidad de la clase explicada.
+                            Rojo aumenta y azul reduce el riesgo operativo estimado.
                         </p>
                         <div data-shap-chart="direction" class="mt-3 min-h-[360px]" wire:ignore></div>
                     </div>
@@ -213,16 +213,16 @@
                 <div class="card card-border bg-base-100">
                     <div class="card-body">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h3 class="card-title">SHAP beeswarm</h3>
-                            <span class="badge badge-info badge-soft">Resumen profesional</span>
+                            <h3 class="card-title">Importancia difusa global</h3>
+                            <span class="badge badge-info badge-soft">Resumen operativo</span>
                         </div>
                         <p class="text-sm opacity-70">
-                            Cada punto representa una serie y cuánto empuja una variable hacia la condición explicada.
+                            Promedio de aportes por señal sobre las series de la muestra.
                         </p>
                         @if($shapGlobal['beeswarm_url'] ?? null)
                             <img
                                 src="{{ $shapGlobal['beeswarm_url'] }}"
-                                alt="Gráfico SHAP beeswarm"
+                                alt="Grafico de importancia difusa"
                                 class="mt-3 w-full rounded-box bg-white object-contain"
                             />
                         @endif
@@ -233,13 +233,13 @@
                     <div class="card-body">
                         <h3 class="card-title">Dependencia de la variable dominante</h3>
                         <p class="text-sm opacity-70">
-                            Relación entre el valor observado y su impacto SHAP. Variable destacada:
+                            Aporte positivo promedio. Variable destacada:
                             <strong>{{ $shapGlobal['top_feature'] ?? '—' }}</strong>.
                         </p>
                         @if($shapGlobal['dependence_url'] ?? null)
                             <img
                                 src="{{ $shapGlobal['dependence_url'] }}"
-                                alt="Gráfico SHAP de dependencia"
+                                alt="Grafico de aporte difuso"
                                 class="mt-3 w-full rounded-box bg-white object-contain"
                             />
                         @endif
@@ -250,7 +250,7 @@
             <script type="application/json" data-shap-chart-data>@json($shapChartData)</script>
         @elseif($shapError)
             <div class="alert alert-warning">
-                <span>No se pudo cargar SHAP: {{ $shapError }}</span>
+                <span>No se pudo cargar la explicabilidad difusa: {{ $shapError }}</span>
             </div>
         @endif
     </section>
@@ -360,7 +360,7 @@
                                         No hay predicciones disponibles.
                                     </p>
                                     <p class="mt-1 text-sm text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">
-                                        Verifica que `ml_service` este levantado y que el modelo haya sido entrenado.
+                                        Verifica que `ml_service` este levantado y que la logica difusa haya sido calibrada.
                                     </p>
                                 </td>
                             </tr>
@@ -409,14 +409,14 @@
                     <div class="flex items-center justify-between gap-4">
                         <dt class="text-[var(--color-on-surface)] opacity-70 dark:text-[var(--color-on-surface-dark)]">Modelo</dt>
                         <dd class="font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-                            {{ !empty($health['model_ready']) ? 'listo' : 'pendiente' }}
+                            {{ !empty($health['model_ready']) ? 'calibrado' : 'pendiente' }}
                         </dd>
                     </div>
                 </dl>
             </div>
 
             <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
-                <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Ultimo entrenamiento</h2>
+                <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Ultima calibracion</h2>
 
                 @if ($trainingSummary)
                     @php
@@ -425,15 +425,15 @@
                     @endphp
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">F1 actual</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Ajuste actual</p>
                             <p class="mt-2 text-2xl font-bold">{{ number_format(((float) ($currentMetrics['f1_macro'] ?? 0)) * 100, 2) }}%</p>
                         </div>
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Balanced actual</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Balance actual</p>
                             <p class="mt-2 text-2xl font-bold">{{ number_format(((float) ($currentMetrics['balanced_accuracy'] ?? 0)) * 100, 2) }}%</p>
                         </div>
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">F1 futuro</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Ajuste futuro</p>
                             <p class="mt-2 text-xl font-bold">{{ number_format(((float) ($futureMetrics['f1_macro'] ?? 0)) * 100, 2) }}%</p>
                         </div>
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
@@ -493,14 +493,14 @@
                         @if($shapIndividual['waterfall_url'] ?? null)
                             <img
                                 src="{{ $shapIndividual['waterfall_url'] }}"
-                                alt="Gráfico SHAP waterfall"
+                                alt="Grafico de aportes difusos"
                                 class="w-full rounded-box bg-white object-contain"
                             />
                         @endif
                     </div>
 
                     <div>
-                        <h3 class="font-semibold">Principales contribuciones</h3>
+                        <h3 class="font-semibold">Principales aportes</h3>
                         <div class="mt-3 overflow-x-auto">
                             <table class="table table-sm">
                                 <thead>

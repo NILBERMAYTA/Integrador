@@ -16,6 +16,9 @@
         $luego = $planificada + $estable;
         $ahoraDeg = round(($ahora / $totalRecomendaciones) * 360, 2);
         $prontoDeg = round(($pronto / $totalRecomendaciones) * 360, 2);
+        $articulosReposicion = collect($recomendaciones)
+            ->sortByDesc(fn ($item) => (float) ($item['reposicion_esperada'] ?? 0))
+            ->values();
 
         $reposicionChartData = [
             'urgencia' => [
@@ -26,6 +29,17 @@
                 'labels' => ['Ahora', 'Pronto', 'Luego'],
                 'series' => [$ahora, $pronto, $luego],
             ],
+            'articulos' => [
+                'labels' => $articulosReposicion
+                    ->map(fn ($item) => trim(($item['articulo'] ?? 'Sin articulo').' · '.($item['unidad_nombre'] ?? 'Sin unidad')))
+                    ->all(),
+                'cantidad' => $articulosReposicion
+                    ->map(fn ($item) => (int) ($item['cantidad_sugerida'] ?? 0))
+                    ->all(),
+                'reposicion' => $articulosReposicion
+                    ->map(fn ($item) => round((float) ($item['reposicion_esperada'] ?? 0), 2))
+                    ->all(),
+            ],
         ];
     @endphp
 
@@ -35,7 +49,7 @@
                 Reposicion general de armamento
             </h1>
             <p class="text-sm opacity-70">
-                Solicitud esperada calculada únicamente desde la predicción futura del modelo a {{ $horizonteDias }} días.
+                Solicitud esperada calculada con Random Forest para reposición a {{ $horizonteDias }} días.
             </p>
         </div>
 
@@ -90,7 +104,7 @@
 
     <div role="alert" class="alert alert-info alert-soft">
         <span>
-            La cantidad sugerida es el valor esperado de reposición según probabilidades futuras; no usa directamente el estado almacenado de las series.
+            La cantidad sugerida es el valor esperado de reposición estimado por Random Forest; el estado del armamento se mantiene con lógica difusa.
         </span>
     </div>
 
@@ -145,6 +159,19 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Reposición por artículo</h2>
+                <p class="text-sm opacity-70">Incluye todos los artículos del alcance seleccionado, ordenados por reposición esperada.</p>
+            </div>
+            <span class="badge badge-info badge-soft">{{ count($recomendaciones) }} artículos</span>
+        </div>
+        <div class="mt-5 max-h-[42rem] overflow-y-auto pr-2">
+            <div data-reposicion-chart="articulos" class="min-h-[360px] w-full" wire:ignore></div>
         </div>
     </div>
 

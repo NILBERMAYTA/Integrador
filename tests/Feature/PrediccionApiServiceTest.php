@@ -98,7 +98,7 @@ class PrediccionApiServiceTest extends TestCase
             === 'http://127.0.0.1:8002/predictions/armamento/summary?unidad_id=82&page=2&per_page=10');
     }
 
-    public function test_obtiene_explicabilidad_global_shap(): void
+    public function test_obtiene_explicabilidad_global_difusa(): void
     {
         config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');
 
@@ -120,7 +120,7 @@ class PrediccionApiServiceTest extends TestCase
             === 'http://127.0.0.1:8002/explainability/armamento/global?unidad_id=82&sample_size=200');
     }
 
-    public function test_obtiene_explicacion_individual_shap(): void
+    public function test_obtiene_explicacion_individual_difusa(): void
     {
         config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import io
+import sys
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -14,44 +15,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import shap
 
-from app.data import build_prediction_frame, load_armamento_dataset
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from app.config import get_settings
+from app.data import load_armamento_dataset
 from app.ml import load_model_bundle, predict_armamento_dataframe
-
-
-FEATURE_LABELS = {
-    "categoria_id": "Categoría",
-    "articulo_id": "Artículo",
-    "tipo_articulo": "Tipo de artículo",
-    "seguimiento": "Tipo de seguimiento",
-    "operaciones_total": "Operaciones históricas",
-    "operaciones_90d": "Operaciones en 90 días",
-    "incidencias_total": "Incidencias históricas",
-    "incidencias_90d": "Incidencias en 90 días",
-    "mantenimientos_total": "Mantenimientos históricos",
-    "mantenimientos_180d": "Mantenimientos en 180 días",
-    "sin_mantenimiento": "Sin mantenimiento previo",
-    "sin_operacion": "Sin operación previa",
-    "sin_incidencia": "Sin incidencias",
-    "sin_inspeccion": "Sin inspección previa",
-    "dias_desde_ultimo_mantenimiento": "Días desde mantenimiento",
-    "dias_desde_ultima_operacion": "Días desde operación",
-    "dias_desde_ultima_incidencia": "Días desde incidencia",
-    "ultimo_resultado_inspeccion": "Última inspección",
-    "dias_desde_ultima_inspeccion": "Días desde inspección",
-}
+from fuzzy_logic.armamento import FEATURE_LABELS, explain_row
 
 
 def _model_signature() -> str:
-    path = Path(load_model_bundle_path())
+    path = get_settings().model_path
     return f"{path.stat().st_mtime_ns}:{path.stat().st_size}"
-
-
-def load_model_bundle_path() -> str:
-    from app.config import get_settings
-
-    return str(get_settings().model_path)
 
 
 def _sample_dataset(df: pd.DataFrame, sample_size: int) -> pd.DataFrame:
@@ -77,90 +54,6 @@ def _sample_dataset(df: pd.DataFrame, sample_size: int) -> pd.DataFrame:
     return sampled.sort_values("serie_id", ascending=False)
 
 
-def _components() -> tuple[Any, Any, Any]:
-    bundle = load_model_bundle()
-    pipeline = bundle["current_model"]
-    preprocessor = pipeline.named_steps["preprocessor"]
-    classifier = pipeline.named_steps["classifier"]
-    return bundle, preprocessor, classifier
-
-
-def _class_explanation(
-    frame: pd.DataFrame,
-    class_index: int,
-) -> tuple[shap.Explanation, np.ndarray, list[str]]:
-    _, preprocessor, classifier = _components()
-    transformed = preprocessor.transform(frame)
-    if hasattr(transformed, "toarray"):
-        transformed = transformed.toarray()
-    transformed = np.asarray(transformed, dtype=float)
-
-    feature_names = list(preprocessor.get_feature_names_out())
-    explainer = shap.TreeExplainer(classifier)
-    explanation = explainer(transformed)
-    values = np.asarray(explanation.values)
-    base_values = np.asarray(explanation.base_values)
-
-    if values.ndim == 3:
-        values = values[:, :, class_index]
-    if base_values.ndim == 2:
-        base_values = base_values[:, class_index]
-
-    selected = shap.Explanation(
-        values=values,
-        base_values=base_values,
-        data=transformed,
-        feature_names=[_encoded_label(name) for name in feature_names],
-    )
-    return selected, transformed, feature_names
-
-
-def _original_feature(encoded_name: str) -> str:
-    if encoded_name.startswith("numeric__"):
-        return encoded_name.removeprefix("numeric__")
-
-    encoded_name = encoded_name.removeprefix("categorical__")
-    for feature in (
-        "articulo_id",
-        "categoria_id",
-        "tipo_articulo",
-        "seguimiento",
-        "ultimo_resultado_inspeccion",
-    ):
-        prefix = f"{feature}_"
-        if encoded_name.startswith(prefix):
-            return feature
-
-    return encoded_name
-
-
-def _encoded_label(encoded_name: str) -> str:
-    original = _original_feature(encoded_name)
-    label = FEATURE_LABELS.get(original, original.replace("_", " ").title())
-
-    if encoded_name.startswith("categorical__"):
-        encoded = encoded_name.removeprefix("categorical__")
-        suffix = encoded.removeprefix(f"{original}_").replace("_", " ")
-        return f"{label}: {suffix}"
-
-    return label
-
-
-def _aggregate_values(
-    shap_values: np.ndarray,
-    encoded_names: list[str],
-) -> tuple[list[str], np.ndarray]:
-    grouped: dict[str, np.ndarray] = {}
-    for index, encoded_name in enumerate(encoded_names):
-        original = _original_feature(encoded_name)
-        grouped.setdefault(original, np.zeros(shap_values.shape[0], dtype=float))
-        grouped[original] += shap_values[:, index]
-
-    names = list(grouped.keys())
-    values = np.column_stack([grouped[name] for name in names])
-    return names, values
-
-
 def _figure_data_uri() -> str:
     buffer = io.BytesIO()
     plt.tight_layout()
@@ -175,34 +68,14 @@ def _figure_data_uri() -> str:
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
-def _beeswarm_image(explanation: shap.Explanation) -> str:
-    plt.figure(figsize=(10, 6.5))
-    shap.plots.beeswarm(explanation, max_display=12, show=False, plot_size=None)
-    plt.title("Impacto SHAP global de las variables", fontsize=14, pad=14)
-    plt.xlabel("Impacto sobre la probabilidad de condición inoperativa")
-    return _figure_data_uri()
-
-
-def _dependence_image(
-    explanation: shap.Explanation,
-    encoded_names: list[str],
-    importance: np.ndarray,
-) -> str | None:
-    numeric_indexes = [
-        index for index, name in enumerate(encoded_names) if name.startswith("numeric__")
-    ]
-    if not numeric_indexes:
-        return None
-
-    feature_index = max(numeric_indexes, key=lambda index: importance[index])
+def _bar_image(title: str, labels: list[str], values: list[float], color: str = "#2563eb") -> str:
+    y = np.arange(len(labels))
     plt.figure(figsize=(9, 5.5))
-    shap.plots.scatter(explanation[:, feature_index], show=False)
-    plt.title(
-        f"Dependencia: {_encoded_label(encoded_names[feature_index])}",
-        fontsize=14,
-        pad=14,
-    )
-    plt.ylabel("Impacto SHAP")
+    plt.barh(y, values, color=color)
+    plt.yticks(y, labels)
+    plt.gca().invert_yaxis()
+    plt.xlabel("Aporte difuso")
+    plt.title(title, fontsize=14, pad=14)
     return _figure_data_uri()
 
 
@@ -217,57 +90,45 @@ def _global_explanation_cached(
     if df.empty:
         raise RuntimeError("No existen series para explicar en el alcance seleccionado.")
 
+    bundle = load_model_bundle()
     sampled = _sample_dataset(df, sample_size)
-    frame = build_prediction_frame(sampled)
-    bundle, _, classifier = _components()
-    classes = [str(value) for value in classifier.classes_]
-    explained_class = "inoperativo" if "inoperativo" in classes else classes[-1]
-    explanation, _, encoded_names = _class_explanation(
-        frame,
-        classes.index(explained_class),
+    contributions = [explain_row(row, bundle) for _, row in sampled.iterrows()]
+    features = list(FEATURE_LABELS.keys())
+    matrix = np.array(
+        [[float(item.get(feature, 0.0)) for feature in features] for item in contributions],
+        dtype=float,
     )
-    encoded_values = np.asarray(explanation.values)
-    names, grouped_values = _aggregate_values(encoded_values, encoded_names)
-
-    mean_abs = np.abs(grouped_values).mean(axis=0)
-    positive_mean = np.clip(grouped_values, 0, None).mean(axis=0)
-    negative_mean = np.clip(grouped_values, None, 0).mean(axis=0)
+    mean_abs = np.abs(matrix).mean(axis=0)
+    positive_mean = np.clip(matrix, 0, None).mean(axis=0)
+    negative_mean = np.clip(matrix, None, 0).mean(axis=0)
     order = np.argsort(mean_abs)[::-1]
 
     importance = [
         {
-            "feature": name,
-            "label": FEATURE_LABELS.get(name, name.replace("_", " ").title()),
+            "feature": features[index],
+            "label": FEATURE_LABELS[features[index]],
             "importance": round(float(mean_abs[index]), 6),
             "positive_impact": round(float(positive_mean[index]), 6),
             "negative_impact": round(float(negative_mean[index]), 6),
         }
-        for index, name in sorted(
-            enumerate(names),
-            key=lambda pair: mean_abs[pair[0]],
-            reverse=True,
-        )
+        for index in order
     ]
 
-    encoded_importance = np.abs(encoded_values).mean(axis=0)
+    labels = [FEATURE_LABELS[features[index]] for index in order]
+    values = [float(mean_abs[index]) for index in order]
+    positive_values = [float(positive_mean[index]) for index in order]
+
     return {
         "unidad_id": unidad_id,
         "total_records": int(len(df)),
         "sample_size": int(len(sampled)),
-        "base_value": round(float(np.mean(explanation.base_values)), 6),
+        "base_value": 0.0,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "importance": importance,
-        "beeswarm_image": _beeswarm_image(explanation),
-        "dependence_image": _dependence_image(
-            explanation,
-            encoded_names,
-            encoded_importance,
-        ),
-        "top_feature": FEATURE_LABELS.get(
-            names[order[0]],
-            names[order[0]].replace("_", " ").title(),
-        ),
-        "explained_class": explained_class,
+        "beeswarm_image": _bar_image("Importancia global de reglas difusas", labels, values),
+        "dependence_image": _bar_image("Aporte positivo promedio", labels, positive_values, "#16a34a"),
+        "top_feature": labels[0] if labels else "",
+        "explained_class": "riesgo_operativo",
     }
 
 
@@ -288,37 +149,35 @@ def individual_armamento_explanation(serie_id: int) -> dict[str, Any]:
         raise RuntimeError(f"No existe la serie {serie_id}.")
 
     row = df.iloc[[0]]
-    frame = build_prediction_frame(row)
+    bundle = load_model_bundle()
     prediction = predict_armamento_dataframe(row)[0]
-    predicted_state = str(prediction["condicion_actual_predicha"])
-    bundle, _, classifier = _components()
-    classes = [str(value) for value in classifier.classes_]
-    class_index = classes.index(predicted_state)
-    explanation, _, encoded_names = _class_explanation(frame, class_index)
-    encoded_values = np.asarray(explanation.values)
-    names, grouped_values = _aggregate_values(encoded_values, encoded_names)
-    values = grouped_values[0]
-    probability = float(prediction["confianza_actual"])
-
+    contributions_map = explain_row(row.iloc[0], bundle)
     contributions = sorted(
         [
             {
-                "feature": name,
-                "label": FEATURE_LABELS.get(name, name.replace("_", " ").title()),
-                "feature_value": str(frame.iloc[0][name]),
-                "shap_value": round(float(values[index]), 6),
-                "absolute_impact": round(float(abs(values[index])), 6),
-                "direction": "aumenta" if values[index] >= 0 else "reduce",
+                "feature": feature,
+                "label": FEATURE_LABELS.get(feature, feature.replace("_", " ").title()),
+                "feature_value": str(round(float(value), 4)),
+                "shap_value": round(float(value), 6),
+                "absolute_impact": round(float(abs(value)), 6),
+                "direction": "aumenta" if value >= 0 else "reduce",
             }
-            for index, name in enumerate(names)
+            for feature, value in contributions_map.items()
         ],
         key=lambda item: item["absolute_impact"],
         reverse=True,
     )
 
-    plt.figure(figsize=(10, 6))
-    shap.plots.waterfall(explanation[0], max_display=12, show=False)
-    plt.title(f"Explicación individual: {row.iloc[0]['codigo_serie']}", fontsize=14)
+    labels = [item["label"] for item in contributions]
+    values = [float(item["shap_value"]) for item in contributions]
+    colors = ["#dc2626" if value >= 0 else "#2563eb" for value in values]
+    y = np.arange(len(labels))
+    plt.figure(figsize=(9, 5.5))
+    plt.barh(y, values, color=colors)
+    plt.yticks(y, labels)
+    plt.gca().invert_yaxis()
+    plt.xlabel("Aporte a riesgo futuro")
+    plt.title(f"Explicacion difusa: {row.iloc[0]['codigo_serie']}", fontsize=14)
     waterfall_image = _figure_data_uri()
 
     return {
@@ -326,14 +185,15 @@ def individual_armamento_explanation(serie_id: int) -> dict[str, Any]:
         "codigo_serie": str(row.iloc[0]["codigo_serie"]),
         "unidad_id": int(row.iloc[0]["unidad_id"]),
         "unidad_nombre": str(row.iloc[0]["unidad_nombre"]),
-        "probability": round(probability, 6),
-        "predicted_state": predicted_state,
+        "probability": round(float(prediction["confianza_actual"]), 6),
+        "predicted_state": prediction["condicion_actual_predicha"],
         "future_condition": prediction["condicion_futura_predicha"],
         "future_confidence": prediction["confianza_futura"],
         "risk_level": prediction["nivel_riesgo"],
         "recommendation": prediction["recomendacion"],
-        "base_value": round(float(explanation.base_values[0]), 6),
+        "base_value": 0.0,
         "contributions": contributions,
         "waterfall_image": waterfall_image,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
+

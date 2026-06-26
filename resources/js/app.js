@@ -391,7 +391,7 @@ const destroyShapCharts = () => {
         try {
             chart.destroy();
         } catch (error) {
-            // Livewire may already have replaced the SHAP container.
+            // Livewire may already have replaced the explanation container.
         }
     });
     shapCharts = [];
@@ -904,7 +904,7 @@ const renderShapCharts = async () => {
         const importanceChart = new apexChartsConstructor(importanceElement, {
             ...baseDashboardChart('bar', 360),
             series: [{
-                name: 'Importancia SHAP',
+                name: 'Importancia difusa',
                 data: data.importance.series,
             }],
             colors: ['#8b5cf6'],
@@ -1099,6 +1099,91 @@ const renderReposicionCharts = async () => {
         reposicionCharts.push(chart);
         chart.render();
     });
+
+    const articulosElement = document.querySelector('[data-reposicion-chart="articulos"]');
+
+    if (articulosElement && data.articulos) {
+        const labels = data.articulos.labels || [];
+        const cantidad = data.articulos.cantidad || [];
+        const reposicion = data.articulos.reposicion || [];
+        const height = Math.max(360, labels.length * 30);
+        const baseBar = baseDashboardChart('bar', height);
+
+        articulosElement.innerHTML = '';
+        const chart = new apexChartsConstructor(articulosElement, {
+            ...baseBar,
+            series: [
+                {
+                    name: 'Cantidad sugerida',
+                    data: cantidad,
+                },
+                {
+                    name: 'Reposición esperada',
+                    data: reposicion,
+                },
+            ],
+            colors: ['#2563eb', '#16a34a'],
+            chart: {
+                ...baseBar.chart,
+                toolbar: { show: false },
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 4,
+                    barHeight: '58%',
+                },
+            },
+            dataLabels: {
+                enabled: true,
+                style: {
+                    colors: [theme.strong],
+                    fontSize: '11px',
+                    fontWeight: 700,
+                },
+                formatter: (value) => {
+                    const numeric = Number(value);
+                    return numeric.toFixed(numeric % 1 === 0 ? 0 : 2);
+                },
+                offsetX: 8,
+            },
+            xaxis: {
+                categories: labels,
+                labels: {
+                    style: { colors: theme.foreground },
+                    formatter: (value) => Number(value).toFixed(0),
+                },
+            },
+            yaxis: {
+                labels: {
+                    style: { colors: labels.map(() => theme.foreground) },
+                    maxWidth: 260,
+                },
+            },
+            legend: {
+                show: true,
+                position: 'top',
+                horizontalAlign: 'left',
+                labels: { colors: theme.foreground },
+            },
+            grid: {
+                borderColor: theme.grid,
+                strokeDashArray: 3,
+            },
+            tooltip: {
+                ...baseBar.tooltip,
+                y: {
+                    formatter: (value, context) => {
+                        const name = context.seriesIndex === 0 ? 'unidades' : 'esperadas';
+                        return `${Number(value).toFixed(context.seriesIndex === 0 ? 0 : 2)} ${name}`;
+                    },
+                },
+            },
+        });
+
+        reposicionCharts.push(chart);
+        chart.render();
+    }
 };
 
 const scheduleReposicionChartsUpdate = () => {

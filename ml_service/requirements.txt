@@ -2,9 +2,8 @@ fastapi==0.118.0
 uvicorn[standard]==0.37.0
 pandas==2.3.3
 scikit-learn==1.7.2
+joblib==1.5.2
 psycopg2-binary==2.9.10
 SQLAlchemy==2.0.43
-joblib==1.5.2
 python-dotenv==1.1.1
-shap==0.52.0
 matplotlib==3.11.0

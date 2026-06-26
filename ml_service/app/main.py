@@ -147,9 +147,9 @@ class ReplacementResponse(BaseModel):
 
 
 app = FastAPI(
-    title="Armutop ML Service",
+    title="Armutop Fuzzy Logic Service",
     version="1.0.0",
-    description="API de entrenamiento y prediccion para armamento.",
+    description="API de calibracion y prediccion difusa para armamento.",
 )
 
 
@@ -194,7 +194,7 @@ def predictions_armamento(
             for item in list_armamento_predictions(limit=limit, unidad_id=unidad_id)
         ]
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+        raise HTTPException(status_code=404, detail="No existe una configuracion difusa calibrada.") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -214,7 +214,7 @@ def predictions_armamento_summary(
             )
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+        raise HTTPException(status_code=404, detail="No existe una configuracion difusa calibrada.") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -228,7 +228,7 @@ def recommendations_replacement(
             **replacement_recommendations(unidad_id=unidad_id)
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+        raise HTTPException(status_code=404, detail="No existe una configuracion difusa calibrada.") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -249,7 +249,7 @@ def explainability_armamento_global(
             )
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+        raise HTTPException(status_code=404, detail="No existe una configuracion difusa calibrada.") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -268,7 +268,7 @@ def explainability_armamento_individual(
     except RuntimeError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+        raise HTTPException(status_code=404, detail="No existe una configuracion difusa calibrada.") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -282,7 +282,7 @@ def predict_armamento_persist() -> PersistResponse:
             total=len(predictions),
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+        raise HTTPException(status_code=404, detail="No existe una configuracion difusa calibrada.") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

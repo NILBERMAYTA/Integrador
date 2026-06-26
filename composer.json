@@ -62,7 +62,7 @@
         ],
         "dev:ml": [
             "Composer\\Config::disableProcessTimeout",
-            "bash -c \"cd ml_service; if [ ! -d .venv ]; then python -m venv .venv; fi; source .venv/bin/activate && python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8002\""
+            "bash -c \"cd fuzzy_logic; if [ ! -d .venv ]; then python -m venv .venv; fi; source .venv/bin/activate && pip install -r requirements.txt -r ../ml_service/requirements.txt && cd ../ml_service && python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8002\""
         ],
         "dev:ml-deteccion": [
             "Composer\\Config::disableProcessTimeout",

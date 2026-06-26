@@ -76,7 +76,7 @@ class Index extends Component
             $this->trainingSummary = $prediccionApi->entrenarArmamento();
             $this->cargarDatos();
             $this->cargarExplicabilidadGlobal();
-            session()->flash('success', 'Modelo de armamento entrenado correctamente.');
+            session()->flash('success', 'Motor difuso de armamento calibrado correctamente.');
         } catch (\Throwable $exception) {
             $this->error = $exception->getMessage();
             session()->flash('error', $this->error);
