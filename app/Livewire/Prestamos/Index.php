@@ -5,7 +5,7 @@ namespace App\Livewire\Prestamos;
 use App\Models\Evento;
 use App\Models\Operacion;
 use App\Models\Unidad;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -26,9 +26,8 @@ class Index extends Component
 
     public function render()
     {
-        $unidadId = $this->unidadId !== '' ? $this->unidadId : null;
-
-        $baseQuery = Operacion::query()
+        $baseQuery = $this->baseQuery();
+        $filteredQuery = (clone $baseQuery)
             ->with([
                 'policia',
                 'evento',
@@ -37,42 +36,17 @@ class Index extends Component
                 'detalles.series.serie',
                 'devoluciones.detalles',
             ])
-            ->where('tipo', 'asignacion')
-            ->when(! auth()->user()?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId))
-            ->when(auth()->user()?->isPolicia(), function ($query) {
-                $query->where('usuario_destino_id', auth()->id());
-            })
-            ->when($this->search, function ($query) {
-                $query->whereHas('policia', fn ($u) => $u->where('name', 'like', "%{$this->search}%"));
-            })
-            ->when($this->eventoId, fn ($q) => $q->where('evento_id', $this->eventoId))
+            ->when($this->estado === 'pendiente', fn (Builder $query) => $this->wherePrestamoPendiente($query))
+            ->when($this->estado === 'concluido', fn (Builder $query) => $this->wherePrestamoConcluido($query))
             ->latest();
 
-        $collection = $baseQuery->get();
-
-        $filtered = $collection->filter(function ($op) {
-            $estado = $this->estadoPrestamo($op);
-            if ($this->estado) {
-                return $estado === $this->estado;
-            }
-            return true;
-        })->values();
-
-        $page = $this->page ?? 1;
-        $items = $filtered->forPage($page, $this->perPage);
-        $operaciones = new LengthAwarePaginator(
-            $items,
-            $filtered->count(),
-            $this->perPage,
-            $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+        $operaciones = $filteredQuery->paginate($this->perPage);
 
         $eventos = Evento::orderBy('id', 'desc')->get();
         $unidades = Unidad::orderBy('nombre')->get(['id', 'nombre', 'sigla']);
 
-        $totalPrestamos = $collection->count();
-        $pendientes = $collection->filter(fn ($op) => $this->estadoPrestamo($op) === 'pendiente')->count();
+        $totalPrestamos = (clone $baseQuery)->count();
+        $pendientes = $this->wherePrestamoPendiente(clone $baseQuery)->count();
         $stats = [
             'total' => $totalPrestamos,
             'pendientes' => $pendientes,
@@ -81,6 +55,72 @@ class Index extends Component
         ];
 
         return view('livewire.prestamos.index', compact('operaciones', 'eventos', 'unidades', 'stats'));
+    }
+
+    private function baseQuery(): Builder
+    {
+        $unidadId = $this->unidadId !== '' ? $this->unidadId : null;
+
+        return Operacion::query()
+            ->where('tipo', 'asignacion')
+            ->when(! auth()->user()?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId))
+            ->when(auth()->user()?->isPolicia(), function ($query) {
+                $query->where('usuario_destino_id', auth()->id());
+            })
+            ->when($this->search, function ($query) {
+                $query->whereHas('policia', fn ($u) => $u->where('name', 'like', "%{$this->search}%"));
+            })
+            ->when($this->eventoId, fn ($q) => $q->where('evento_id', $this->eventoId));
+    }
+
+    private function wherePrestamoPendiente(Builder $query): Builder
+    {
+        return $query->whereExists(fn ($subquery) => $this->prestamoPendienteSubquery($subquery));
+    }
+
+    private function wherePrestamoConcluido(Builder $query): Builder
+    {
+        return $query->whereNotExists(fn ($subquery) => $this->prestamoPendienteSubquery($subquery));
+    }
+
+    private function prestamoPendienteSubquery($subquery): void
+    {
+        $subquery
+            ->selectRaw('1')
+            ->from('operacion_detalles as od')
+            ->join('articulos as a', 'a.id', '=', 'od.articulo_id')
+            ->whereColumn('od.operacion_id', 'operaciones.id')
+            ->whereNull('od.deleted_at')
+            ->where(function ($pending) {
+                $pending
+                    ->where(function ($serializados) {
+                        $serializados
+                            ->whereRaw("a.tipo::text = 'reutilizable'")
+                            ->whereExists(function ($series) {
+                                $series
+                                    ->selectRaw('1')
+                                    ->from('operacion_detalle_series as ods')
+                                    ->join('articulo_series as s', 's.id', '=', 'ods.serie_id')
+                                    ->whereColumn('ods.operacion_detalle_id', 'od.id')
+                                    ->whereColumn('s.operacion_detalle_id_actual', 'od.id')
+                                    ->whereNull('ods.deleted_at')
+                                    ->whereNull('s.deleted_at');
+                            });
+                    })
+                    ->orWhere(function ($cantidad) {
+                        $cantidad
+                            ->whereRaw("a.tipo::text = 'consumible'")
+                            ->whereRaw('od.cantidad > COALESCE((
+                                SELECT SUM(odd.cantidad)
+                                FROM operaciones dev
+                                JOIN operacion_detalles odd ON odd.operacion_id = dev.id
+                                WHERE dev.operacion_padre_id = operaciones.id
+                                    AND dev.deleted_at IS NULL
+                                    AND odd.deleted_at IS NULL
+                                    AND odd.articulo_id = od.articulo_id
+                            ), 0)');
+                    });
+            });
     }
 
     public function updatingSearch() { $this->resetPage(); }

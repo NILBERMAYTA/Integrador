@@ -17,11 +17,12 @@ import pandas as pd
 import shap
 
 from app.data import build_prediction_frame, load_armamento_dataset
-from app.ml import classify_risk, load_model_bundle, recommend_action
+from app.ml import load_model_bundle, predict_armamento_dataframe
 
 
 FEATURE_LABELS = {
     "categoria_id": "Categoría",
+    "articulo_id": "Artículo",
     "tipo_articulo": "Tipo de artículo",
     "seguimiento": "Tipo de seguimiento",
     "operaciones_total": "Operaciones históricas",
@@ -58,7 +59,7 @@ def _sample_dataset(df: pd.DataFrame, sample_size: int) -> pd.DataFrame:
         return df.copy()
 
     groups: list[pd.DataFrame] = []
-    for _, group in df.groupby("resultado", dropna=False):
+    for _, group in df.groupby("condicion_actual", dropna=False):
         group_size = max(1, round(sample_size * len(group) / len(df)))
         groups.append(group.sample(n=min(group_size, len(group)), random_state=42))
 
@@ -78,14 +79,15 @@ def _sample_dataset(df: pd.DataFrame, sample_size: int) -> pd.DataFrame:
 
 def _components() -> tuple[Any, Any, Any]:
     bundle = load_model_bundle()
-    pipeline = bundle["model"]
+    pipeline = bundle["current_model"]
     preprocessor = pipeline.named_steps["preprocessor"]
     classifier = pipeline.named_steps["classifier"]
     return bundle, preprocessor, classifier
 
 
-def _positive_explanation(
+def _class_explanation(
     frame: pd.DataFrame,
+    class_index: int,
 ) -> tuple[shap.Explanation, np.ndarray, list[str]]:
     _, preprocessor, classifier = _components()
     transformed = preprocessor.transform(frame)
@@ -100,17 +102,17 @@ def _positive_explanation(
     base_values = np.asarray(explanation.base_values)
 
     if values.ndim == 3:
-        values = values[:, :, 1]
+        values = values[:, :, class_index]
     if base_values.ndim == 2:
-        base_values = base_values[:, 1]
+        base_values = base_values[:, class_index]
 
-    positive = shap.Explanation(
+    selected = shap.Explanation(
         values=values,
         base_values=base_values,
         data=transformed,
         feature_names=[_encoded_label(name) for name in feature_names],
     )
-    return positive, transformed, feature_names
+    return selected, transformed, feature_names
 
 
 def _original_feature(encoded_name: str) -> str:
@@ -119,6 +121,7 @@ def _original_feature(encoded_name: str) -> str:
 
     encoded_name = encoded_name.removeprefix("categorical__")
     for feature in (
+        "articulo_id",
         "categoria_id",
         "tipo_articulo",
         "seguimiento",
@@ -176,7 +179,7 @@ def _beeswarm_image(explanation: shap.Explanation) -> str:
     plt.figure(figsize=(10, 6.5))
     shap.plots.beeswarm(explanation, max_display=12, show=False, plot_size=None)
     plt.title("Impacto SHAP global de las variables", fontsize=14, pad=14)
-    plt.xlabel("Impacto sobre la probabilidad de inoperatividad")
+    plt.xlabel("Impacto sobre la probabilidad de condición inoperativa")
     return _figure_data_uri()
 
 
@@ -216,7 +219,13 @@ def _global_explanation_cached(
 
     sampled = _sample_dataset(df, sample_size)
     frame = build_prediction_frame(sampled)
-    explanation, _, encoded_names = _positive_explanation(frame)
+    bundle, _, classifier = _components()
+    classes = [str(value) for value in classifier.classes_]
+    explained_class = "inoperativo" if "inoperativo" in classes else classes[-1]
+    explanation, _, encoded_names = _class_explanation(
+        frame,
+        classes.index(explained_class),
+    )
     encoded_values = np.asarray(explanation.values)
     names, grouped_values = _aggregate_values(encoded_values, encoded_names)
 
@@ -258,6 +267,7 @@ def _global_explanation_cached(
             names[order[0]],
             names[order[0]].replace("_", " ").title(),
         ),
+        "explained_class": explained_class,
     }
 
 
@@ -279,14 +289,16 @@ def individual_armamento_explanation(serie_id: int) -> dict[str, Any]:
 
     row = df.iloc[[0]]
     frame = build_prediction_frame(row)
-    explanation, _, encoded_names = _positive_explanation(frame)
+    prediction = predict_armamento_dataframe(row)[0]
+    predicted_state = str(prediction["condicion_actual_predicha"])
+    bundle, _, classifier = _components()
+    classes = [str(value) for value in classifier.classes_]
+    class_index = classes.index(predicted_state)
+    explanation, _, encoded_names = _class_explanation(frame, class_index)
     encoded_values = np.asarray(explanation.values)
     names, grouped_values = _aggregate_values(encoded_values, encoded_names)
     values = grouped_values[0]
-    bundle = load_model_bundle()
-    threshold = float(bundle.get("decision_threshold", 0.5))
-    probability = float(bundle["model"].predict_proba(frame)[0, 1])
-    predicted_state = "inoperativo" if probability >= threshold else "operativo"
+    probability = float(prediction["confianza_actual"])
 
     contributions = sorted(
         [
@@ -316,8 +328,10 @@ def individual_armamento_explanation(serie_id: int) -> dict[str, Any]:
         "unidad_nombre": str(row.iloc[0]["unidad_nombre"]),
         "probability": round(probability, 6),
         "predicted_state": predicted_state,
-        "risk_level": classify_risk(probability, threshold),
-        "recommendation": recommend_action(probability, predicted_state, threshold),
+        "future_condition": prediction["condicion_futura_predicha"],
+        "future_confidence": prediction["confianza_futura"],
+        "risk_level": prediction["nivel_riesgo"],
+        "recommendation": prediction["recomendacion"],
         "base_value": round(float(explanation.base_values[0]), 6),
         "contributions": contributions,
         "waterfall_image": waterfall_image,

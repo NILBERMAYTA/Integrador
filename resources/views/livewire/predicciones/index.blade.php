@@ -3,17 +3,20 @@
         $alto = (int) ($stats['alto'] ?? 0);
         $medio = (int) ($stats['medio'] ?? 0);
         $bajo = (int) ($stats['bajo'] ?? 0);
-        $inoperativoCount = (int) ($stats['inoperativo'] ?? 0);
-        $operativoCount = (int) ($stats['operativo'] ?? 0);
+        $actual = (array) ($stats['actual'] ?? []);
+        $futura = (array) ($stats['futura'] ?? []);
+        $cobertura = (array) ($stats['cobertura'] ?? []);
+        $condiciones = ['bueno', 'con_defectos', 'malo', 'inoperativo', 'indeterminada'];
+        $conditionLabels = ['Bueno', 'Con defectos', 'Malo', 'Inoperativo', 'Sin historial'];
 
         $predictionChartData = [
             'risk' => [
-                'labels' => ['Alto', 'Medio', 'Bajo'],
-                'series' => [$alto, $medio, $bajo],
+                'labels' => $conditionLabels,
+                'series' => collect($condiciones)->map(fn ($condition) => (int) ($futura[$condition] ?? 0))->all(),
             ],
             'status' => [
-                'labels' => ['Operativo', 'Inoperativo'],
-                'series' => [$operativoCount, $inoperativoCount],
+                'labels' => $conditionLabels,
+                'series' => collect($condiciones)->map(fn ($condition) => (int) ($actual[$condition] ?? 0))->all(),
             ],
         ];
     @endphp
@@ -72,29 +75,15 @@
                 <div data-prediction-chart="risk" class="min-h-[220px] w-full shrink-0 sm:w-[250px]" wire:ignore></div>
 
                 <div class="flex-1">
-                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Distribución de riesgo</h2>
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Condición futura predicha</h2>
+                    <p class="mt-1 text-sm opacity-70">Horizonte estimado: {{ $stats['horizonte_dias'] ?? 0 }} días.</p>
                     <div class="mt-4 space-y-3 text-sm">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="h-3 w-3 rounded-full bg-rose-500"></span>
-                                <span>Alto</span>
+                        @foreach($condiciones as $index => $condition)
+                            <div class="flex items-center justify-between gap-4">
+                                <span>{{ $conditionLabels[$index] }}</span>
+                                <span class="font-semibold">{{ (int) ($futura[$condition] ?? 0) }}</span>
                             </div>
-                            <span class="font-semibold">{{ $alto }}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="h-3 w-3 rounded-full bg-amber-500"></span>
-                                <span>Medio</span>
-                            </div>
-                            <span class="font-semibold">{{ $medio }}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
-                                <span>Bajo</span>
-                            </div>
-                            <span class="font-semibold">{{ $bajo }}</span>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -105,22 +94,14 @@
                 <div data-prediction-chart="status" class="min-h-[220px] w-full shrink-0 sm:w-[250px]" wire:ignore></div>
 
                 <div class="flex-1">
-                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Estado predicho</h2>
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Condición actual predicha</h2>
                     <div class="mt-4 space-y-3 text-sm">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
-                                <span>Operativo</span>
+                        @foreach($condiciones as $index => $condition)
+                            <div class="flex items-center justify-between gap-4">
+                                <span>{{ $conditionLabels[$index] }}</span>
+                                <span class="font-semibold">{{ (int) ($actual[$condition] ?? 0) }}</span>
                             </div>
-                            <span class="font-semibold">{{ $operativoCount }}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="h-3 w-3 rounded-full bg-rose-500"></span>
-                                <span>Inoperativo</span>
-                            </div>
-                            <span class="font-semibold">{{ $inoperativoCount }}</span>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -147,7 +128,7 @@
         </div>
 
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-5 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
-            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Riesgo alto</p>
+            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Riesgo futuro alto</p>
             <p class="mt-3 text-3xl font-bold text-rose-600">{{ $stats['alto'] }}</p>
             <p class="mt-2 text-sm text-[var(--color-on-surface)] opacity-75 dark:text-[var(--color-on-surface-dark)]">
                 Articulos con atencion inmediata recomendada.
@@ -155,12 +136,19 @@
         </div>
 
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-5 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
-            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Riesgo medio/bajo</p>
-            <p class="mt-3 text-3xl font-bold text-amber-600">{{ $stats['medio'] + $stats['bajo'] }}</p>
+            <p class="text-xs uppercase tracking-[0.18em] text-[var(--color-on-surface)] opacity-60 dark:text-[var(--color-on-surface-dark)]">Con historial</p>
+            <p class="mt-3 text-3xl font-bold text-warning">{{ (int) ($cobertura['alta'] ?? 0) + (int) ($cobertura['parcial'] ?? 0) }}</p>
             <p class="mt-2 text-sm text-[var(--color-on-surface)] opacity-75 dark:text-[var(--color-on-surface-dark)]">
-                Seguimiento preventivo o monitoreo rutinario.
+                {{ (int) ($cobertura['sin_historial'] ?? 0) }} series sin eventos históricos.
             </p>
         </div>
+    </div>
+
+    <div role="alert" class="alert alert-warning alert-soft">
+        <span>
+            Ambas condiciones son salidas del modelo. La predicción futura dispone actualmente de 348 transiciones históricas;
+            las series sin historial son extrapolaciones y deben confirmarse mediante inspecciones.
+        </span>
     </div>
 
     <section class="space-y-5">
@@ -206,7 +194,7 @@
                     <div class="card-body">
                         <h3 class="card-title">Importancia global de variables</h3>
                         <p class="text-sm opacity-70">
-                            Promedio del impacto absoluto de cada variable sobre la probabilidad de inoperatividad.
+                            Impacto medio sobre la clase {{ str_replace('_', ' ', $shapGlobal['explained_class'] ?? 'inoperativo') }} del modelo actual.
                         </p>
                         <div data-shap-chart="importance" class="mt-3 min-h-[360px]" wire:ignore></div>
                     </div>
@@ -216,7 +204,7 @@
                     <div class="card-body">
                         <h3 class="card-title">Impacto positivo y negativo</h3>
                         <p class="text-sm opacity-70">
-                            Rojo aumenta el riesgo predicho; azul reduce la probabilidad de inoperatividad.
+                            Rojo aumenta y azul reduce la probabilidad de la clase explicada.
                         </p>
                         <div data-shap-chart="direction" class="mt-3 min-h-[360px]" wire:ignore></div>
                     </div>
@@ -229,7 +217,7 @@
                             <span class="badge badge-info badge-soft">Resumen profesional</span>
                         </div>
                         <p class="text-sm opacity-70">
-                            Cada punto representa una serie. La posición indica cuánto empuja la variable hacia mayor o menor riesgo.
+                            Cada punto representa una serie y cuánto empuja una variable hacia la condición explicada.
                         </p>
                         @if($shapGlobal['beeswarm_url'] ?? null)
                             <img
@@ -303,8 +291,9 @@
                         <tr>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Serie</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Unidad</th>
-                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Predicción</th>
-                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Probabilidad</th>
+                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Ahora</th>
+                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Futuro</th>
+                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Cobertura</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Explicación</th>
                         </tr>
                     </thead>
@@ -312,10 +301,13 @@
                         @forelse ($predicciones as $prediccion)
                             @php
                                 $riesgo = $prediccion['nivel_riesgo'] ?? 'bajo';
-                                $riesgoClasses = match ($riesgo) {
-                                    'alto' => 'bg-rose-100 text-rose-700',
-                                    'medio' => 'bg-amber-100 text-amber-700',
-                                    default => 'bg-emerald-100 text-emerald-700',
+                                $actualPredicha = $prediccion['condicion_actual_predicha'] ?? '--';
+                                $futuraPredicha = $prediccion['condicion_futura_predicha'] ?? '--';
+                                $riskBadge = match ($riesgo) {
+                                    'alto' => 'badge-error',
+                                    'medio' => 'badge-warning',
+                                    'sin_datos' => 'badge-neutral',
+                                    default => 'badge-success',
                                 };
                             @endphp
                             <tr class="align-top hover:bg-[var(--color-surface-alt)] dark:hover:bg-[var(--color-surface-dark-alt)]">
@@ -331,17 +323,25 @@
                                     {{ $prediccion['unidad_nombre'] ?? ($nombresUnidades[$prediccion['unidad_id'] ?? 0] ?? 'Sin unidad') }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-2">
-                                    <span class="badge badge-sm {{ ($prediccion['estado_predicho'] ?? '') === 'inoperativo' ? 'badge-error' : 'badge-success' }}">
-                                        {{ ucfirst($prediccion['estado_predicho'] ?? '--') }}
+                                    <span class="badge badge-sm badge-soft">
+                                        {{ ucfirst(str_replace('_', ' ', $actualPredicha)) }}
                                     </span>
-                                    <span class="badge badge-sm badge-soft {{ $riesgo === 'alto' ? 'badge-error' : ($riesgo === 'medio' ? 'badge-warning' : 'badge-success') }}">
-                                        {{ ucfirst($riesgo) }}
-                                    </span>
-                                    </div>
+                                    <p class="mt-1 text-xs opacity-70">
+                                        {{ number_format(((float) ($prediccion['confianza_actual'] ?? 0)) * 100, 1) }}%
+                                    </p>
                                 </td>
-                                <td class="px-6 py-4 text-sm font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
-                                    {{ isset($prediccion['probabilidad']) ? number_format((float) $prediccion['probabilidad'] * 100, 2) . '%' : '--' }}
+                                <td class="px-6 py-4">
+                                    <span class="badge badge-sm badge-soft {{ $riskBadge }}">
+                                        {{ ucfirst(str_replace('_', ' ', $futuraPredicha)) }}
+                                    </span>
+                                    <p class="mt-1 text-xs opacity-70">
+                                        {{ number_format(((float) ($prediccion['confianza_futura'] ?? 0)) * 100, 1) }}% · riesgo {{ $riesgo }}
+                                    </p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="badge badge-sm {{ ($prediccion['cobertura_historica'] ?? '') === 'sin_historial' ? 'badge-warning' : 'badge-info' }}">
+                                        {{ ucfirst(str_replace('_', ' ', $prediccion['cobertura_historica'] ?? '--')) }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4">
                                     <button
@@ -355,7 +355,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="6" class="px-6 py-12 text-center">
                                     <p class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                                         No hay predicciones disponibles.
                                     </p>
@@ -419,27 +419,31 @@
                 <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Ultimo entrenamiento</h2>
 
                 @if ($trainingSummary)
+                    @php
+                        $currentMetrics = (array) ($trainingSummary['current_metrics'] ?? []);
+                        $futureMetrics = (array) ($trainingSummary['future_metrics'] ?? []);
+                    @endphp
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Accuracy</p>
-                            <p class="mt-2 text-2xl font-bold">{{ number_format(((float) ($trainingSummary['accuracy'] ?? 0)) * 100, 2) }}%</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">F1 actual</p>
+                            <p class="mt-2 text-2xl font-bold">{{ number_format(((float) ($currentMetrics['f1_macro'] ?? 0)) * 100, 2) }}%</p>
                         </div>
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">F1</p>
-                            <p class="mt-2 text-2xl font-bold">{{ number_format(((float) ($trainingSummary['f1'] ?? 0)) * 100, 2) }}%</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Balanced actual</p>
+                            <p class="mt-2 text-2xl font-bold">{{ number_format(((float) ($currentMetrics['balanced_accuracy'] ?? 0)) * 100, 2) }}%</p>
                         </div>
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Precision</p>
-                            <p class="mt-2 text-xl font-bold">{{ number_format(((float) ($trainingSummary['precision'] ?? 0)) * 100, 2) }}%</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">F1 futuro</p>
+                            <p class="mt-2 text-xl font-bold">{{ number_format(((float) ($futureMetrics['f1_macro'] ?? 0)) * 100, 2) }}%</p>
                         </div>
                         <div class="rounded-xl bg-[var(--color-surface-alt)] p-4 dark:bg-[var(--color-surface-dark-alt)]">
-                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Recall</p>
-                            <p class="mt-2 text-xl font-bold">{{ number_format(((float) ($trainingSummary['recall'] ?? 0)) * 100, 2) }}%</p>
+                            <p class="text-xs uppercase tracking-[0.16em] opacity-60">Historial futuro</p>
+                            <p class="mt-2 text-xl font-bold">{{ $trainingSummary['total_historial_futuro'] ?? 0 }}</p>
                         </div>
                     </div>
 
                     <p class="mt-4 text-sm text-[var(--color-on-surface)] opacity-75 dark:text-[var(--color-on-surface-dark)]">
-                        Registros usados: {{ $trainingSummary['total_registros'] ?? '--' }}. Version del modelo: {{ $trainingSummary['model_version'] ?? '--' }}.
+                        Series actuales: {{ $trainingSummary['total_registros'] ?? '--' }} · horizonte: {{ $trainingSummary['horizon_days'] ?? '--' }} días · versión {{ $trainingSummary['model_version'] ?? '--' }}.
                     </p>
                 @else
                     <p class="mt-4 text-sm text-[var(--color-on-surface)] opacity-70 dark:text-[var(--color-on-surface-dark)]">
@@ -473,8 +477,10 @@
                         </div>
                         <p class="mt-2 text-sm opacity-70">
                             {{ $shapIndividual['unidad_nombre'] ?? 'Sin unidad' }} ·
-                            Probabilidad de inoperatividad:
+                            Condición actual: <strong>{{ ucfirst(str_replace('_', ' ', $shapIndividual['predicted_state'] ?? '—')) }}</strong>,
+                            confianza
                             <strong>{{ number_format(((float) ($shapIndividual['probability'] ?? 0)) * 100, 2) }}%</strong>
+                            · futura: <strong>{{ ucfirst(str_replace('_', ' ', $shapIndividual['future_condition'] ?? '—')) }}</strong>
                         </p>
                     </div>
                     <button type="button" class="btn btn-sm btn-ghost" wire:click="cerrarExplicacionIndividual">

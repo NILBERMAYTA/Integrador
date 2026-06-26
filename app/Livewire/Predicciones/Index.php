@@ -29,8 +29,10 @@ class Index extends Component
         'alto' => 0,
         'medio' => 0,
         'bajo' => 0,
-        'inoperativo' => 0,
-        'operativo' => 0,
+        'actual' => [],
+        'futura' => [],
+        'cobertura' => [],
+        'horizonte_dias' => 0,
     ];
 
     public ?array $health = null;
@@ -50,6 +52,7 @@ class Index extends Component
         abort_unless(auth()->user()?->can('predicciones.view'), 403);
 
         if (! auth()->user()->isAdministradorGeneral()) {
+            abort_unless(auth()->user()->unidad_id, 403);
             $this->unidad = (string) auth()->user()->unidad_id;
         }
 
@@ -212,6 +215,14 @@ class Index extends Component
         try {
             $prediccionApi = app(PrediccionApiService::class);
             $this->health = $prediccionApi->health();
+            $this->trainingSummary ??= [
+                'current_metrics' => $this->health['current_metrics'] ?? [],
+                'future_metrics' => $this->health['future_metrics'] ?? [],
+                'total_historial_futuro' => $this->health['total_historial_futuro'] ?? 0,
+                'horizon_days' => $this->health['horizon_days'] ?? 0,
+                'model_version' => $this->health['model_version'] ?? null,
+                'total_registros' => data_get($this->health, 'current_metrics.total_registros', 0),
+            ];
             $summary = $prediccionApi->resumenPrediccionesArmamento(
                 $this->unidad !== '' ? (int) $this->unidad : null,
                 $this->pagina,
@@ -225,8 +236,10 @@ class Index extends Component
                 'alto' => (int) data_get($summary, 'riesgo.alto', 0),
                 'medio' => (int) data_get($summary, 'riesgo.medio', 0),
                 'bajo' => (int) data_get($summary, 'riesgo.bajo', 0),
-                'inoperativo' => (int) data_get($summary, 'estado.inoperativo', 0),
-                'operativo' => (int) data_get($summary, 'estado.operativo', 0),
+                'actual' => (array) ($summary['condicion_actual'] ?? []),
+                'futura' => (array) ($summary['condicion_futura'] ?? []),
+                'cobertura' => (array) ($summary['cobertura'] ?? []),
+                'horizonte_dias' => (int) ($summary['horizonte_dias'] ?? 0),
             ];
         } catch (\Throwable $exception) {
             $this->health = null;
@@ -236,8 +249,10 @@ class Index extends Component
                 'alto' => 0,
                 'medio' => 0,
                 'bajo' => 0,
-                'inoperativo' => 0,
-                'operativo' => 0,
+                'actual' => [],
+                'futura' => [],
+                'cobertura' => [],
+                'horizonte_dias' => 0,
             ];
             $this->error = $exception->getMessage();
             session()->flash('error', $this->error);

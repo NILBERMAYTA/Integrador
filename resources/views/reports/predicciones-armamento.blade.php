@@ -45,8 +45,10 @@
             ?: trim((data_get($generatedBy, 'name', '').' '.data_get($generatedBy, 'apellido_paterno', '')))
             ?: data_get($generatedBy, 'email', 'Sistema');
         $totalSeries = max(1, (int) ($stats['total'] ?? 0));
-        $operativas = (int) ($stats['operativo'] ?? 0);
-        $inoperativas = (int) ($stats['inoperativo'] ?? 0);
+        $actualStats = (array) ($stats['actual'] ?? []);
+        $futuraStats = (array) ($stats['futura'] ?? []);
+        $operativas = (int) ($futuraStats['bueno'] ?? 0);
+        $inoperativas = (int) ($futuraStats['inoperativo'] ?? 0);
         $alto = (int) ($stats['alto'] ?? 0);
         $medio = (int) ($stats['medio'] ?? 0);
         $bajo = (int) ($stats['bajo'] ?? 0);
@@ -90,15 +92,15 @@
             </td>
             <td>
                 <div class="card">
-                    <div class="label">Operativas</div>
-                    <div class="value" style="color:#166534;">{{ $stats['operativo'] ?? 0 }}</div>
+                    <div class="label">Futuras buenas</div>
+                    <div class="value" style="color:#166534;">{{ $futuraStats['bueno'] ?? 0 }}</div>
                     <div class="hint">Predichas como operativas por el modelo.</div>
                 </div>
             </td>
             <td>
                 <div class="card">
-                    <div class="label">Inoperativas</div>
-                    <div class="value" style="color:#be123c;">{{ $stats['inoperativo'] ?? 0 }}</div>
+                    <div class="label">Futuras inoperativas</div>
+                    <div class="value" style="color:#be123c;">{{ $futuraStats['inoperativo'] ?? 0 }}</div>
                     <div class="hint">Predichas como inoperativas por el modelo.</div>
                 </div>
             </td>
@@ -124,12 +126,12 @@
                             <td style="text-align:right;">{{ $stats['bajo'] ?? 0 }}</td>
                         </tr>
                         <tr>
-                            <td>Prediccion operativa</td>
-                            <td style="text-align:right;">{{ $stats['operativo'] ?? 0 }}</td>
+                            <td>Futuras con defectos</td>
+                            <td style="text-align:right;">{{ $futuraStats['con_defectos'] ?? 0 }}</td>
                         </tr>
                         <tr>
-                            <td>Prediccion inoperativa</td>
-                            <td style="text-align:right;">{{ $stats['inoperativo'] ?? 0 }}</td>
+                            <td>Futuras inoperativas</td>
+                            <td style="text-align:right;">{{ $futuraStats['inoperativo'] ?? 0 }}</td>
                         </tr>
                     </table>
                 </div>
@@ -168,37 +170,41 @@
     </table>
 
     @if($trainingSummary)
+        @php
+            $currentMetrics = (array) ($trainingSummary['current_metrics'] ?? []);
+            $futureMetrics = (array) ($trainingSummary['future_metrics'] ?? []);
+        @endphp
         <div class="section">
             <h2>Ultimo entrenamiento registrado</h2>
             <table class="grid-4">
                 <tr>
                     <td>
                         <div class="card">
-                            <div class="label">Accuracy</div>
-                            <div class="value">{{ number_format(((float) ($trainingSummary['accuracy'] ?? 0)) * 100, 2) }}%</div>
+                            <div class="label">F1 actual</div>
+                            <div class="value">{{ number_format(((float) ($currentMetrics['f1_macro'] ?? 0)) * 100, 2) }}%</div>
                         </div>
                     </td>
                     <td>
                         <div class="card">
-                            <div class="label">F1</div>
-                            <div class="value">{{ number_format(((float) ($trainingSummary['f1'] ?? 0)) * 100, 2) }}%</div>
+                            <div class="label">Balanced actual</div>
+                            <div class="value">{{ number_format(((float) ($currentMetrics['balanced_accuracy'] ?? 0)) * 100, 2) }}%</div>
                         </div>
                     </td>
                     <td>
                         <div class="card">
-                            <div class="label">Precision</div>
-                            <div class="value">{{ number_format(((float) ($trainingSummary['precision'] ?? 0)) * 100, 2) }}%</div>
+                            <div class="label">F1 futuro</div>
+                            <div class="value">{{ number_format(((float) ($futureMetrics['f1_macro'] ?? 0)) * 100, 2) }}%</div>
                         </div>
                     </td>
                     <td>
                         <div class="card">
-                            <div class="label">Recall</div>
-                            <div class="value">{{ number_format(((float) ($trainingSummary['recall'] ?? 0)) * 100, 2) }}%</div>
+                            <div class="label">Historial futuro</div>
+                            <div class="value">{{ $trainingSummary['total_historial_futuro'] ?? 0 }}</div>
                         </div>
                     </td>
                 </tr>
             </table>
-            <p class="small muted">Registros usados: {{ $trainingSummary['total_registros'] ?? 0 }}. Entrenamiento: {{ $trainingSummary['total_entrenamiento'] ?? 0 }}. Prueba: {{ $trainingSummary['total_prueba'] ?? 0 }}. ROC AUC: {{ isset($trainingSummary['roc_auc']) ? number_format(((float) $trainingSummary['roc_auc']) * 100, 2).'%' : 'No disponible' }}.</p>
+            <p class="small muted">Series actuales: {{ $trainingSummary['total_registros'] ?? 0 }}. Transiciones futuras: {{ $trainingSummary['total_historial_futuro'] ?? 0 }}. Horizonte: {{ $trainingSummary['horizon_days'] ?? 0 }} días.</p>
         </div>
     @endif
 
@@ -210,8 +216,8 @@
                     <th>Serie</th>
                     <th>Articulo</th>
                     <th>Unidad</th>
-                    <th>Estado predicho</th>
-                    <th>Probabilidad</th>
+                    <th>Condición actual predicha</th>
+                    <th>Condición futura predicha</th>
                     <th>Riesgo</th>
                     <th>Recomendacion</th>
                     <th>Fecha</th>
@@ -220,7 +226,8 @@
             <tbody>
                 @forelse($predicciones as $item)
                     @php
-                        $estado = $item['estado_predicho'] ?? '--';
+                        $estado = $item['condicion_actual_predicha'] ?? '--';
+                        $estadoFuturo = $item['condicion_futura_predicha'] ?? '--';
                         $riesgo = $item['nivel_riesgo'] ?? '--';
                         $estadoClass = $estado === 'inoperativo' ? 'badge-danger' : 'badge-success';
                         $riesgoClass = match ($riesgo) {
@@ -236,8 +243,8 @@
                         </td>
                         <td>{{ $item['articulo_id'] ?? '--' }}</td>
                         <td>{{ $item['unidad_id'] ?? '--' }}</td>
-                        <td><span class="badge {{ $estadoClass }}">{{ ucfirst($estado) }}</span></td>
-                        <td>{{ isset($item['probabilidad']) ? number_format(((float) $item['probabilidad']) * 100, 2).'%' : '--' }}</td>
+                        <td><span class="badge {{ $estadoClass }}">{{ ucfirst(str_replace('_', ' ', $estado)) }}</span></td>
+                        <td>{{ ucfirst(str_replace('_', ' ', $estadoFuturo)) }} ({{ number_format(((float) ($item['confianza_futura'] ?? 0)) * 100, 1) }}%)</td>
                         <td><span class="badge {{ $riesgoClass }}">{{ ucfirst($riesgo) }}</span></td>
                         <td>{{ $item['recomendacion'] ?? '--' }}</td>
                         <td>{{ $item['fecha_prediccion'] ?? '--' }}</td>

@@ -34,6 +34,9 @@
             <h1 class="text-3xl font-bold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                 Reposicion general de armamento
             </h1>
+            <p class="text-sm opacity-70">
+                Solicitud esperada calculada únicamente desde la predicción futura del modelo a {{ $horizonteDias }} días.
+            </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -62,6 +65,34 @@
 
     <x-form.toast_notification :message="session('success')" variant="success" />
     <x-form.toast_notification :message="session('error')" variant="danger" />
+
+    <div class="card card-border bg-base-100">
+        <div class="card-body gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="card-title">Alcance de reposición</h2>
+                <p class="text-sm opacity-70">{{ $unidadSeleccionada }}</p>
+            </div>
+            <label class="block w-full max-w-md">
+                <span class="mb-2 text-xs font-semibold uppercase tracking-wider opacity-60">Unidad</span>
+                <select wire:model.live="unidad" class="select w-full">
+                    @if(auth()->user()->isAdministradorGeneral())
+                        <option value="">Todas las unidades</option>
+                    @endif
+                    @foreach($unidades as $unidadItem)
+                        <option value="{{ $unidadItem->id }}">
+                            {{ trim(($unidadItem->sigla ? $unidadItem->sigla.' - ' : '').$unidadItem->nombre) }}
+                        </option>
+                    @endforeach
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div role="alert" class="alert alert-info alert-soft">
+        <span>
+            La cantidad sugerida es el valor esperado de reposición según probabilidades futuras; no usa directamente el estado almacenado de las series.
+        </span>
+    </div>
 
     <div class="grid gap-6 xl:grid-cols-2">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
@@ -156,19 +187,61 @@
         </div>
     </div>
 
+    @if(auth()->user()->isAdministradorGeneral() && $unidad === '')
+        <div class="card card-border bg-base-100">
+            <div class="card-body">
+                <h2 class="card-title">Reposición esperada por unidad</h2>
+                <p class="text-sm opacity-70">
+                    Las unidades sin historial aparecen como “sin datos”; no se les asigna una cantidad artificial.
+                </p>
+                <div class="mt-3 max-h-[34rem] overflow-auto">
+                    <table class="table table-sm table-pin-rows">
+                        <thead>
+                            <tr>
+                                <th>Unidad</th>
+                                <th>Series</th>
+                                <th>Con historial</th>
+                                <th>Reposición esperada</th>
+                                <th>Cantidad sugerida</th>
+                                <th>Prioridad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($resumenUnidades as $unidadResumen)
+                                <tr>
+                                    <td class="font-semibold">{{ $unidadResumen['unidad_nombre'] ?? 'Sin unidad' }}</td>
+                                    <td>{{ $unidadResumen['total_series'] ?? 0 }}</td>
+                                    <td>{{ number_format((float) ($unidadResumen['cobertura_historica_pct'] ?? 0), 1) }}%</td>
+                                    <td>{{ number_format((float) ($unidadResumen['reposicion_esperada'] ?? 0), 2) }}</td>
+                                    <td>{{ $unidadResumen['cantidad_sugerida'] ?? 0 }}</td>
+                                    <td>
+                                        <span class="badge badge-sm badge-soft {{ ($unidadResumen['urgencia'] ?? '') === 'sin_datos' ? 'badge-neutral' : 'badge-warning' }}">
+                                            {{ ucfirst(str_replace('_', ' ', $unidadResumen['urgencia'] ?? 'sin_datos')) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
         <div class="border-b border-[var(--color-outline)] px-6 py-5 dark:border-[var(--color-outline-dark)]">
-            <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Recomendacion por articulo</h2>
+            <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Recomendación por unidad y artículo</h2>
             <p class="mt-1 text-sm text-[var(--color-on-surface)] opacity-70 dark:text-[var(--color-on-surface-dark)]">
                 Resumen corto para decidir que armamento conviene reponer primero.
             </p>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <table class="table table-sm">
                 <thead class="bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface-dark-alt)]">
                     <tr>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Articulo</th>
+                        <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Unidad</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Estado</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Urgencia</th>
                         <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">Cuando pedir</th>
@@ -183,12 +256,14 @@
                                 'inmediata' => 'bg-rose-100 text-rose-700',
                                 'proxima' => 'bg-amber-100 text-amber-700',
                                 'planificada' => 'bg-sky-100 text-sky-700',
+                                'sin_datos' => 'bg-base-300 text-base-content',
                                 default => 'bg-emerald-100 text-emerald-700',
                             };
                             $cuandoTexto = match ($item['urgencia']) {
                                 'inmediata' => 'Ahora a 30 dias',
                                 'proxima' => '30 a 60 dias',
                                 'planificada' => '60 a 90 dias',
+                                'sin_datos' => 'Pendiente de historial',
                                 default => 'Mas de 90 dias',
                             };
                         @endphp
@@ -201,6 +276,9 @@
                                     {{ $item['categoria'] ?? 'Sin categoria' }}
                                 </p>
                             </td>
+                            <td class="px-6 py-4 text-sm">
+                                {{ $item['unidad_nombre'] ?? 'Sin unidad' }}
+                            </td>
                             <td class="px-6 py-4 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                 <p class="font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                                     @if (($item['urgencia'] ?? '') === 'inmediata')
@@ -209,13 +287,15 @@
                                         Requiere atencion
                                     @elseif (($item['urgencia'] ?? '') === 'planificada')
                                         Seguimiento preventivo
+                                    @elseif (($item['urgencia'] ?? '') === 'sin_datos')
+                                        Predicción no disponible
                                     @else
                                         Estado estable
                                     @endif
                                 </p>
                                 <p class="mt-1">Total: {{ $item['total_series'] }}</p>
-                                <p>{{ $item['inoperativas'] }} inoperativas</p>
-                                <p>{{ $item['observadas'] }} observadas</p>
+                                <p>{{ $item['futuro_inoperativo'] ?? 0 }} futuras inoperativas</p>
+                                <p>{{ ($item['futuro_con_defectos'] ?? 0) + ($item['futuro_malo'] ?? 0) }} con deterioro futuro</p>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $urgenciaClasses }}">
@@ -224,22 +304,22 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
                                 <p class="font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">{{ $cuandoTexto }}</p>
-                                <p class="mt-1">Desde {{ $item['fecha_sugerida_desde'] }}</p>
+                                @if($item['fecha_sugerida_desde'] ?? null)
+                                    <p class="mt-1">Desde {{ $item['fecha_sugerida_desde'] }}</p>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-sm font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                                 {{ $item['cantidad_sugerida'] }}
                             </td>
                             <td class="px-6 py-4 text-sm text-[var(--color-on-surface)] dark:text-[var(--color-on-surface-dark)]">
-                                <p>{{ $item['inoperativas'] }} inoperativas, {{ $item['observadas'] }} con desgaste.</p>
-                                <p class="mt-1">{{ $item['incidencias_90d'] }} incidencias en 90 dias.</p>
-                                @if ($item['mantenimientos_abiertos'] > 0)
-                                    <p class="mt-1">{{ $item['mantenimientos_abiertos'] }} en mantenimiento abierto.</p>
-                                @endif
+                                <p>{{ $item['motivo'] ?? 'Sin detalle.' }}</p>
+                                <p class="mt-1">Confianza media: {{ number_format(((float) ($item['confianza_futura_promedio'] ?? 0)) * 100, 1) }}%.</p>
+                                <p class="mt-1">Cobertura histórica: {{ number_format((float) ($item['cobertura_historica_pct'] ?? 0), 1) }}%.</p>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <p class="font-medium text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">
                                     No hay armamento serializado suficiente para calcular reposicion.
                                 </p>

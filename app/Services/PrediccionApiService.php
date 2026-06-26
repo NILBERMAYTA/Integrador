@@ -63,6 +63,13 @@ class PrediccionApiService
         return $this->request('get', "/explainability/armamento/{$serieId}");
     }
 
+    public function recomendacionesReposicion(?int $unidadId = null): array
+    {
+        return $this->request('get', '/recommendations/replacement', array_filter([
+            'unidad_id' => $unidadId,
+        ], fn ($value) => $value !== null));
+    }
+
     protected function request(string $method, string $uri, array $query = []): array
     {
         try {

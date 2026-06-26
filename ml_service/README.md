@@ -39,6 +39,16 @@ evita que el modelo conozca directamente la respuesta que debe predecir.
 del entrenamiento. La pertenencia administrativa a una unidad no debe
 considerarse una causa directa de inoperatividad.
 
+Los niveles de riesgo se presentan como una clasificación operativa híbrida:
+
+- Alto: el modelo supera su umbral de decisión o la serie ya está en condición
+  crítica.
+- Medio: la serie está observada, en mantenimiento, con defectos o en mal
+  estado y requiere seguimiento preventivo.
+- Bajo: no presenta señales críticas ni preventivas conocidas.
+
+El campo `estado_predicho` permanece como la salida binaria pura del modelo.
+
 Si falla por falta de clases, exporta el dataset y revisa la distribucion:
 
 ```powershell

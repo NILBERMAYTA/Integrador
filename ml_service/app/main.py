@@ -10,7 +10,9 @@ from app.explainability import (
 )
 from app.ml import (
     list_armamento_predictions,
+    load_model_bundle,
     model_exists,
+    replacement_recommendations,
     summarize_armamento_predictions,
     train_armamento_model,
 )
@@ -21,6 +23,10 @@ class HealthResponse(BaseModel):
     model_ready: bool
     model_path: str
     model_version: str
+    current_metrics: dict | None = None
+    future_metrics: dict | None = None
+    total_historial_futuro: int | None = None
+    horizon_days: int | None = None
 
 
 class TrainResponse(BaseModel):
@@ -35,6 +41,10 @@ class TrainResponse(BaseModel):
     recall: float
     f1: float
     roc_auc: float | None = None
+    total_historial_futuro: int
+    horizon_days: int
+    current_metrics: dict
+    future_metrics: dict
 
 
 class PredictionItem(BaseModel):
@@ -43,6 +53,17 @@ class PredictionItem(BaseModel):
     unidad_id: int | None = None
     unidad_nombre: str
     codigo_serie: str
+    articulo_nombre: str
+    categoria_nombre: str
+    condicion_actual_predicha: str
+    confianza_actual: float
+    probabilidades_actuales: dict[str, float]
+    condicion_futura_predicha: str
+    confianza_futura: float
+    probabilidades_futuras: dict[str, float]
+    horizonte_dias: int
+    cobertura_historica: str
+    probabilidad_reposicion: float
     estado_predicho: str
     probabilidad: float
     nivel_riesgo: str
@@ -56,19 +77,14 @@ class PersistResponse(BaseModel):
     total: int
 
 
-class PredictionCounts(BaseModel):
-    alto: int | None = None
-    medio: int | None = None
-    bajo: int | None = None
-    operativo: int | None = None
-    inoperativo: int | None = None
-
-
 class PredictionSummaryResponse(BaseModel):
     unidad_id: int | None = None
     total: int
-    riesgo: PredictionCounts
-    estado: PredictionCounts
+    riesgo: dict[str, int]
+    condicion_actual: dict[str, int]
+    condicion_futura: dict[str, int]
+    cobertura: dict[str, int]
+    horizonte_dias: int
     page: int
     per_page: int
     last_page: int
@@ -93,6 +109,7 @@ class GlobalExplanationResponse(BaseModel):
     beeswarm_image: str
     dependence_image: str | None = None
     top_feature: str
+    explained_class: str
 
 
 class IndividualContributionItem(BaseModel):
@@ -111,12 +128,22 @@ class IndividualExplanationResponse(BaseModel):
     unidad_nombre: str
     probability: float
     predicted_state: str
+    future_condition: str
+    future_confidence: float
     risk_level: str
     recommendation: str
     base_value: float
     contributions: list[IndividualContributionItem]
     waterfall_image: str
     generated_at: str
+
+
+class ReplacementResponse(BaseModel):
+    unidad_id: int | None = None
+    horizonte_dias: int
+    resumen: dict
+    unidades: list[dict]
+    recomendaciones: list[dict]
 
 
 app = FastAPI(
@@ -129,11 +156,21 @@ app = FastAPI(
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     settings = get_settings()
+    bundle = load_model_bundle() if model_exists() else {}
+    future_metrics = bundle.get("future_metrics")
     return HealthResponse(
         status="ok",
         model_ready=model_exists(),
         model_path=str(settings.model_path),
         model_version=settings.model_version,
+        current_metrics=bundle.get("current_metrics"),
+        future_metrics=future_metrics,
+        total_historial_futuro=(
+            int(future_metrics.get("total_registros", 0))
+            if isinstance(future_metrics, dict)
+            else None
+        ),
+        horizon_days=bundle.get("horizon_days"),
     )
 
 
@@ -175,6 +212,20 @@ def predictions_armamento_summary(
                 page=page,
                 per_page=per_page,
             )
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/recommendations/replacement", response_model=ReplacementResponse)
+def recommendations_replacement(
+    unidad_id: int | None = Query(default=None, ge=1),
+) -> ReplacementResponse:
+    try:
+        return ReplacementResponse(
+            **replacement_recommendations(unidad_id=unidad_id)
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="No existe un modelo entrenado.") from exc

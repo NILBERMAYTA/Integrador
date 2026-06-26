@@ -138,6 +138,29 @@ class PrediccionApiServiceTest extends TestCase
         $this->assertSame(41556, $result['serie_id']);
     }
 
+    public function test_obtiene_reposicion_del_modelo_filtrada_por_unidad(): void
+    {
+        config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');
+
+        Http::fake([
+            'http://127.0.0.1:8002/recommendations/replacement*' => Http::response([
+                'unidad_id' => 82,
+                'horizonte_dias' => 65,
+                'resumen' => ['cantidad_sugerida_total' => 4],
+                'unidades' => [],
+                'recomendaciones' => [],
+            ], 200),
+        ]);
+
+        $result = app(PrediccionApiService::class)
+            ->recomendacionesReposicion(82);
+
+        $this->assertSame(4, $result['resumen']['cantidad_sugerida_total']);
+
+        Http::assertSent(fn ($request) => $request->url()
+            === 'http://127.0.0.1:8002/recommendations/replacement?unidad_id=82');
+    }
+
     public function test_lanza_error_claro_cuando_falla_la_api(): void
     {
         config()->set('services.prediccion_api.url', 'http://127.0.0.1:8002');

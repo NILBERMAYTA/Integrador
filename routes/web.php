@@ -53,15 +53,50 @@ Route::get('dashboard', function () {
     $user = auth()->user()?->loadMissing('unidad');
     $unidadId = $user?->unidad_id;
 
-    $prestamos = Operacion::with([
-        'usuarioDestino',
-        'detalles.articulo',
-        'detalles.series.serie',
-        'devoluciones.detalles.articulo',
-    ])->where('tipo', 'asignacion')
-        ->when(! $user?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId))
-        ->latest()
-        ->get();
+    $prestamosBase = Operacion::query()
+        ->where('tipo', 'asignacion')
+        ->when(! $user?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId));
+
+    $prestamoPendienteSubquery = function ($subquery): void {
+        $subquery
+            ->selectRaw('1')
+            ->from('operacion_detalles as od')
+            ->join('articulos as a', 'a.id', '=', 'od.articulo_id')
+            ->whereColumn('od.operacion_id', 'operaciones.id')
+            ->whereNull('od.deleted_at')
+            ->where(function ($pending) {
+                $pending
+                    ->where(function ($serializados) {
+                        $serializados
+                            ->whereRaw("a.tipo::text = 'reutilizable'")
+                            ->whereExists(function ($series) {
+                                $series
+                                    ->selectRaw('1')
+                                    ->from('operacion_detalle_series as ods')
+                                    ->join('articulo_series as s', 's.id', '=', 'ods.serie_id')
+                                    ->whereColumn('ods.operacion_detalle_id', 'od.id')
+                                    ->whereColumn('s.operacion_detalle_id_actual', 'od.id')
+                                    ->whereNull('ods.deleted_at')
+                                    ->whereNull('s.deleted_at');
+                            });
+                    })
+                    ->orWhere(function ($cantidad) {
+                        $cantidad
+                            ->whereRaw("a.tipo::text = 'consumible'")
+                            ->whereRaw('od.cantidad > COALESCE((
+                                SELECT SUM(odd.cantidad)
+                                FROM operaciones dev
+                                JOIN operacion_detalles odd ON odd.operacion_id = dev.id
+                                WHERE dev.operacion_padre_id = operaciones.id
+                                    AND dev.deleted_at IS NULL
+                                    AND odd.deleted_at IS NULL
+                                    AND odd.articulo_id = od.articulo_id
+                            ), 0)');
+                    });
+            });
+    };
+
+    $wherePrestamoPendiente = fn ($query) => $query->whereExists($prestamoPendienteSubquery);
 
     $estadoPrestamo = function ($op) {
         $devueltosCantidad = [];
@@ -89,53 +124,71 @@ Route::get('dashboard', function () {
         return 'concluido';
     };
 
-    $prestamosActivos = $prestamos->filter(fn ($op) => $estadoPrestamo($op) === 'pendiente')->count();
-    $prestamosConcluidos = $prestamos->count() - $prestamosActivos;
+    $totalPrestamos = (clone $prestamosBase)->count();
+    $prestamosActivos = $wherePrestamoPendiente(clone $prestamosBase)->count();
+    $prestamosConcluidos = max(0, $totalPrestamos - $prestamosActivos);
     $devolucionesPendientes = $prestamosActivos;
     $personalActivo = User::query()
         ->where('role', 'policia')
         ->when(! $user?->isAdministradorGeneral(), fn ($query) => $query->where('unidad_id', $unidadId))
         ->count();
 
-    $prestamosRecientes = $prestamos->take(6)->map(function ($op) use ($estadoPrestamo) {
-        return [
-            'id' => $op->id,
-            'policia' => $op->usuarioDestino?->name ?? 'Sin asignar',
-            'badge' => $op->usuarioDestino?->numero_escalafon ?? '',
-            'articulo' => $op->detalles->first()?->articulo?->nombre ?? 'Articulo',
-            'serie' => $op->detalles->first()?->series->first()?->serie?->codigo_serie ?? null,
-            'fecha' => optional($op->fecha)->format('d M Y'),
-            'estado' => $estadoPrestamo($op),
-        ];
-    });
+    $prestamosRecientes = (clone $prestamosBase)
+        ->with([
+            'usuarioDestino',
+            'detalles.articulo',
+            'detalles.series.serie',
+            'devoluciones.detalles.articulo',
+        ])
+        ->latest()
+        ->limit(6)
+        ->get()
+        ->map(function ($op) use ($estadoPrestamo) {
+            return [
+                'id' => $op->id,
+                'policia' => $op->usuarioDestino?->name ?? 'Sin asignar',
+                'badge' => $op->usuarioDestino?->numero_escalafon ?? '',
+                'articulo' => $op->detalles->first()?->articulo?->nombre ?? 'Articulo',
+                'serie' => $op->detalles->first()?->series->first()?->serie?->codigo_serie ?? null,
+                'fecha' => optional($op->fecha)->format('d M Y'),
+                'estado' => $estadoPrestamo($op),
+            ];
+        });
+
+    $prestamosPorMes = (clone $prestamosBase)
+        ->where('fecha', '>=', now()->startOfMonth()->subMonths(5))
+        ->selectRaw("TO_CHAR(fecha, 'YYYY-MM') AS periodo, COUNT(*) AS total")
+        ->groupByRaw("TO_CHAR(fecha, 'YYYY-MM')")
+        ->pluck('total', 'periodo');
 
     $prestamosTendencia = collect(range(5, 0))
-        ->map(function (int $offset) use ($prestamos) {
+        ->map(function (int $offset) use ($prestamosPorMes) {
             $month = now()->startOfMonth()->subMonths($offset);
-            $total = $prestamos->filter(function ($op) use ($month) {
-                return optional($op->fecha)?->format('Y-m') === $month->format('Y-m');
-            })->count();
 
             return [
                 'label' => $month->locale('es')->translatedFormat('M'),
                 'full_label' => $month->translatedFormat('F Y'),
-                'total' => $total,
+                'total' => (int) ($prestamosPorMes[$month->format('Y-m')] ?? 0),
             ];
         })
         ->values();
 
     $inicioSemana = now()->startOfWeek();
+    $finSemana = $inicioSemana->copy()->endOfWeek();
+    $prestamosPorDia = (clone $prestamosBase)
+        ->whereBetween('fecha', [$inicioSemana, $finSemana])
+        ->selectRaw('DATE(fecha) AS dia, COUNT(*) AS total')
+        ->groupByRaw('DATE(fecha)')
+        ->pluck('total', 'dia');
+
     $prestamosSemana = collect(range(0, 6))
-        ->map(function (int $offset) use ($prestamos, $inicioSemana) {
+        ->map(function (int $offset) use ($prestamosPorDia, $inicioSemana) {
             $day = $inicioSemana->copy()->addDays($offset);
-            $total = $prestamos->filter(function ($op) use ($day) {
-                return optional($op->fecha)?->format('Y-m-d') === $day->format('Y-m-d');
-            })->count();
 
             return [
                 'label' => mb_strtoupper($day->locale('es')->translatedFormat('D')),
                 'full_label' => $day->locale('es')->translatedFormat('l d \d\e F'),
-                'total' => $total,
+                'total' => (int) ($prestamosPorDia[$day->format('Y-m-d')] ?? 0),
             ];
         })
         ->values();

@@ -76,15 +76,15 @@
 
     <div class="section">
         <h1>Reporte de reposicion de armamento</h1>
-        <p class="subtitle">Resumen para adquisicion o reposicion.</p>
+        <p class="subtitle">Estimación generada exclusivamente desde la predicción futura del modelo.</p>
     </div>
 
     <table class="meta">
         <tr>
             <td><strong>Generado:</strong> {{ $generatedAt->format('d/m/Y H:i') }}</td>
             <td><strong>Usuario:</strong> {{ $generatedByName }}</td>
-            <td><strong>Articulos evaluados:</strong> {{ $resumen['articulos_evaluados'] ?? 0 }}</td>
-            <td><strong>Total sugerido:</strong> {{ $resumen['cantidad_sugerida_total'] ?? 0 }}</td>
+            <td><strong>Unidad:</strong> {{ $unidadNombre ?? 'Todas las unidades' }}</td>
+            <td><strong>Horizonte:</strong> {{ $horizonteDias ?? 0 }} días</td>
         </tr>
     </table>
 
@@ -200,6 +200,7 @@
                             'inmediata' => 'badge-now',
                             'proxima' => 'badge-soon',
                             'planificada' => 'badge-plan',
+                            'sin_datos' => 'badge-stable',
                             default => 'badge-stable',
                         };
                         $cuandoTexto = match ($item['urgencia'] ?? '') {
@@ -209,9 +210,8 @@
                             default => 'Luego',
                         };
                         $justificacionCorta = trim(implode(', ', array_filter([
-                            ((int) ($item['inoperativas'] ?? 0)) > 0 ? ((int) $item['inoperativas']).' inoperativas' : null,
-                            ((int) ($item['observadas'] ?? 0)) > 0 ? ((int) $item['observadas']).' observadas' : null,
-                            ((int) ($item['incidencias_90d'] ?? 0)) > 0 ? ((int) $item['incidencias_90d']).' incidencias recientes' : null,
+                            ((int) ($item['futuro_inoperativo'] ?? 0)) > 0 ? ((int) $item['futuro_inoperativo']).' futuras inoperativas' : null,
+                            ((int) ($item['futuro_con_defectos'] ?? 0)) > 0 ? ((int) $item['futuro_con_defectos']).' futuras con defectos' : null,
                         ])));
                     @endphp
                     <tr>
@@ -259,12 +259,14 @@
                             'inmediata' => 'Estado critico',
                             'proxima' => 'Requiere atencion',
                             'planificada' => 'Seguimiento preventivo',
+                            'sin_datos' => 'Sin historial suficiente',
                             default => 'Estado estable',
                         };
                         $cuandoTexto = match ($item['urgencia'] ?? '') {
                             'inmediata' => 'Ahora a 30 dias',
                             'proxima' => '30 a 60 dias',
                             'planificada' => '60 a 90 dias',
+                            'sin_datos' => 'Pendiente de inspecciones',
                             default => 'Mas de 90 dias',
                         };
                     @endphp
@@ -276,15 +278,20 @@
                         <td>{{ $item['categoria'] ?? 'Sin categoria' }}</td>
                         <td>
                             <strong>{{ $estadoTexto }}</strong><br>
-                            <span class="muted">Total: {{ $item['total_series'] ?? 0 }}, inoperativas: {{ $item['inoperativas'] ?? 0 }}, observadas: {{ $item['observadas'] ?? 0 }}</span>
+                            <span class="muted">Unidad: {{ $item['unidad_nombre'] ?? 'Sin unidad' }}. Total: {{ $item['total_series'] ?? 0 }}, futuras inoperativas: {{ $item['futuro_inoperativo'] ?? 0 }}</span>
                         </td>
                         <td><span class="badge {{ $urgenciaClass }}">{{ ucfirst($item['urgencia'] ?? 'estable') }}</span></td>
-                        <td>{{ $cuandoTexto }}<br><span class="muted">Desde {{ $item['fecha_sugerida_desde'] ?? '--' }}</span></td>
+                        <td>
+                            {{ $cuandoTexto }}
+                            @if($item['fecha_sugerida_desde'] ?? null)
+                                <br><span class="muted">Desde {{ $item['fecha_sugerida_desde'] }}</span>
+                            @endif
+                        </td>
                         <td><strong>{{ $item['cantidad_sugerida'] ?? 0 }}</strong></td>
-                        <td>{{ number_format((float) ($item['salud_operativa'] ?? 0), 2) }}%</td>
+                        <td>{{ number_format((1 - (float) ($item['tasa_reposicion_esperada'] ?? 0)) * 100, 2) }}%</td>
                         <td>
                             {{ $item['motivo'] ?? '--' }}<br>
-                            <span class="muted">Incidencias 90d: {{ $item['incidencias_90d'] ?? 0 }}, inspecciones observadas: {{ $item['inspecciones_observadas_90d'] ?? 0 }}, mantenimientos abiertos: {{ $item['mantenimientos_abiertos'] ?? 0 }}</span>
+                            <span class="muted">Confianza: {{ number_format(((float) ($item['confianza_futura_promedio'] ?? 0)) * 100, 1) }}%, cobertura histórica: {{ number_format((float) ($item['cobertura_historica_pct'] ?? 0), 1) }}%</span>
                         </td>
                     </tr>
                 @empty
