@@ -68,16 +68,6 @@
                 </div>
             </template>
 
-            <div class="mt-4 min-w-0 rounded-[var(--radius-radius)] bg-[var(--color-surface-alt)] p-3 dark:border dark:border-lime-900 dark:bg-[#222d1d]">
-                <p class="text-xs font-semibold uppercase text-[var(--color-on-surface-strong)] opacity-70 dark:text-lime-300">
-                    Contenido del QR
-                </p>
-                <p
-                    class="mt-1 max-h-20 overflow-y-auto break-all text-xs leading-5 text-[var(--color-on-surface)] dark:text-[#b8c9aa]"
-                    x-text="value"
-                ></p>
-            </div>
-
             <div class="modal-action flex flex-wrap justify-end gap-2">
                 <button
                     type="button"

@@ -75,7 +75,7 @@
                 <div data-prediction-chart="risk" class="min-h-[220px] w-full shrink-0 sm:w-[250px]" wire:ignore></div>
 
                 <div class="flex-1">
-                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Condición futura predicha</h2>
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Condición futura</h2>
                     <p class="mt-1 text-sm opacity-70">Horizonte estimado: {{ $stats['horizonte_dias'] ?? 0 }} días.</p>
                     <div class="mt-4 space-y-3 text-sm">
                         @foreach($condiciones as $index => $condition)
@@ -94,7 +94,7 @@
                 <div data-prediction-chart="status" class="min-h-[220px] w-full shrink-0 sm:w-[250px]" wire:ignore></div>
 
                 <div class="flex-1">
-                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Condición actual predicha</h2>
+                    <h2 class="text-lg font-semibold text-[var(--color-on-surface-strong)] dark:text-[var(--color-on-surface-dark-strong)]">Condición actual</h2>
                     <div class="mt-4 space-y-3 text-sm">
                         @foreach($condiciones as $index => $condition)
                             <div class="flex items-center justify-between gap-4">
@@ -142,13 +142,6 @@
                 {{ (int) ($cobertura['sin_historial'] ?? 0) }} series sin eventos históricos.
             </p>
         </div>
-    </div>
-
-    <div role="alert" class="alert alert-warning alert-soft">
-        <span>
-            Ambas condiciones son salidas de reglas difusas calibradas con el historial disponible;
-            las series sin historial quedan indeterminadas y deben confirmarse mediante inspecciones.
-        </span>
     </div>
 
     <section class="space-y-5">

@@ -102,12 +102,6 @@
         </div>
     </div>
 
-    <div role="alert" class="alert alert-info alert-soft">
-        <span>
-            La cantidad sugerida es el valor esperado de reposición estimado por Random Forest; el estado del armamento se mantiene con lógica difusa.
-        </span>
-    </div>
-
     <div class="grid gap-6 xl:grid-cols-2">
         <div class="rounded-[var(--radius-radius)] border border-[var(--color-outline)] bg-[var(--color-surface)] p-6 shadow-sm dark:border-[var(--color-outline-dark)] dark:bg-[var(--color-surface-dark)]">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
